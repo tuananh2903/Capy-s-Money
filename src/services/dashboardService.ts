@@ -41,10 +41,30 @@ export interface Transaction {
  */
 export async function fetchWallets(userId: string): Promise<{ success: boolean; data?: Wallet[]; error?: string }> {
   try {
-    const { data, error } = await supabase
-      .from('wallets')
-      .select('*')
-      .or(`user_id.eq.${userId},id.in.(select wallet_id from wallet_members where user_id = ${userId})`);
+    // Bước 1: Lấy danh sách wallet_id mà user là thành viên (ví chung)
+    const { data: memberRows, error: memberError } = await supabase
+      .from('wallet_members')
+      .select('wallet_id')
+      .eq('user_id', userId);
+
+    if (memberError) {
+      console.error('Error fetching wallet_members:', memberError);
+      return { success: false, error: `Không thể tải danh sách ví: ${memberError.message}` };
+    }
+
+    const sharedWalletIds = (memberRows ?? []).map((row: any) => row.wallet_id);
+
+    // Bước 2: Lấy tất cả ví mà user sở hữu hoặc là thành viên
+    let query = supabase.from('wallets').select('*').eq('user_id', userId);
+
+    if (sharedWalletIds.length > 0) {
+      query = supabase
+        .from('wallets')
+        .select('*')
+        .or(`user_id.eq.${userId},id.in.(${sharedWalletIds.join(',')})`);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error fetching wallets:', error);

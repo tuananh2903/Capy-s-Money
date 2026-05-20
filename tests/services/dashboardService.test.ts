@@ -15,6 +15,11 @@ jest.mock('../../src/services/supabaseClient', () => ({
           select: mockSelect,
         };
       }
+      if (table === 'wallet_members') {
+        return {
+          select: mockSelect,
+        };
+      }
       if (table === 'jars') {
         return {
           select: mockSelect,
@@ -52,24 +57,32 @@ describe('dashboardService', () => {
   });
 
   describe('fetchWallets', () => {
-    it('should fetch all wallets of the user (owned or shared)', async () => {
+    it('should fetch all wallets of the user (owned) - no shared wallets', async () => {
       const mockWallets = [
         { id: 'w-1', name: 'Ví Cá Nhân', type: 'personal', balance: 5000000 },
-        { id: 'w-2', name: 'Ví Chung', type: 'shared', balance: 10000000 },
       ];
-      
-      mockOr.mockResolvedValue({ data: mockWallets, error: null });
+
+      // Both wallet_members and wallets use .select().eq() chain:
+      //   mockSelect() returns mockChain, then mockEq resolves data
+      mockSelect.mockReturnValue(mockChain);
+
+      // Call 1: wallet_members .eq() → empty list (no shared wallets)
+      // Call 2: wallets .eq()        → mockWallets
+      mockEq
+        .mockResolvedValueOnce({ data: [], error: null })
+        .mockResolvedValueOnce({ data: mockWallets, error: null });
 
       const res = await fetchWallets('user-123');
       expect(res.success).toBe(true);
       expect(res.data).toEqual(mockWallets);
+      expect(supabase.from).toHaveBeenCalledWith('wallet_members');
       expect(supabase.from).toHaveBeenCalledWith('wallets');
-      expect(mockSelect).toHaveBeenCalledWith('*');
-      expect(mockOr).toHaveBeenCalledWith('user_id.eq.user-123,id.in.(select wallet_id from wallet_members where user_id = user-123)');
     });
 
-    it('should return error if fetching wallets fails', async () => {
-      mockOr.mockResolvedValue({ data: null, error: { message: 'Database Error' } });
+    it('should return error if fetching wallet_members fails', async () => {
+      // wallet_members .select().eq() → error
+      mockSelect.mockReturnValue(mockChain);
+      mockEq.mockResolvedValueOnce({ data: null, error: { message: 'Database Error' } });
 
       const res = await fetchWallets('user-123');
       expect(res.success).toBe(false);
