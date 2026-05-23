@@ -47,7 +47,7 @@ export async function completeOnboarding(
     }
 
     // 2. Khởi tạo Ví Tiền Mặt mặc định
-    const { error: walletError } = await supabase
+    const { data: walletData, error: walletError } = await supabase
       .from('wallets')
       .insert({
         user_id: userId,
@@ -55,15 +55,41 @@ export async function completeOnboarding(
         balance: initialBalance,
         is_default: true,
         type: 'cash',
-      });
+      })
+      .select('id')
+      .single();
 
-    if (walletError) {
+    if (walletError || !walletData) {
       console.error('Error creating initial wallet:', walletError);
       // Ghi nhận lỗi nhưng không rollback hoàn toàn (vì profiles đã hoàn thành)
       // Trong ứng dụng thực tế, ta nên dùng RPC hoặc quản lý giao dịch kỹ hơn
       return {
         success: false,
         error: 'Cập nhật hồ sơ thành công nhưng không thể khởi tạo ví. Vui lòng tạo ví thủ công ở màn hình chính.',
+      };
+    }
+
+    const walletId = walletData.id;
+
+    // 3. Khởi tạo 6 Hũ tài chính tương ứng cho ví vừa tạo
+    const jarsToInsert = [
+      { wallet_id: walletId, type: 'NEC', allocation_percentage: jarsRatios.nec, budget_limit: 0, spent_amount: 0 },
+      { wallet_id: walletId, type: 'FFA', allocation_percentage: jarsRatios.ffa, budget_limit: 0, spent_amount: 0 },
+      { wallet_id: walletId, type: 'EDU', allocation_percentage: jarsRatios.edu, budget_limit: 0, spent_amount: 0 },
+      { wallet_id: walletId, type: 'PLAY', allocation_percentage: jarsRatios.play, budget_limit: 0, spent_amount: 0 },
+      { wallet_id: walletId, type: 'LTSS', allocation_percentage: jarsRatios.lt, budget_limit: 0, spent_amount: 0 },
+      { wallet_id: walletId, type: 'GIVE', allocation_percentage: jarsRatios.give, budget_limit: 0, spent_amount: 0 },
+    ];
+
+    const { error: jarsError } = await supabase
+      .from('jars')
+      .insert(jarsToInsert);
+
+    if (jarsError) {
+      console.error('Error creating initial jars:', jarsError);
+      return {
+        success: false,
+        error: 'Tạo ví thành công nhưng không thể khởi tạo 6 hũ tài chính. Vui lòng thử lại.',
       };
     }
 
