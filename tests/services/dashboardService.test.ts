@@ -278,12 +278,16 @@ describe('dashboardService', () => {
       const res = await ensureJarsExist('w-123', mockCurrentJars, { nec: 55, lt: 10, ffa: 10, edu: 10, play: 10, give: 5 });
       expect(res.success).toBe(true);
       expect(supabase.from).toHaveBeenCalledWith('jars');
-      expect(mockUpsert).toHaveBeenCalled();
+      expect(mockUpsert).toHaveBeenCalledWith(
+        expect.any(Array),
+        { onConflict: 'wallet_id,type' }
+      );
       // Verifies that it upserted NEC (updated to 55%) and missing jars (PLAY, EDU, LTSS, GIVE)
       // but didn't upsert FFA (since it was already 10%)
       const upsertedPayload = mockUpsert.mock.calls[0][0];
       expect(upsertedPayload.length).toBe(5); // NEC, EDU, PLAY, LTSS, GIVE
       expect(upsertedPayload.find((p: any) => p.type === 'NEC').allocation_percentage).toBe(55);
+      expect(upsertedPayload.find((p: any) => p.type === 'NEC').id).toBeUndefined(); // verify no id passed
       expect(upsertedPayload.find((p: any) => p.type === 'FFA')).toBeUndefined();
     });
 

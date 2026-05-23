@@ -235,7 +235,6 @@ export async function ensureJarsExist(
       needsUpdate = true;
     } else if (existing.allocation_percentage === 0) {
       jarsToUpsert.push({
-        id: existing.id,
         wallet_id: walletId,
         type: req.type,
         allocation_percentage: req.ratio,
@@ -253,7 +252,7 @@ export async function ensureJarsExist(
   try {
     const { error } = await supabase
       .from('jars')
-      .upsert(jarsToUpsert);
+      .upsert(jarsToUpsert, { onConflict: 'wallet_id,type' });
 
     if (error) {
       console.error('Error upserting jars in ensureJarsExist:', error);
