@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=390, initial-scale=1" />
+  <title>Capy's Money — Dashboard (Stitch preview)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+      background: #e8d6d7;
+      display: flex;
+      justify-content: center;
+      padding: 24px;
+      min-height: 100vh;
+    }
+    .phone {
+      width: 390px;
+      height: 844px;
+      background: #fff8f7;
+      border-radius: 40px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 24px 48px rgba(255, 183, 197, 0.35);
+      position: relative;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      padding: 12px 20px 12px;
+      border-bottom: 1px solid #d6c2c4;
+      gap: 12px;
+    }
+    .avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: #ffb7c5;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+    .header-text { flex: 1; }
+    .header-text h1 { font-size: 18px; font-weight: 700; color: #23191a; }
+    .header-text p { font-size: 11px; color: #514345; margin-top: 2px; }
+    .bell {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: #f7e4e5;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding-bottom: 100px;
+    }
+    .label-sm {
+      font-size: 12px; font-weight: 500; color: #514345;
+      padding: 16px 20px 8px;
+    }
+    .wallets {
+      display: flex; gap: 12px;
+      padding: 0 20px 16px;
+      overflow-x: auto;
+    }
+    .wallet-pill {
+      flex-shrink: 0;
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 16px;
+      border-radius: 9999px;
+      font-size: 14px; font-weight: 600;
+      border: 1px solid #d6c2c4;
+      background: #fff;
+      opacity: 0.6;
+      color: #514345;
+    }
+    .wallet-pill.active {
+      opacity: 1;
+      border: 2px solid #864e5a;
+      background: linear-gradient(135deg, #ffb7c5, #fe9da9);
+      color: #23191a;
+    }
+    .balance-card {
+      margin: 0 20px 16px;
+      padding: 24px;
+      background: #fff;
+      border-radius: 32px;
+      border: 1px solid #ffdde2;
+      box-shadow: 0 8px 24px rgba(255, 183, 197, 0.2);
+    }
+    .balance-card .lbl { font-size: 13px; font-weight: 600; color: #514345; }
+    .balance-card .amt { font-size: 34px; font-weight: 700; color: #23191a; margin: 8px 0; letter-spacing: -0.5px; }
+    .chip {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 12px; font-weight: 600;
+      background: #ffb7c5;
+      color: #864e5a;
+    }
+    .quote {
+      margin: 0 20px 20px;
+      padding: 16px;
+      background: #fff0f1;
+      border-radius: 24px;
+      display: flex; gap: 12px; align-items: flex-start;
+    }
+    .quote .mascot { font-size: 48px; line-height: 1; }
+    .quote p { font-size: 14px; color: #514345; line-height: 1.5; flex: 1; }
+    .section-title {
+      font-size: 24px; font-weight: 600; color: #23191a;
+      padding: 0 20px 12px;
+    }
+    .jars {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 0 20px 24px;
+    }
+    .jar {
+      background: #fff;
+      border-radius: 24px;
+      border: 1px solid #ffdde2;
+      padding: 14px;
+      box-shadow: 0 4px 16px rgba(255, 183, 197, 0.15);
+    }
+    .jar-head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .jar-name { font-size: 12px; font-weight: 600; color: #23191a; }
+    .jar-amt { font-size: 13px; color: #514345; margin-bottom: 8px; }
+    .bar-bg { height: 8px; background: #f1dedf; border-radius: 9999px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 9999px; }
+    .alert { font-size: 11px; font-weight: 600; margin-top: 6px; }
+    .fab {
+      position: absolute;
+      right: 20px;
+      bottom: 88px;
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #864e5a, #944652);
+      color: #fff;
+      font-size: 28px; font-weight: 600;
+      border: none;
+      box-shadow: 0 8px 20px rgba(255, 183, 197, 0.45);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+    }
+    .tabbar {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-around;
+      padding: 8px 8px 20px;
+      background: rgba(255, 255, 255, 0.95);
+      border-top: 1px solid #d6c2c4;
+    }
+    .tab {
+      font-size: 11px; font-weight: 600;
+      color: #514345;
+      text-align: center;
+      padding: 8px 4px;
+    }
+    .tab.active { color: #864e5a; }
+    .tab-add-wrap { margin-top: -20px; }
+    .tab-add {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #864e5a, #944652);
+      color: #fff;
+      font-size: 24px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 6px 16px rgba(255, 183, 197, 0.4);
+    }
+    .banner {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: #864e5a; color: #fff;
+      font-size: 12px; text-align: center; padding: 6px;
+      z-index: 99;
+    }
+  </style>
+</head>
+<body>
+  <p class="banner">Bản preview local — chưa phải frame trên Stitch. Mở file này trong trình duyệt để duyệt layout.</p>
+  <div class="phone" style="margin-top: 28px;">
+    <header class="header">
+      <div class="avatar">🦦</div>
+      <div class="header-text">
+        <h1>Capy's Money</h1>
+        <p>Tài chính thảnh thơi ✨</p>
+      </div>
+      <div class="bell">🔔</div>
+    </header>
+
+    <div class="scroll">
+      <p class="label-sm">Ví của bạn</p>
+      <div class="wallets">
+        <div class="wallet-pill active"><span>👤</span> Ví chính <span>✓</span></div>
+        <div class="wallet-pill"><span>👥</span> Nhà chung</div>
+      </div>
+
+      <div class="balance-card">
+        <div class="lbl">Số dư hiện tại</div>
+        <div class="amt">12.450.000 đ</div>
+        <span class="chip">Tài chính ổn định</span>
+      </div>
+
+      <div class="quote">
+        <span class="mascot">🦦</span>
+        <p>Hãy quản lý tài chính thật chill cùng Capy mỗi ngày nhé!</p>
+      </div>
+
+      <h2 class="section-title">Phân phối 6 Hũ Tài Chính</h2>
+      <div class="jars">
+        <div class="jar">
+          <div class="jar-head"><span class="dot" style="background:#ffb7c5"></span><span class="jar-name">Thiết yếu (55%)</span></div>
+          <div class="jar-amt">8,2 tr / 10 tr đ</div>
+          <div class="bar-bg"><div class="bar-fill" style="width:82%;background:#fe9da9"></div></div>
+          <div class="alert" style="color:#d81b60">⚡ Tiêu dùng nhanh!</div>
+        </div>
+        <div class="jar">
+          <div class="jar-head"><span class="dot" style="background:#a8dfce"></span><span class="jar-name">Tiết kiệm (10%)</span></div>
+          <div class="jar-amt">1,2 tr / 5 tr đ</div>
+          <div class="bar-bg"><div class="bar-fill" style="width:24%;background:#a8dfce"></div></div>
+        </div>
+        <div class="jar">
+          <div class="jar-head"><span class="dot" style="background:#ffd4a8"></span><span class="jar-name">Tự do TC (10%)</span></div>
+          <div class="jar-amt">0 / 5 tr đ</div>
+          <div class="bar-bg"><div class="bar-fill" style="width:0%;background:#ffd4a8"></div></div>
+        </div>
+        <div class="jar">
+          <div class="jar-head"><span class="dot" style="background:#b4caff"></span><span class="jar-name">Giáo dục (10%)</span></div>
+          <div class="jar-amt">2,1 tr / 5 tr đ</div>
+          <div class="bar-bg"><div class="bar-fill" style="width:42%;background:#b4caff"></div></div>
+        </div>
+        <div class="jar">
+          <div class="jar-head"><span class="dot" style="background:#fcb7ff"></span><span class="jar-name">Hưởng thụ (10%)</span></div>
+          <div class="jar-amt">5,5 tr / 5 tr đ</div>
+          <div class="bar-bg"><div class="bar-fill" style="width:100%;background:#ba1a1a"></div></div>
+          <div class="alert" style="color:#ba1a1a">⚠ Vượt hạn mức!</div>
+        </div>
+        <div class="jar">
+          <div class="jar-head"><span class="dot" style="background:#c8b7ff"></span><span class="jar-name">Cho đi (5%)</span></div>
+          <div class="jar-amt">200k / 2,5 tr đ</div>
+          <div class="bar-bg"><div class="bar-fill" style="width:8%;background:#c8b7ff"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <button class="fab" type="button" aria-label="Thêm giao dịch">+</button>
+
+    <nav class="tabbar">
+      <div class="tab active">Trang chủ</div>
+      <div class="tab">Sổ GD</div>
+      <div class="tab-add-wrap"><div class="tab-add">+</div></div>
+      <div class="tab">Ngân sách</div>
+      <div class="tab">Ví</div>
+    </nav>
+  </div>
+</body>
+</html>

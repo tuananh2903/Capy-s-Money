@@ -28,15 +28,16 @@ describe('QuickAddBottomSheet', () => {
     );
 
     // Header / title
-    expect(getByText('Thêm giao dịch')).toBeTruthy();
+    expect(getByText('Thêm Giao Dịch')).toBeTruthy();
     
-    // Switch tabs
-    expect(getByText('Khoản Chi')).toBeTruthy();
-    expect(getByText('Khoản Thu')).toBeTruthy();
+    // Switch tabs - default is "Khoản thu" first (theo Stitch design)
+    expect(getByText('Khoản thu')).toBeTruthy();
+    expect(getByText('Khoản chi')).toBeTruthy();
 
     // Input fields
     expect(getByPlaceholderText('0')).toBeTruthy(); // Amount placeholder
-    expect(getByPlaceholderText('Nhập ghi chú (tùy chọn)...')).toBeTruthy(); // Note placeholder
+    // Note input is an inline TextInput in row section
+    expect(getByPlaceholderText('Nhập ghi chú...')).toBeTruthy();
   });
 
   it('shows error if trying to save with empty or 0 amount', async () => {
@@ -56,7 +57,7 @@ describe('QuickAddBottomSheet', () => {
       fireEvent.press(saveButton);
     });
 
-    expect(getByText('Số tiền giao dịch phải lớn hơn 0.')).toBeTruthy();
+    expect(getByText('Số tiền giao dịch phải lớn hơn 0 đ. Vui lòng nhập lại.')).toBeTruthy();
     expect(createTransaction).not.toHaveBeenCalled();
   });
 
@@ -74,7 +75,7 @@ describe('QuickAddBottomSheet', () => {
     const amountInput = getByPlaceholderText('0');
     fireEvent.changeText(amountInput, '500000');
 
-    const noteInput = getByPlaceholderText('Nhập ghi chú (tùy chọn)...');
+    const noteInput = getByPlaceholderText('Nhập ghi chú...');
     fireEvent.changeText(noteInput, 'a'.repeat(201));
 
     const saveButton = getByText('Lưu giao dịch');
@@ -104,12 +105,16 @@ describe('QuickAddBottomSheet', () => {
     const amountInput = getByPlaceholderText('0');
     fireEvent.changeText(amountInput, '250000');
 
-    // Select Jar
+    // Switch to expense tab to see jars
+    const expenseTab = getByText('Khoản chi');
+    fireEvent.press(expenseTab);
+
+    // Select Jar - NEC jar now shows icon + name
     const jarButton = getByText('Thiết yếu'); // NEC
     fireEvent.press(jarButton);
 
-    // Set note
-    const noteInput = getByPlaceholderText('Nhập ghi chú (tùy chọn)...');
+    // Set note via inline input
+    const noteInput = getByPlaceholderText('Nhập ghi chú...');
     fireEvent.changeText(noteInput, 'Mua sữa cho con');
 
     const saveButton = getByText('Lưu giao dịch');

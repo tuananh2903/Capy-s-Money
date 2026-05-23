@@ -1,57 +1,235 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from "react";
 import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-  ScrollView,
-  SafeAreaView,
-  ActivityIndicator,
-  Modal,
-  Dimensions,
-} from 'react-native';
-import CapyMascot from '../components/CapyMascot';
-import QuickAddBottomSheet from '../components/QuickAddBottomSheet';
-import { fetchWallets, fetchJars, Wallet, Jar } from '../services/dashboardService';
-import { evaluateJarBudget, BudgetAlertStatus } from '../utils/budgetChecker';
+  StyleSheet, Text, View, TouchableOpacity, ScrollView,
+  SafeAreaView, ActivityIndicator, Dimensions, Alert, Image,
+  Platform, StatusBar, Modal, TextInput
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { fetchProfile, updateProfileName } from "../services/profileService";
+import { supabase } from "../services/supabaseClient";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons, MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
+import CapyMascot from "../components/CapyMascot";
+import QuickAddBottomSheet from "../components/QuickAddBottomSheet";
+import WalletInviteScreen from "./WalletInviteScreen";
+import WalletJoinScreen from "./WalletJoinScreen";
+import { fetchWalletMembers, removeMember } from "../services/walletInviteService";
+import { fetchWallets, fetchJars, fetchWalletIncome, Wallet, Jar } from "../services/dashboardService";
+import { evaluateJarBudget, BudgetAlertStatus } from "../utils/budgetChecker";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
+
+const COLORS = {
+  primary: "#864E5A",
+  onPrimary: "#FFFFFF",
+  primaryContainer: "#FFB7C5",
+  onPrimaryContainer: "#7B4551",
+  secondary: "#944652",
+  onSecondary: "#FFFFFF",
+  secondaryContainer: "#FE9DA9",
+  onSecondaryContainer: "#79313D",
+  tertiary: "#71585C",
+  onTertiary: "#FFFFFF",
+  tertiaryContainer: "#E3C2C7",
+  onTertiaryContainer: "#674F53",
+  background: "#FFF8F7",
+  surface: "#FFF8F7",
+  surfaceContainer: "#FDE9EA",
+  surfaceContainerHigh: "#F7E4E5",
+  surfaceContainerLowest: "#FFFFFF",
+  onSurface: "#23191A",
+  onSurfaceVariant: "#514345",
+  outline: "#837375",
+  outlineVariant: "#D6C2C4",
+  error: "#BA1A1A",
+  errorContainer: "#FFDAD6",
+};
+
+const JAR_META: Record<string, {
+  name: string;
+  icon: string;
+  iconLib: "Ionicons" | "MaterialIcons" | "MaterialCommunityIcons";
+  iconColor: string;
+  iconBg: string;
+  fillColor: string;
+}> = {
+  NEC: {
+    name: "Thiết yếu",
+    icon: "shopping-basket",
+    iconLib: "MaterialIcons",
+    iconColor: "#944652",
+    iconBg: "rgba(254, 157, 169, 0.3)",
+    fillColor: "#944652",
+  },
+  LTSS: {
+    name: "Tiết kiệm",
+    icon: "piggy-bank-outline",
+    iconLib: "MaterialCommunityIcons",
+    iconColor: "#864e5a",
+    iconBg: "rgba(255, 183, 197, 0.3)",
+    fillColor: "#864e5a",
+  },
+  EDU: {
+    name: "Giáo dục",
+    icon: "school-outline",
+    iconLib: "Ionicons",
+    iconColor: "#71585c",
+    iconBg: "rgba(227, 194, 199, 0.3)",
+    fillColor: "#71585c",
+  },
+  PLAY: {
+    name: "Hưởng thụ",
+    icon: "celebration",
+    iconLib: "MaterialIcons",
+    iconColor: "#ea580c",
+    iconBg: "#ffedd5",
+    fillColor: "#fb923c",
+  },
+  FFA: {
+    name: "Đầu tư",
+    icon: "trending-up",
+    iconLib: "Ionicons",
+    iconColor: "#2563eb",
+    iconBg: "#dbeafe",
+    fillColor: "#2563eb",
+  },
+  GIVE: {
+    name: "Từ thiện",
+    icon: "volunteer-activism",
+    iconLib: "MaterialIcons",
+    iconColor: "#dc2626",
+    iconBg: "#fee2e2",
+    fillColor: "#ef4444",
+  },
+};
+
+const TAB_ITEMS = [
+  { id: "home", label: "Trang chủ" },
+  { id: "ledger", label: "Sổ GD" },
+  { id: "budget", label: "Ngân sách" },
+  { id: "wallets", label: "Ví" },
+] as const;
+
+const defaultQuote = "Ghi chép mỗi ngày, tâm hồn thảnh thơi cùng Capy bạn nhé!";
 
 interface DashboardScreenProps {
   userId: string;
   onSignOut: () => void;
+  initialInviteCode?: string | null;
+  onClearInviteCode?: () => void;
 }
 
-const goatQuotes: Record<string, string> = {
-  save_big: 'Capy tin bạn sẽ sớm tậu nhà tậu xe, đạt tự do tài chính thôi! Fighting! 🏠✨',
-  reduce_spend: 'Tiêu tiền ít thôi kẻo cuối tháng lại phải ăn mì gói nha bạn thân ơi! 🦦🍜',
-  self_invest: 'Đầu tư cho trí tuệ là khoản đầu tư lãi nhất đời! Học tập chăm chỉ nhé! 📚💡',
-  exit_broke_loop: 'Cố lên! Cùng chia hũ thông minh để thoát kiếp viêm màng túi vĩnh viễn nha! 🦦💸',
-};
-
-const defaultQuote = 'Hãy quản lý tài chính thật chill cùng Capy mỗi ngày nhé! 🥰🦦';
-
-const JAR_NAMES: Record<string, { name: string; color: string }> = {
-  NEC: { name: 'Thiết yếu', color: '#FF8C8C' },
-  LTSS: { name: 'Tiết kiệm', color: '#A8E6CF' },
-  FFA: { name: 'Tự do TC', color: '#FFD3B6' },
-  EDU: { name: 'Giáo dục', color: '#D4E2FC' },
-  PLAY: { name: 'Hưởng thụ', color: '#FCE1FC' },
-  GIVE: { name: 'Cho đi', color: '#EAE1FC' },
-};
-
-export default function DashboardScreen({ userId, onSignOut }: DashboardScreenProps) {
+export default function DashboardScreen({
+  userId,
+  onSignOut,
+  initialInviteCode,
+  onClearInviteCode,
+}: DashboardScreenProps) {
   const [loading, setLoading] = useState(true);
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [selectedWallet, setSelectedWallet] = useState<Wallet | null>(null);
   const [jars, setJars] = useState<Jar[]>([]);
-  const [showWalletModal, setShowWalletModal] = useState(false);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
-  const [quote, setQuote] = useState(defaultQuote);
+  const [activeTab, setActiveTab] = useState<string>("home");
+
+  const [walletIncome, setWalletIncome] = useState<number>(0);
+  const [showTotalBalance, setShowTotalBalance] = useState<boolean>(true);
+
+  // Invite and Share wallet state
+  const [showInviteScreen, setShowInviteScreen] = useState(false);
+  const [showJoinScreen, setShowJoinScreen] = useState(false);
+  const [inviteCodeToJoin, setInviteCodeToJoin] = useState<string | null>(null);
+  const [walletMembers, setWalletMembers] = useState<any[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showUserInfoModal, setShowUserInfoModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [userDisplayName, setUserDisplayName] = useState("");
+  const [userEmail, setUserEmail] = useState("");
+  const [userPhone, setUserPhone] = useState("");
+  const [appLanguage, setAppLanguage] = useState<'vi' | 'en'>('vi');
+  const [appTheme, setAppTheme] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {
-    loadDashboardData();
+    let isMounted = true;
+    
+    const load = async () => {
+      try {
+        setLoading(true);
+        const walletsRes = await fetchWallets(userId);
+        if (isMounted && walletsRes.success && walletsRes.data && walletsRes.data.length > 0) {
+          setWallets(walletsRes.data);
+          
+          let activeWallet = walletsRes.data[0];
+          let isLastWalletFound = false;
+          try {
+            const lastWalletId = await AsyncStorage.getItem(`last_active_wallet_id_${userId}`);
+            if (lastWalletId) {
+              const found = walletsRes.data.find((w) => w.id === lastWalletId);
+              if (found) {
+                activeWallet = found;
+                isLastWalletFound = true;
+              }
+            }
+            if (!isLastWalletFound) {
+              await AsyncStorage.setItem(`last_active_wallet_id_${userId}`, activeWallet.id);
+            }
+          } catch (e) {
+            console.error("Lỗi khi đọc/lưu ví active từ AsyncStorage:", e);
+          }
+          
+          setSelectedWallet(activeWallet);
+          const jarsRes = await fetchJars(activeWallet.id);
+          if (isMounted && jarsRes.success && jarsRes.data) {
+            setJars(jarsRes.data);
+          }
+          const incomeRes = await fetchWalletIncome(activeWallet.id);
+          if (isMounted && incomeRes.success) {
+            setWalletIncome(incomeRes.data);
+          }
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    load();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
+
+  // Listen to deep link code
+  useEffect(() => {
+    if (initialInviteCode) {
+      setInviteCodeToJoin(initialInviteCode);
+      setShowJoinScreen(true);
+      if (onClearInviteCode) {
+        onClearInviteCode();
+      }
+    }
+  }, [initialInviteCode]);
+
+  const loadMembers = async (walletId: string) => {
+    try {
+      setLoadingMembers(true);
+      const res = await fetchWalletMembers(walletId);
+      if (res.success && res.data) {
+        setWalletMembers(res.data);
+      }
+    } catch (err) {
+      console.error("Lỗi khi load thành viên:", err);
+    } finally {
+      setLoadingMembers(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedWallet && activeTab === "wallets") {
+      loadMembers(selectedWallet.id);
+    }
+  }, [selectedWallet, activeTab]);
 
   const loadDashboardData = async (targetWalletId?: string) => {
     try {
@@ -60,247 +238,777 @@ export default function DashboardScreen({ userId, onSignOut }: DashboardScreenPr
       if (walletsRes.success && walletsRes.data && walletsRes.data.length > 0) {
         setWallets(walletsRes.data);
         
-        let activeWallet = walletsRes.data[0];
+        let wallet = walletsRes.data[0];
         if (targetWalletId) {
-          activeWallet = walletsRes.data.find(w => w.id === targetWalletId) || activeWallet;
+          const target = walletsRes.data.find((w) => w.id === targetWalletId);
+          if (target) wallet = target;
         } else {
-          const defaultWallet = walletsRes.data.find(w => w.is_default);
-          if (defaultWallet) activeWallet = defaultWallet;
+          try {
+            const lastWalletId = await AsyncStorage.getItem(`last_active_wallet_id_${userId}`);
+            if (lastWalletId) {
+              const found = walletsRes.data.find((w) => w.id === lastWalletId);
+              if (found) wallet = found;
+            }
+          } catch (e) {
+            console.error("Lỗi khi đọc ví active từ AsyncStorage:", e);
+          }
         }
         
-        setSelectedWallet(activeWallet);
+        setSelectedWallet(wallet);
         
-        const jarsRes = await fetchJars(activeWallet.id);
-        if (jarsRes.success && jarsRes.data) {
-          setJars(jarsRes.data);
+        try {
+          await AsyncStorage.setItem(`last_active_wallet_id_${userId}`, wallet.id);
+        } catch (e) {
+          console.error("Lỗi khi lưu ví active vào AsyncStorage:", e);
         }
+
+        const jarsRes = await fetchJars(wallet.id);
+        if (jarsRes.success && jarsRes.data) setJars(jarsRes.data);
+        const incomeRes = await fetchWalletIncome(wallet.id);
+        if (incomeRes.success) setWalletIncome(incomeRes.data);
       }
-    } catch (e) {
-      console.error('Error fetching dashboard data:', e);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSelectWallet = async (wallet: Wallet) => {
-    setShowWalletModal(false);
-    setLoading(true);
     setSelectedWallet(wallet);
-    const jarsRes = await fetchJars(wallet.id);
-    if (jarsRes.success && jarsRes.data) {
-      setJars(jarsRes.data);
+    try {
+      await AsyncStorage.setItem(`last_active_wallet_id_${userId}`, wallet.id);
+    } catch (e) {
+      console.error("Lỗi khi lưu ví active vào AsyncStorage:", e);
     }
-    setLoading(false);
+    fetchJars(wallet.id).then((res) => {
+      if (res.success && res.data) setJars(res.data);
+    });
+    fetchWalletIncome(wallet.id).then((res) => {
+      if (res.success) setWalletIncome(res.data);
+    });
   };
 
   const handleQuickAddSuccess = () => {
-    if (selectedWallet) {
-      loadDashboardData(selectedWallet.id);
+    if (selectedWallet) loadDashboardData(selectedWallet.id);
+  };
+
+  const handleRemoveMember = (memberId: string, displayName: string) => {
+    if (!selectedWallet) return;
+    
+    Alert.alert(
+      "Xác nhận xóa",
+      `Bạn có chắc chắn muốn xóa thành viên "${displayName}" ra khỏi ví chung không?`,
+      [
+        { text: "Hủy", style: "cancel" },
+        {
+          text: "Xóa",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setLoadingMembers(true);
+              const res = await removeMember(selectedWallet.id, memberId);
+              if (res.success) {
+                Alert.alert("Thành công", "Đã xóa thành viên khỏi ví chung.");
+                loadMembers(selectedWallet.id);
+                loadDashboardData(selectedWallet.id);
+              } else {
+                Alert.alert("Lỗi", res.error || "Không thể xóa thành viên.");
+              }
+            } catch (err: any) {
+              Alert.alert("Lỗi", err.message || "Lỗi kết nối.");
+            } finally {
+              setLoadingMembers(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleJoinSuccess = (walletName: string) => {
+    loadDashboardData();
+  };
+
+  const jarsWithAlerts = useMemo(() => {
+    return jars.map((jar) => ({
+      ...jar,
+      alertStatus: evaluateJarBudget({ type: jar.type, spentAmount: jar.spent_amount, budgetLimit: jar.budget_limit }),
+    }));
+  }, [jars]);
+
+  const { hasOverBudget, hasSpendingTooFast } = useMemo(() => {
+    const over = jarsWithAlerts.some((j) => j.alertStatus === BudgetAlertStatus.OVER_BUDGET);
+    const fast = jarsWithAlerts.some((j) => j.alertStatus === BudgetAlertStatus.SPENDING_TOO_FAST);
+    return { hasOverBudget: over, hasSpendingTooFast: fast };
+  }, [jarsWithAlerts]);
+
+  const totalBalance = useMemo(() => {
+    return wallets.reduce((sum, w) => sum + w.balance, 0);
+  }, [wallets]);
+
+  const walletSpent = useMemo(() => {
+    return jars.reduce((sum, jar) => sum + jar.spent_amount, 0);
+  }, [jars]);
+
+  const walletStatusText = useMemo(() => {
+    if (hasOverBudget) return "CÓ HŨ VƯỢT NGÂN SÁCH";
+    if (hasSpendingTooFast) return "CHI TIÊU ĐANG NHANH";
+    return "TÀI CHÍNH ỔN ĐỊNH";
+  }, [hasOverBudget, hasSpendingTooFast]);
+
+  const walletStatusStyle = useMemo(() => {
+    if (hasOverBudget) return styles.statusChipError;
+    if (hasSpendingTooFast) return styles.statusChipWarning;
+    return styles.statusChipNormal;
+  }, [hasOverBudget, hasSpendingTooFast]);
+
+  const walletStatusTextStyle = useMemo(() => {
+    if (hasOverBudget) return styles.statusChipTextError;
+    if (hasSpendingTooFast) return styles.statusChipTextWarning;
+    return styles.statusChipTextNormal;
+  }, [hasOverBudget, hasSpendingTooFast]);
+
+  const getMascotSpeech = () => {
+    if (hasOverBudget) return "Ôi bạn ơi! Có hũ bị vượt ngân sách kìa, hãy kiểm soát chi tiêu lại nhé!";
+    if (hasSpendingTooFast) return "Cẩn thận nhé, bạn đang tiêu hơi nhanh cho một số hũ đấy!";
+    return defaultQuote;
+  };
+
+  const renderJarIcon = (jarType: string) => {
+    const meta = JAR_META[jarType];
+    if (!meta) return null;
+    const IconComponent =
+      meta.iconLib === "Ionicons"
+        ? Ionicons
+        : meta.iconLib === "MaterialCommunityIcons"
+        ? MaterialCommunityIcons
+        : MaterialIcons;
+    return (
+      <IconComponent
+        name={meta.icon as any}
+        size={20}
+        color={meta.iconColor}
+      />
+    );
+  };
+
+  const renderTabIcon = (tabId: string, isActive: boolean) => {
+    const color = isActive ? "#79313D" : "#514345";
+    const size = 24;
+    if (tabId === "home") {
+      return <Ionicons name={isActive ? "home" : "home-outline"} size={size} color={color} />;
+    } else if (tabId === "ledger") {
+      return <MaterialIcons name="receipt-long" size={size} color={color} />;
+    } else if (tabId === "budget") {
+      return <MaterialIcons name="account-balance-wallet" size={size} color={color} />;
+    } else if (tabId === "wallets") {
+      return <MaterialIcons name="account-balance" size={size} color={color} />;
     }
+    return null;
+  };
+
+  // Fetch profile and app settings on mount
+  useEffect(() => {
+    const loadProfile = async () => {
+      const res = await fetchProfile(userId);
+      if (res.success && res.data) {
+        setUserDisplayName(res.data.display_name || "Thành viên Capy");
+      }
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setUserEmail(user.email || "");
+          setUserPhone(user.phone || "");
+        }
+      } catch (e) {
+        console.error("Error fetching user email/phone:", e);
+      }
+    };
+
+    const loadAppSettings = async () => {
+      try {
+        const lang = await AsyncStorage.getItem(`@app_language_${userId}`);
+        if (lang === 'vi' || lang === 'en') setAppLanguage(lang);
+        
+        const theme = await AsyncStorage.getItem(`@app_theme_${userId}`);
+        if (theme === 'light' || theme === 'dark') setAppTheme(theme);
+      } catch (e) {
+        console.error("Error loading app settings:", e);
+      }
+    };
+
+    loadProfile();
+    loadAppSettings();
+  }, [userId]);
+
+  const handleSaveProfile = async () => {
+    const cleanName = userDisplayName.trim();
+    if (!cleanName) {
+      Alert.alert("Lỗi", "Tên hiển thị không được để trống.");
+      return;
+    }
+    if (cleanName.length > 32) {
+      Alert.alert("Lỗi", "Tên hiển thị không được vượt quá 32 ký tự.");
+      return;
+    }
+
+    const res = await updateProfileName(userId, cleanName);
+    if (res.success) {
+      Alert.alert("Thành công", "Cập nhật tên hiển thị thành công!");
+      setShowUserInfoModal(false);
+    } else {
+      Alert.alert("Lỗi", res.error || "Không thể cập nhật tên. Vui lòng kiểm tra lại kết nối mạng.");
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    try {
+      await AsyncStorage.setItem(`@app_language_${userId}`, appLanguage);
+      await AsyncStorage.setItem(`@app_theme_${userId}`, appTheme);
+      Alert.alert("Thành công", "Đã lưu cài đặt tài khoản của bạn.");
+      setShowSettingsModal(false);
+    } catch (e) {
+      Alert.alert("Lỗi", "Không thể lưu cài đặt.");
+    }
+  };
+
+  const handleSignOutClick = () => {
+    Alert.alert(
+      "Xác nhận đăng xuất",
+      "Bạn có chắc chắn muốn đăng xuất không?",
+      [
+        { text: "Hủy", style: "cancel" },
+        { text: "Đăng xuất", style: "destructive", onPress: onSignOut }
+      ]
+    );
   };
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#FF8C8C" />
-        <Text style={styles.loadingText}>Đang chuẩn bị Dashboard cực chill cho bạn...</Text>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>Đang chuẩn bị tài chính...</Text>
       </View>
     );
   }
 
-  // Calculate alert statuses and select caption
-  let hasOverBudget = false;
-  let hasSpendingTooFast = false;
-
-  const jarsWithAlerts = jars.map(jar => {
-    const balance = selectedWallet?.balance ?? 0;
-    const limit = balance * (jar.allocation_percentage / 100);
-    const alertStatus = evaluateJarBudget({
-      type: jar.type,
-      spentAmount: jar.spent_amount,
-      budgetLimit: limit,
-    });
-
-    if (alertStatus === BudgetAlertStatus.OVER_BUDGET) {
-      hasOverBudget = true;
-    } else if (alertStatus === BudgetAlertStatus.SPENDING_TOO_FAST) {
-      hasSpendingTooFast = true;
-    }
-
-    return {
-      ...jar,
-      limit,
-      alertStatus,
-    };
-  });
-
-  const getMascotSpeech = () => {
-    if (hasOverBudget) {
-      return 'Ối bạn ơi! Có hũ bị vượt ngân sách kìa, hãy kiểm soát chi tiêu lại nha! 🦦';
-    }
-    if (hasSpendingTooFast) {
-      return 'Cần thận nha, bạn đang tiêu hơi bị nhanh cho một số hũ đấy! 🦦';
-    }
-    return quote;
-  };
-
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
+      {/* Top App Bar */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>Capy's Money 🦦</Text>
-          <Text style={styles.headerSubtitle}>Tài chính thảnh thơi, sống đời thong thả</Text>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => setShowProfileMenu(true)}
+            style={styles.avatarContainer}
+            testID="avatar-button"
+          >
+            <Image
+              source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuDhq93xgHYB9zHvKzMxBGPaG_OntFhm2_owD9L-J5PZQd8V5m175trDv00QBQ8tbkJz0mOW40gWTmfWEsjNFIc343KEQM03Fq6lbGVvG3Lsw6R9H-wNI9q1rBI64e6cW5CLQtEcsTToAXkXODMl2WFRApvtkDyW-5OyD9rU26j_ni9krkQ_StHegdhySbuQ062MdFw_6RQrM4I7RkMBf4WU_u_Rd-wgp58_iC1DT-XqPh6xHbtijpqMimWRCJoq38mloeqZfCtAfyI9" }}
+              style={styles.avatarImage}
+            />
+          </TouchableOpacity>
+          <View style={styles.headerText}>
+            <Text style={styles.headerTitle}>Capy's Money</Text>
+            <Text style={styles.headerSubtitle}>Tài chính thảnh thơi</Text>
+          </View>
         </View>
-        <TouchableOpacity activeOpacity={0.8} style={styles.signOutButton} onPress={onSignOut}>
-          <Text style={styles.signOutText}>Đăng xuất</Text>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          style={styles.bellButton}
+          onPress={() => Alert.alert("Thông báo", "Hiện tại bạn chưa có thông báo mới nào.")}
+          testID="bell-button"
+        >
+          <Ionicons name="notifications-outline" size={20} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Capy Motivation Banner */}
-        <View style={styles.quoteCard}>
-          <CapyMascot type={hasOverBudget ? 'thinking' : 'success'} style={styles.mascotStyle} />
-          <View style={styles.quoteTextContainer}>
-            <Text style={styles.quoteBubble}>“ {getMascotSpeech()} ”</Text>
-          </View>
-        </View>
-
-        {/* Balance & Wallet Selector Card */}
-        {selectedWallet && (
-          <View style={styles.balanceCard}>
-            <View style={styles.balanceHeader}>
-              <Text style={styles.balanceLabel}>Ví hiện tại</Text>
-              <TouchableOpacity
-                style={styles.walletSwitcher}
-                onPress={() => setShowWalletModal(true)}
-              >
-                <Text style={styles.walletSwitcherText}>{selectedWallet.name}</Text>
-                <Text style={styles.dropdownArrow}>▼</Text>
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.balanceAmount}>
-              {selectedWallet.balance.toLocaleString('en-US')} VND
-            </Text>
-          </View>
-        )}
-
-        {/* Floating/Bottom Action Bar */}
-        <TouchableOpacity
-          activeOpacity={0.8}
-          style={styles.floatingAddButton}
-          onPress={() => setShowQuickAdd(true)}
-        >
-          <Text style={styles.floatingAddButtonText}>+ Giao dịch</Text>
-        </TouchableOpacity>
-
-        {/* 6 Jars splits breakdown */}
-        <Text style={styles.sectionTitle}>💰 Phân phối 6 Hũ Tài Chính</Text>
-        <View style={styles.jarsContainer}>
-          {jarsWithAlerts.length === 0 ? (
-            <Text style={styles.emptyJarsText}>Chưa cấu hình hũ tài chính cho ví này.</Text>
-          ) : (
-            jarsWithAlerts.map((jar, idx) => {
-              const metadata = JAR_NAMES[jar.type] || { name: jar.type, color: '#B3B3B3' };
-              const percent = jar.allocation_percentage;
-              const limit = jar.limit;
-              
-              // Progress ratio
-              const ratio = limit > 0 ? jar.spent_amount / limit : 0;
-              const progressWidth = Math.min(100, Math.round(ratio * 100));
-
-              // Colors & labels by budget checker
-              let barColor = metadata.color;
-              let alertText = '';
-              let alertTextColor = '#8A7A7B';
-
-              if (jar.alertStatus === BudgetAlertStatus.OVER_BUDGET) {
-                barColor = '#E84545';
-                alertText = 'Đã vượt hạn mức!';
-                alertTextColor = '#E84545';
-              } else if (jar.alertStatus === BudgetAlertStatus.SPENDING_TOO_FAST) {
-                barColor = '#D81B60'; // Dark pink
-                alertText = 'Tiêu quá nhanh!';
-                alertTextColor = '#D81B60';
-              }
-
-              return (
-                <View key={idx} style={styles.jarRow}>
-                  <View style={styles.jarHeaderRow}>
-                    <View style={styles.jarNameContainer}>
-                      <View style={[styles.jarColorDot, { backgroundColor: barColor }]} />
-                      <Text style={styles.jarNameText}>
-                        {metadata.name} ({percent}%)
-                      </Text>
-                    </View>
-                    <View style={{ alignItems: 'flex-end' }}>
-                      <Text style={styles.jarAmountText}>
-                        {jar.spent_amount.toLocaleString('en-US')} / {Math.round(limit).toLocaleString('en-US')} đ
-                      </Text>
-                      {alertText !== '' && (
-                        <Text style={[styles.alertBadgeText, { color: alertTextColor }]}>
-                          {alertText}
-                        </Text>
-                      )}
-                    </View>
-                  </View>
-                  {/* Progress bar visualizer */}
-                  <View style={styles.progressBarContainer}>
-                    <View
-                      style={[
-                        styles.progressBar,
-                        { width: `${progressWidth}%`, backgroundColor: barColor },
-                      ]}
-                    />
-                  </View>
-                </View>
-              );
-            })
-          )}
-        </View>
-      </ScrollView>
-
-      {/* Wallet Switcher Modal */}
+      {/* Profile Dropdown Menu */}
       <Modal
-        visible={showWalletModal}
+        visible={showProfileMenu}
         transparent={true}
         animationType="fade"
-        onRequestClose={() => setShowWalletModal(false)}
+        onRequestClose={() => setShowProfileMenu(false)}
       >
         <TouchableOpacity
-          activeOpacity={1}
           style={styles.modalOverlay}
-          onPress={() => setShowWalletModal(false)}
+          activeOpacity={1}
+          onPress={() => setShowProfileMenu(false)}
         >
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Chọn ví tài chính</Text>
-            {wallets.map((w) => (
-              <TouchableOpacity
-                key={w.id}
-                style={[
-                  styles.walletOption,
-                  selectedWallet?.id === w.id && styles.walletOptionActive,
-                ]}
-                onPress={() => handleSelectWallet(w)}
-              >
-                <Text
-                  style={[
-                    styles.walletOptionText,
-                    selectedWallet?.id === w.id && styles.walletOptionTextActive,
-                  ]}
-                >
-                  {w.name}
-                </Text>
-                <Text style={styles.walletOptionBalance}>
-                  {w.balance.toLocaleString('en-US')} đ
-                </Text>
-              </TouchableOpacity>
-            ))}
+          <View style={styles.dropdownMenu}>
+            <TouchableOpacity
+              style={styles.dropdownItem}
+              onPress={() => {
+                setShowProfileMenu(false);
+                setShowUserInfoModal(true);
+              }}
+              activeOpacity={0.7}
+              testID="dropdown-profile-info"
+            >
+              <Ionicons name="person-outline" size={20} color={COLORS.onSurface} style={styles.dropdownIcon} />
+              <Text style={styles.dropdownText}>Thông tin người dùng</Text>
+            </TouchableOpacity>
+
+            <View style={styles.dropdownDivider} />
+
+            <TouchableOpacity
+              style={styles.dropdownItem}
+              onPress={() => {
+                setShowProfileMenu(false);
+                setShowSettingsModal(true);
+              }}
+              activeOpacity={0.7}
+              testID="dropdown-settings"
+            >
+              <Ionicons name="settings-outline" size={20} color={COLORS.onSurface} style={styles.dropdownIcon} />
+              <Text style={styles.dropdownText}>Cài đặt</Text>
+            </TouchableOpacity>
+
+            <View style={styles.dropdownDivider} />
+
+            <TouchableOpacity
+              style={[styles.dropdownItem, styles.dropdownItemDestructive]}
+              onPress={() => {
+                setShowProfileMenu(false);
+                handleSignOutClick();
+              }}
+              activeOpacity={0.7}
+              testID="dropdown-logout"
+            >
+              <Ionicons name="log-out-outline" size={20} color={COLORS.error} style={styles.dropdownIcon} />
+              <Text style={[styles.dropdownText, styles.dropdownTextDestructive]}>Đăng xuất</Text>
+            </TouchableOpacity>
           </View>
         </TouchableOpacity>
       </Modal>
 
-      {/* Quick Add Bottom Sheet */}
+      {/* User Info Popup Modal */}
+      <Modal
+        visible={showUserInfoModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowUserInfoModal(false)}
+      >
+        <View style={styles.modalOverlayCenter}>
+          <View style={styles.infoModalContainer}>
+            <Text style={styles.modalHeading}>Thông tin cá nhân</Text>
+            
+            <View style={styles.modalFieldGroup}>
+              <Text style={styles.modalFieldLabel}>Tên hiển thị</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={userDisplayName}
+                onChangeText={setUserDisplayName}
+                placeholder="Nhập tên hiển thị"
+                maxLength={32}
+              />
+            </View>
+
+            <View style={styles.modalFieldGroup}>
+              <Text style={styles.modalFieldLabel}>Email (Đăng nhập)</Text>
+              <Text style={styles.modalReadOnlyValue}>{userEmail || "Chưa thiết lập"}</Text>
+            </View>
+
+            <View style={styles.modalFieldGroup}>
+              <Text style={styles.modalFieldLabel}>Số điện thoại</Text>
+              <Text style={styles.modalReadOnlyValue}>{userPhone || "Chưa thiết lập"}</Text>
+            </View>
+
+            <View style={styles.modalButtonsRow}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setShowUserInfoModal(false)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.modalCancelBtnText}>Hủy</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.modalSaveBtn}
+                onPress={handleSaveProfile}
+                activeOpacity={0.7}
+                testID="save-profile-btn"
+              >
+                <Text style={styles.modalSaveBtnText}>Lưu</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Settings Popup Modal */}
+      <Modal
+        visible={showSettingsModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowSettingsModal(false)}
+      >
+        <View style={styles.modalOverlayCenter}>
+          <View style={styles.infoModalContainer}>
+            <Text style={styles.modalHeading}>Cài đặt tài khoản</Text>
+
+            {/* Language Selection */}
+            <View style={styles.modalFieldGroup}>
+              <Text style={styles.modalFieldLabel}>Ngôn ngữ</Text>
+              <View style={styles.settingToggleRow}>
+                <TouchableOpacity
+                  style={[styles.settingOptionBtn, appLanguage === 'vi' && styles.settingOptionActive]}
+                  onPress={() => setAppLanguage('vi')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.settingOptionText, appLanguage === 'vi' && styles.settingOptionActiveText]}>Tiếng Việt</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.settingOptionBtn, appLanguage === 'en' && styles.settingOptionActive]}
+                  onPress={() => setAppLanguage('en')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.settingOptionText, appLanguage === 'en' && styles.settingOptionActiveText]}>English</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Theme Selection */}
+            <View style={styles.modalFieldGroup}>
+              <Text style={styles.modalFieldLabel}>Giao diện hiển thị</Text>
+              <View style={styles.settingToggleRow}>
+                <TouchableOpacity
+                  style={[styles.settingOptionBtn, appTheme === 'light' && styles.settingOptionActive]}
+                  onPress={() => setAppTheme('light')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.settingOptionText, appTheme === 'light' && styles.settingOptionActiveText]}>Sáng</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.settingOptionBtn, appTheme === 'dark' && styles.settingOptionActive]}
+                  onPress={() => setAppTheme('dark')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.settingOptionText, appTheme === 'dark' && styles.settingOptionActiveText]}>Tối</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.modalButtonsRow}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setShowSettingsModal(false)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.modalCancelBtnText}>Hủy</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalSaveBtn}
+                onPress={handleSaveSettings}
+                activeOpacity={0.7}
+                testID="save-settings-btn"
+              >
+                <Text style={styles.modalSaveBtnText}>Lưu</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {selectedWallet && (
+          <>
+            {/* Total Balance Card */}
+            <LinearGradient
+              colors={["#FE9DA9", "#864E5A"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.totalBalanceCard}
+            >
+              <View style={styles.totalBalanceOrnament} />
+              <View style={styles.totalBalanceHeader}>
+                <Text style={styles.totalBalanceTitle}>Tổng số dư</Text>
+                <TouchableOpacity
+                  style={styles.eyeButton}
+                  onPress={() => setShowTotalBalance(!showTotalBalance)}
+                  activeOpacity={0.7}
+                  testID="total-balance-eye-toggle"
+                >
+                  <Ionicons
+                    name={showTotalBalance ? "eye-outline" : "eye-off-outline"}
+                    size={20}
+                    color="#FFFFFF"
+                  />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.totalBalanceValueRow}>
+                <Text style={styles.totalBalanceAmount} numberOfLines={1} adjustsFontSizeToFit>
+                  {showTotalBalance ? totalBalance.toLocaleString("vi-VN") : "••••••••"}
+                </Text>
+                <Text style={styles.totalBalanceSymbol}>đ</Text>
+              </View>
+            </LinearGradient>
+
+            {/* Wallet Switcher */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.walletSwitcherScroll}
+              contentContainerStyle={styles.walletSwitcherContent}
+            >
+              {wallets.map((w) => {
+                const isActive = selectedWallet.id === w.id;
+                if (isActive) {
+                  return (
+                    <TouchableOpacity
+                      key={w.id}
+                      activeOpacity={0.8}
+                      style={styles.walletPillActive}
+                      onPress={() => handleSelectWallet(w)}
+                    >
+                      <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+                      <Text style={styles.walletPillTextActive}>{w.name}</Text>
+                    </TouchableOpacity>
+                  );
+                }
+                return (
+                  <TouchableOpacity
+                    key={w.id}
+                    activeOpacity={0.8}
+                    style={styles.walletPillInactive}
+                    onPress={() => handleSelectWallet(w)}
+                  >
+                    <Ionicons
+                      name={w.type === "personal" ? "person-outline" : "people-outline"}
+                      size={18}
+                      color={COLORS.onSurfaceVariant}
+                      style={{ marginRight: 6 }}
+                    />
+                    <Text style={styles.walletPillTextInactive}>{w.name}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            {/* Wallet Balance Hero Card */}
+            <View style={styles.balanceHeroCard}>
+              <View style={styles.balanceHeroHeader}>
+                <View>
+                  <Text style={styles.balanceHeroLabel}>Số dư ví này</Text>
+                  <View style={styles.balanceHeroAmountContainer}>
+                    <Text style={styles.balanceHeroAmount} numberOfLines={1} adjustsFontSizeToFit>
+                      {selectedWallet.balance.toLocaleString("vi-VN")}
+                    </Text>
+                    <Text style={styles.balanceHeroSymbol}>đ</Text>
+                  </View>
+                </View>
+                <View style={[styles.statusChip, walletStatusStyle]}>
+                  <Text style={[styles.statusChipText, walletStatusTextStyle]}>{walletStatusText}</Text>
+                </View>
+              </View>
+              
+              <View style={styles.divider} />
+              
+              <View style={styles.balanceColumns}>
+                <View style={styles.balanceColumn}>
+                  <Text style={styles.columnLabel}>Thu nhập</Text>
+                  <Text style={styles.incomeAmount} numberOfLines={1} adjustsFontSizeToFit>
+                    +{walletIncome.toLocaleString("vi-VN")} đ
+                  </Text>
+                </View>
+                <View style={styles.balanceColumnRight}>
+                  <Text style={styles.columnLabel}>Đã chi tiêu</Text>
+                  <Text style={styles.spentAmount} numberOfLines={1} adjustsFontSizeToFit>
+                    -{walletSpent.toLocaleString("vi-VN")} đ
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </>
+        )}
+
+        {activeTab === "wallets" ? (
+          <View style={styles.walletsTabContainer}>
+            {selectedWallet && (
+              <>
+                {selectedWallet.type === "shared" ? (
+                  <View style={styles.memberCard}>
+                    <Text style={styles.walletTabSectionTitle}>Thành viên Ví chung</Text>
+                    {loadingMembers ? (
+                      <ActivityIndicator size="small" color={COLORS.primary} style={{ marginVertical: 20 }} />
+                    ) : (
+                      <View style={styles.membersList}>
+                        {walletMembers.map((member) => {
+                          const isOwner = member.role === "owner";
+                          const isCurrentUser = member.user_id === userId;
+                          const displayName = member.profiles?.display_name || "Thành viên Capy";
+                          return (
+                            <View key={member.user_id} style={styles.memberRow}>
+                              <View style={styles.memberAvatar}>
+                                <Text style={styles.memberAvatarText}>🦦</Text>
+                              </View>
+                              <View style={styles.memberInfo}>
+                                <Text style={styles.memberName}>
+                                  {displayName} {isCurrentUser && <Text style={styles.selfText}>(Bạn)</Text>}
+                                </Text>
+                                <Text style={styles.memberRoleText}>
+                                  {isOwner ? "Chủ ví" : "Người chỉnh sửa"}
+                                </Text>
+                              </View>
+                              {selectedWallet.user_id === userId && !isOwner && (
+                                <TouchableOpacity
+                                  style={styles.removeBtn}
+                                  onPress={() => handleRemoveMember(member.user_id, displayName)}
+                                  activeOpacity={0.7}
+                                >
+                                  <Text style={styles.removeBtnText}>Xóa</Text>
+                                </TouchableOpacity>
+                              )}
+                            </View>
+                          );
+                        })}
+                      </View>
+                    )}
+
+                    {selectedWallet.user_id === userId && !loadingMembers && walletMembers.length < 3 ? (
+                      <TouchableOpacity
+                        style={styles.inviteButton}
+                        onPress={() => setShowInviteScreen(true)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={styles.inviteButtonText}>+ Mời thành viên</Text>
+                      </TouchableOpacity>
+                    ) : selectedWallet.user_id === userId && !loadingMembers ? (
+                      <Text style={styles.limitText}>Ví đã đầy thành viên (Tối đa 3 người)</Text>
+                    ) : null}
+                  </View>
+                ) : (
+                  <View style={styles.personalWalletCard}>
+                    <CapyMascot type="thinking" style={styles.personalWalletMascot} />
+                    <Text style={styles.personalWalletTitle}>Đây là ví cá nhân</Text>
+                    <Text style={styles.personalWalletDesc}>
+                      Dữ liệu tài chính ở ví này được bảo mật hoàn toàn riêng tư. Bạn có thể chia sẻ chi tiêu bằng cách tham gia ví chung của bạn bè.
+                    </Text>
+                  </View>
+                )}
+              </>
+            )}
+
+            <TouchableOpacity
+              style={styles.joinWalletMainBtn}
+              onPress={() => setShowJoinScreen(true)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.joinWalletMainBtnText}>Tham gia ví chung bằng mã</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <>
+            {/* Mascot Quote Card */}
+            <View style={styles.quoteCard}>
+              <View style={styles.quoteMascotContainer}>
+                <Image
+                  source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuBj1MKMqCSYp8V3fzVZnQ2uX4NGuF_mpo3N6_wA2bWHNveg-AX6juNT72cmpykoOchnz70IsItbgaLVgdnzOImnFGnlubITL1OAS7Vs_5rpLUR31h_gGw1_NE8jMQOzV40SHJVtQDmTIrx98LrtnUai7YpWLiATYxe_l2MZx542Yq_JMu4OMTnU-GP5GQHLAx1N1yP0lIS4AKD68WcsUEGwOmTlKkE9E0uMucR9fOAMAxAWrF_-Se2R35fGIQoBqLstSXiNM21u_GUb" }}
+                  style={styles.quoteMascot}
+                  resizeMode="contain"
+                />
+              </View>
+              <View style={styles.quoteTextContainer}>
+                <Text style={styles.quoteText}>
+                  "{getMascotSpeech()}"
+                </Text>
+              </View>
+            </View>
+
+            {/* Jars Section */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Phân phối 6 Hũ</Text>
+              <TouchableOpacity style={styles.detailBtn} activeOpacity={0.7}>
+                <Text style={styles.detailBtnText}>Chi tiết</Text>
+                <Ionicons name="chevron-forward" size={14} color={COLORS.primary} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.jarsContainer}>
+              {jarsWithAlerts.length === 0 ? (
+                <Text style={styles.emptyJarsText}>Chưa có hũ nào. Hãy thiết lập ngân sách nhé!</Text>
+              ) : (
+                jarsWithAlerts.map((jar) => {
+                  const meta = JAR_META[jar.type] || {
+                    name: jar.type,
+                    icon: "help-outline",
+                    iconLib: "Ionicons",
+                    iconColor: COLORS.outline,
+                    iconBg: COLORS.surfaceContainer,
+                    fillColor: COLORS.primary,
+                  };
+                  const budgetLimit = jar.budget_limit || 1;
+                  const ratio = Math.min((jar.spent_amount / budgetLimit) * 100, 100);
+                  const progressWidth = Math.max(ratio, 0);
+
+                  let barColor = meta.fillColor;
+                  let alertText = "";
+                  let alertTextColor = COLORS.onSurfaceVariant;
+                  if (jar.alertStatus === BudgetAlertStatus.OVER_BUDGET) {
+                    barColor = COLORS.error;
+                    alertText = "VỰT HẠN MỨC!";
+                    alertTextColor = COLORS.error;
+                  } else if (jar.alertStatus === BudgetAlertStatus.SPENDING_TOO_FAST) {
+                    barColor = "#fb923c"; // Orange-400
+                    alertText = "TIÊU DÙNG NHANH!";
+                    alertTextColor = "#ea580c"; // Orange-600
+                  }
+
+                  return (
+                    <View key={jar.type} style={styles.jarGridItem}>
+                      <View style={styles.jarGridHeader}>
+                        <View style={[styles.jarIconWrapper, { backgroundColor: meta.iconBg }]}>
+                          {renderJarIcon(jar.type)}
+                        </View>
+                        <Text style={styles.jarPercentText}>
+                          {jar.allocation_percentage}%
+                        </Text>
+                      </View>
+                      
+                      <Text style={styles.jarNameText} numberOfLines={1}>
+                        {meta.name}
+                      </Text>
+
+                      <View style={styles.progressBarBg}>
+                        <View style={[styles.progressBar, { width: `${progressWidth}%`, backgroundColor: barColor }]} />
+                      </View>
+
+                      {alertText ? (
+                        <Text style={[styles.alertBadgeText, { color: alertTextColor }]} numberOfLines={1}>
+                          {alertText}
+                        </Text>
+                      ) : (
+                        <View style={styles.alertPlaceholder} />
+                      )}
+                    </View>
+                  );
+                })
+              )}
+            </View>
+          </>
+        )}
+      </ScrollView>
+
+      {/* Bottom Navigation Bar */}
+      <View style={styles.tabBar}>
+        {TAB_ITEMS.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <TouchableOpacity
+              key={tab.id}
+              activeOpacity={0.7}
+              style={isActive ? styles.activeTabItem : styles.inactiveTabItem}
+              onPress={() => setActiveTab(tab.id)}
+            >
+              {renderTabIcon(tab.id, isActive)}
+              <Text style={isActive ? styles.activeTabLabel : styles.inactiveTabLabel}>
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
       {selectedWallet && (
         <QuickAddBottomSheet
           visible={showQuickAdd}
@@ -310,6 +1018,36 @@ export default function DashboardScreen({ userId, onSignOut }: DashboardScreenPr
           onSaveSuccess={handleQuickAddSuccess}
         />
       )}
+
+      {selectedWallet && (
+        <WalletInviteScreen
+          visible={showInviteScreen}
+          onClose={() => setShowInviteScreen(false)}
+          walletId={selectedWallet.id}
+          walletName={selectedWallet.name}
+        />
+      )}
+
+      <WalletJoinScreen
+        visible={showJoinScreen}
+        onClose={() => {
+          setShowJoinScreen(false);
+          setInviteCodeToJoin(null);
+        }}
+        initialCode={inviteCodeToJoin}
+        onJoinSuccess={handleJoinSuccess}
+      />
+
+      {activeTab === "home" && (
+        <TouchableOpacity
+          activeOpacity={0.85}
+          style={styles.fabButton}
+          onPress={() => setShowQuickAdd(true)}
+          testID="fab-add-transaction"
+        >
+          <Ionicons name="add" size={32} color="#FFFFFF" />
+        </TouchableOpacity>
+      )}
     </SafeAreaView>
   );
 }
@@ -317,268 +1055,786 @@ export default function DashboardScreen({ userId, onSignOut }: DashboardScreenPr
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF8F7',
+    backgroundColor: COLORS.surface,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#FFF8F7',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    justifyContent: "center",
+    alignItems: "center",
   },
   loadingText: {
     marginTop: 16,
     fontSize: 14,
-    color: '#8A7A7B',
-    fontStyle: 'italic',
+    color: COLORS.onSurfaceVariant,
+    fontStyle: "italic",
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight || 0) + 12 : 12,
     paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#FFE5E2',
+    backgroundColor: COLORS.surface,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  avatarContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.secondaryContainer,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+    shadowColor: "rgba(0, 0, 0, 0.05)",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+  },
+  headerText: {
+    marginLeft: 12,
   },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#4A3E3F',
+    fontSize: 24,
+    fontWeight: "700",
+    color: COLORS.primary,
+    lineHeight: 28,
   },
   headerSubtitle: {
-    fontSize: 11,
-    color: '#8A7A7B',
+    fontSize: 12,
+    color: COLORS.onSurfaceVariant,
+    fontWeight: "500",
     marginTop: 2,
   },
-  signOutButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
-    backgroundColor: '#FFE5E2',
-  },
-  signOutText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#FF8C8C',
+  bellButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.surfaceContainer,
+    alignItems: "center",
+    justifyContent: "center",
   },
   scrollContent: {
-    paddingHorizontal: 24,
-    paddingBottom: 100, // Make room for floating button
+    paddingBottom: 110,
+    paddingTop: 4,
+  },
+  totalBalanceCard: {
+    borderRadius: 32,
+    padding: 24,
+    marginHorizontal: 20,
+    marginTop: 16,
+    overflow: "hidden",
+    shadowColor: "rgba(255, 183, 197, 0.4)",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 1,
+    shadowRadius: 32,
+    elevation: 8,
+  },
+  totalBalanceOrnament: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    width: 128,
+    height: 128,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 64,
+    marginRight: -64,
+    marginTop: -64,
+  },
+  totalBalanceHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  totalBalanceTitle: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "500",
+    opacity: 0.9,
+  },
+  eyeButton: {
+    padding: 4,
+  },
+  totalBalanceValueRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+  },
+  totalBalanceAmount: {
+    fontSize: 32,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  totalBalanceSymbol: {
+    fontSize: 20,
+    fontWeight: "500",
+    color: "#FFFFFF",
+    marginLeft: 4,
+  },
+  walletSwitcherScroll: {
+    marginTop: 16,
+    maxHeight: 52,
+  },
+  walletSwitcherContent: {
+    paddingHorizontal: 20,
+    alignItems: "center",
+  },
+  walletPillActive: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.secondary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 9999,
+    marginRight: 12,
+    shadowColor: "rgba(255, 183, 197, 0.4)",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 1,
+    shadowRadius: 16,
+    elevation: 4,
+  },
+  walletPillInactive: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.surfaceContainerHigh,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 9999,
+    marginRight: 12,
+  },
+  walletPillTextActive: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#FFFFFF",
+  },
+  walletPillTextInactive: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.onSurfaceVariant,
+  },
+  balanceHeroCard: {
+    backgroundColor: COLORS.surfaceContainerLowest,
+    borderRadius: 32,
+    padding: 24,
+    marginHorizontal: 20,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: COLORS.outlineVariant,
+    shadowColor: "rgba(255, 183, 197, 0.2)",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 1,
+    shadowRadius: 24,
+    elevation: 3,
+  },
+  balanceHeroHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  balanceHeroLabel: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: COLORS.onSurfaceVariant,
+  },
+  balanceHeroAmountContainer: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    marginTop: 2,
+  },
+  balanceHeroAmount: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: COLORS.primary,
+  },
+  balanceHeroSymbol: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.primary,
+    marginLeft: 2,
+  },
+  statusChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 9999,
+    borderWidth: 1,
+  },
+  statusChipNormal: {
+    backgroundColor: "rgba(255, 183, 197, 0.2)",
+    borderColor: "rgba(255, 183, 197, 0.3)",
+  },
+  statusChipWarning: {
+    backgroundColor: "#ffedd5",
+    borderColor: "#fed7aa",
+  },
+  statusChipError: {
+    backgroundColor: COLORS.errorContainer,
+    borderColor: "#ffb4ab",
+  },
+  statusChipText: {
+    fontSize: 10,
+    fontWeight: "700",
+    letterSpacing: 1,
+  },
+  statusChipTextNormal: {
+    color: COLORS.onPrimaryContainer,
+  },
+  statusChipTextWarning: {
+    color: "#c2410c",
+  },
+  statusChipTextError: {
+    color: COLORS.error,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "rgba(214, 194, 196, 0.4)",
+    marginVertical: 16,
+  },
+  balanceColumns: {
+    flexDirection: "row",
+  },
+  balanceColumn: {
+    flex: 1,
+  },
+  balanceColumnRight: {
+    flex: 1,
+    borderLeftWidth: 1,
+    borderLeftColor: "rgba(214, 194, 196, 0.4)",
+    paddingLeft: 16,
+  },
+  columnLabel: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: COLORS.onSurfaceVariant,
+    marginBottom: 4,
+  },
+  incomeAmount: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.secondary,
+  },
+  spentAmount: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.primary,
   },
   quoteCard: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 16,
-    marginTop: 20,
-    alignItems: 'center',
+    backgroundColor: "rgba(227, 194, 199, 0.3)",
+    borderRadius: 32,
+    padding: 20,
+    marginHorizontal: 20,
+    marginTop: 16,
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: '#FFE5E2',
-    shadowColor: '#4A3E3F',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
+    borderColor: "rgba(227, 194, 199, 0.5)",
   },
-  mascotStyle: {
-    width: 80,
-    height: 80,
+  quoteMascotContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 8,
+    shadowColor: "rgba(0, 0, 0, 0.05)",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  quoteMascot: {
+    width: "100%",
+    height: "100%",
   },
   quoteTextContainer: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 16,
   },
-  quoteBubble: {
-    fontSize: 13,
-    color: '#4A3E3F',
-    fontWeight: '600',
-    lineHeight: 18,
-    fontStyle: 'italic',
+  quoteText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.onTertiaryContainer,
+    fontStyle: "italic",
+    lineHeight: 20,
   },
-  balanceCard: {
-    backgroundColor: '#20E3B2',
-    borderRadius: 24,
-    padding: 24,
-    marginTop: 20,
-    shadowColor: '#20E3B2',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  balanceHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  balanceLabel: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  walletSwitcher: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  walletSwitcherText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginRight: 6,
-  },
-  dropdownArrow: {
-    color: '#FFFFFF',
-    fontSize: 10,
-  },
-  balanceAmount: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginTop: 12,
-  },
-  floatingAddButton: {
-    backgroundColor: '#FF8C8C',
-    borderRadius: 24,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginVertical: 16,
-    shadowColor: '#FF8C8C',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  floatingAddButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginHorizontal: 20,
+    marginTop: 24,
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#4A3E3F',
-    marginTop: 12,
-    marginBottom: 16,
+    fontSize: 20,
+    fontWeight: "700",
+    color: COLORS.primary,
+  },
+  detailBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  detailBtnText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.primary,
+    marginRight: 2,
   },
   jarsContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#FFE5E2',
-    gap: 16,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    width: "100%",
   },
   emptyJarsText: {
     fontSize: 14,
-    color: '#8A7A7B',
-    textAlign: 'center',
+    color: COLORS.onSurfaceVariant,
+    textAlign: "center",
     paddingVertical: 20,
+    width: "100%",
   },
-  jarRow: {
-    width: '100%',
+  jarGridItem: {
+    width: "48.5%",
+    backgroundColor: COLORS.surfaceContainerLowest,
+    borderRadius: 32,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.outlineVariant,
+    shadowColor: "rgba(255, 183, 197, 0.1)",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 1,
+    marginBottom: 12,
   },
-  jarHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
+  jarGridHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
   },
-  jarNameContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  jarIconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  jarColorDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 8,
+  jarPercentText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: COLORS.primary,
   },
   jarNameText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#4A3E3F',
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.onSurface,
+    marginBottom: 8,
   },
-  jarAmountText: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#4A3E3F',
+  progressBarBg: {
+    width: "100%",
+    height: 8,
+    backgroundColor: "#F1DEDF",
+    borderRadius: 4,
+    overflow: "hidden",
+    marginBottom: 4,
+  },
+  progressBar: {
+    height: "100%",
+    borderRadius: 4,
   },
   alertBadgeText: {
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: "700",
+    marginTop: 4,
+  },
+  alertPlaceholder: {
+    height: 14,
+  },
+  tabBar: {
+    flexDirection: "row",
+    backgroundColor: COLORS.surfaceContainer,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    paddingBottom: 16,
+    paddingTop: 8,
+    paddingHorizontal: 16,
+    shadowColor: "rgba(255, 183, 197, 0.2)",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 1,
+    shadowRadius: 24,
+    elevation: 8,
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 76,
+    alignItems: "center",
+    justifyContent: "space-around",
+  },
+  activeTabItem: {
+    backgroundColor: COLORS.secondaryContainer,
+    borderRadius: 9999,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "column",
+  },
+  inactiveTabItem: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  activeTabLabel: {
+    fontSize: 10,
+    fontWeight: "600",
+    color: COLORS.onSecondaryContainer,
     marginTop: 2,
   },
-  progressBarContainer: {
-    width: '100%',
-    height: 6,
-    backgroundColor: '#FFF5F4',
-    borderRadius: 3,
-    overflow: 'hidden',
+  inactiveTabLabel: {
+    fontSize: 10,
+    fontWeight: "500",
+    color: COLORS.onSurfaceVariant,
+    marginTop: 2,
   },
-  progressBar: {
-    height: '100%',
-    borderRadius: 3,
+  walletsTabContainer: {
+    marginTop: 16,
+    width: "100%",
+    paddingHorizontal: 20,
+  },
+  memberCard: {
+    backgroundColor: COLORS.surfaceContainerLowest,
+    borderRadius: 32,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: COLORS.outlineVariant,
+    shadowColor: "rgba(255, 183, 197, 0.1)",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 1,
+    marginBottom: 16,
+  },
+  walletTabSectionTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: COLORS.onSurface,
+    marginBottom: 16,
+  },
+  membersList: {
+    marginBottom: 16,
+  },
+  memberRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  memberAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.primaryContainer,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  memberAvatarText: {
+    fontSize: 18,
+  },
+  memberInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  memberName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.onSurface,
+  },
+  selfText: {
+    color: COLORS.outline,
+    fontWeight: "400",
+    fontSize: 12,
+  },
+  memberRoleText: {
+    fontSize: 11,
+    color: COLORS.onSurfaceVariant,
+    marginTop: 2,
+  },
+  removeBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 100,
+    backgroundColor: COLORS.errorContainer,
+    borderWidth: 1,
+    borderColor: "#FFB4AB",
+  },
+  removeBtnText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: COLORS.error,
+  },
+  inviteButton: {
+    backgroundColor: COLORS.primaryContainer,
+    borderRadius: 100,
+    paddingVertical: 12,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+  },
+  inviteButtonText: {
+    color: COLORS.primary,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  limitText: {
+    fontSize: 12,
+    color: COLORS.onSurfaceVariant,
+    fontStyle: "italic",
+    textAlign: "center",
+    marginTop: 8,
+  },
+  personalWalletCard: {
+    backgroundColor: COLORS.surfaceContainerLowest,
+    borderRadius: 32,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: COLORS.outlineVariant,
+    alignItems: "center",
+    shadowColor: "rgba(255, 183, 197, 0.1)",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 1,
+    marginBottom: 16,
+  },
+  personalWalletMascot: {
+    width: 80,
+    height: 80,
+    marginBottom: 12,
+  },
+  personalWalletTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.onSurface,
+    marginBottom: 8,
+  },
+  personalWalletDesc: {
+    fontSize: 13,
+    color: COLORS.onSurfaceVariant,
+    textAlign: "center",
+    lineHeight: 18,
+  },
+  joinWalletMainBtn: {
+    backgroundColor: COLORS.primary,
+    borderRadius: 100,
+    paddingVertical: 16,
+    alignItems: "center",
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3,
+    marginBottom: 20,
+  },
+  joinWalletMainBtnText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "700",
+    letterSpacing: 0.3,
+  },
+  fabButton: {
+    position: "absolute",
+    bottom: 92,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: COLORS.secondary,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#FFB7C5",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    elevation: 8,
+    zIndex: 99,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(74, 62, 63, 0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.15)",
   },
-  modalContent: {
-    width: width * 0.85,
-    backgroundColor: '#FFF8F7',
+  dropdownMenu: {
+    position: "absolute",
+    top: Platform.OS === "android" ? (StatusBar.currentHeight || 0) + 68 : 68,
+    left: 20,
+    width: 220,
+    backgroundColor: COLORS.surfaceContainerLowest,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: COLORS.outlineVariant,
+    paddingVertical: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  dropdownItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  dropdownItemDestructive: {
+    // Optional additional styling
+  },
+  dropdownIcon: {
+    marginRight: 12,
+  },
+  dropdownText: {
+    fontSize: 14,
+    color: COLORS.onSurface,
+    fontWeight: "500",
+  },
+  dropdownTextDestructive: {
+    color: COLORS.error,
+    fontWeight: "600",
+  },
+  dropdownDivider: {
+    height: 1,
+    backgroundColor: COLORS.outlineVariant,
+    opacity: 0.5,
+    marginHorizontal: 16,
+  },
+  modalOverlayCenter: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  infoModalContainer: {
+    width: "85%",
+    backgroundColor: COLORS.surfaceContainerLowest,
     borderRadius: 24,
     padding: 24,
     borderWidth: 1,
-    borderColor: '#FFE5E2',
-    shadowColor: '#4A3E3F',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 6,
+    borderColor: COLORS.outlineVariant,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 10,
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#4A3E3F',
+  modalHeading: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: COLORS.primary,
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  modalFieldGroup: {
     marginBottom: 16,
-    textAlign: 'center',
   },
-  walletOption: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 14,
+  modalFieldLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: COLORS.onSurfaceVariant,
+    marginBottom: 6,
+  },
+  modalInput: {
+    height: 48,
+    borderWidth: 1,
+    borderColor: COLORS.outlineVariant,
+    borderRadius: 12,
     paddingHorizontal: 16,
-    borderRadius: 16,
-    marginBottom: 8,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1.5,
-    borderColor: '#FFE5E2',
-  },
-  walletOptionActive: {
-    borderColor: '#FF8C8C',
-    backgroundColor: '#FFF4F3',
-  },
-  walletOptionText: {
     fontSize: 14,
-    fontWeight: 'bold',
-    color: '#4A3E3F',
+    color: COLORS.onSurface,
+    backgroundColor: "#FFFFFF",
   },
-  walletOptionTextActive: {
-    color: '#FF8C8C',
+  modalReadOnlyValue: {
+    fontSize: 14,
+    color: COLORS.onSurfaceVariant,
+    backgroundColor: COLORS.surfaceContainer,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
   },
-  walletOptionBalance: {
+  modalButtonsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 12,
+  },
+  modalCancelBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+  },
+  modalCancelBtnText: {
+    color: COLORS.primary,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  modalSaveBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: COLORS.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
+  },
+  modalSaveBtnText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  settingToggleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  settingOptionBtn: {
+    flex: 1,
+    height: 40,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.outlineVariant,
+    alignItems: "center",
+    justifyContent: "center",
+    marginHorizontal: 4,
+    backgroundColor: "#FFFFFF",
+  },
+  settingOptionActive: {
+    backgroundColor: COLORS.primaryContainer,
+    borderColor: COLORS.primary,
+  },
+  settingOptionText: {
+    color: COLORS.onSurfaceVariant,
     fontSize: 13,
-    fontWeight: '700',
-    color: '#8A7A7B',
+    fontWeight: "600",
+  },
+  settingOptionActiveText: {
+    color: COLORS.onPrimaryContainer,
+    fontWeight: "700",
   },
 });

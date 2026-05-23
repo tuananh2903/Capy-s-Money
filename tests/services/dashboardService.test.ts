@@ -1,4 +1,4 @@
-import { fetchWallets, fetchJars, createTransaction, updateJarAllocations } from '../../src/services/dashboardService';
+import { fetchWallets, fetchJars, createTransaction, updateJarAllocations, fetchWalletIncome } from '../../src/services/dashboardService';
 import { supabase } from '../../src/services/supabaseClient';
 
 const mockSelect = jest.fn();
@@ -29,6 +29,7 @@ jest.mock('../../src/services/supabaseClient', () => ({
       if (table === 'transactions') {
         return {
           insert: mockInsert,
+          select: mockSelect,
         };
       }
       return {};
@@ -224,6 +225,41 @@ describe('dashboardService', () => {
       const res = await updateJarAllocations('w-1', allocations);
       expect(res.success).toBe(false);
       expect(res.error).toBe('Tổng tỷ lệ phân bổ của các hũ phải bằng 100% (hiện tại: 60%).');
+    });
+  });
+
+  describe('fetchWalletIncome', () => {
+    it('should fetch and sum all income transactions for a wallet', async () => {
+      const mockTxData = [
+        { amount: 500000 },
+        { amount: 1200000 },
+      ];
+
+      const mockEq2 = jest.fn().mockResolvedValue({ data: mockTxData, error: null });
+      mockSelect.mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          eq: mockEq2
+        })
+      });
+
+      const res = await fetchWalletIncome('w-123');
+      expect(res.success).toBe(true);
+      expect(res.data).toBe(1700000);
+      expect(supabase.from).toHaveBeenCalledWith('transactions');
+    });
+
+    it('should return error if db query fails', async () => {
+      const mockEq2 = jest.fn().mockResolvedValue({ data: null, error: { message: 'DB error' } });
+      mockSelect.mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          eq: mockEq2
+        })
+      });
+
+      const res = await fetchWalletIncome('w-123');
+      expect(res.success).toBe(false);
+      expect(res.data).toBe(0);
+      expect(res.error).toBe('Không thể tải dữ liệu thu nhập: DB error');
     });
   });
 });

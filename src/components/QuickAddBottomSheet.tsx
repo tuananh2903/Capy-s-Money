@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -21,12 +21,60 @@ interface QuickAddBottomSheetProps {
 }
 
 const JARS = [
-  { type: 'NEC' as const, name: 'Thiết yếu', color: '#FF8C8C' },
-  { type: 'LTSS' as const, name: 'Tiết kiệm', color: '#A8E6CF' },
-  { type: 'FFA' as const, name: 'Tự do TC', color: '#FFD3B6' },
-  { type: 'EDU' as const, name: 'Giáo dục', color: '#D4E2FC' },
-  { type: 'PLAY' as const, name: 'Hưởng thụ', color: '#FCE1FC' },
-  { type: 'GIVE' as const, name: 'Cho đi', color: '#EAE1FC' },
+  { type: 'NEC' as const, name: 'Thiết yếu', icon: '🛒', color: '#FFB7C5', bgColor: '#FFF0F1' },
+  { type: 'LTSS' as const, name: 'Tiết kiệm', icon: '🏦', color: '#A8DFCE', bgColor: '#F0FFF8' },
+  { type: 'EDU' as const, name: 'Giáo dục', icon: '📚', color: '#B4CAFF', bgColor: '#F0F4FF' },
+  { type: 'PLAY' as const, name: 'Hưởng thụ', icon: '🎉', color: '#FCB7FF', bgColor: '#FFF0FF' },
+  { type: 'FFA' as const, name: 'Tự do TC', icon: '🌟', color: '#FFD4A8', bgColor: '#FFF8F0' },
+  { type: 'GIVE' as const, name: 'Cho đi', icon: '🎁', color: '#C8B7FF', bgColor: '#F5F0FF' },
+];
+
+// Subcategories per jar type
+const SUBCATEGORIES: Record<string, { name: string; icon: string }[]> = {
+  NEC: [
+    { name: 'Ăn uống', icon: '🍜' },
+    { name: 'Thuê nhà', icon: '🏠' },
+    { name: 'Đi lại', icon: '🚌' },
+    { name: 'Khác', icon: '⋯' },
+  ],
+  LTSS: [
+    { name: 'Tiết kiệm', icon: '🏦' },
+    { name: 'Đầu tư', icon: '📈' },
+    { name: 'Quỹ dự phòng', icon: '🛡️' },
+    { name: 'Khác', icon: '⋯' },
+  ],
+  EDU: [
+    { name: 'Khóa học', icon: '🎓' },
+    { name: 'Sách', icon: '📖' },
+    { name: 'Hội thảo', icon: '🎤' },
+    { name: 'Khác', icon: '⋯' },
+  ],
+  PLAY: [
+    { name: 'Du lịch', icon: '✈️' },
+    { name: 'Giải trí', icon: '🎬' },
+    { name: 'Mua sắm', icon: '🛍️' },
+    { name: 'Khác', icon: '⋯' },
+  ],
+  FFA: [
+    { name: 'Cổ phiếu', icon: '📊' },
+    { name: 'BĐS', icon: '🏡' },
+    { name: 'Crypto', icon: '₿' },
+    { name: 'Khác', icon: '⋯' },
+  ],
+  GIVE: [
+    { name: 'Từ thiện', icon: '❤️' },
+    { name: 'Quà tặng', icon: '🎁' },
+    { name: 'Gia đình', icon: '👨‍👩‍👧' },
+    { name: 'Khác', icon: '⋯' },
+  ],
+};
+
+const INCOME_SUBCATEGORIES = [
+  { name: 'Lương', icon: '💼' },
+  { name: 'Thưởng', icon: '🏆' },
+  { name: 'Đầu tư', icon: '📈' },
+  { name: 'Freelance', icon: '💻' },
+  { name: 'Khác', icon: '⋯' },
 ];
 
 export default function QuickAddBottomSheet({
@@ -36,17 +84,36 @@ export default function QuickAddBottomSheet({
   userId,
   onSaveSuccess,
 }: QuickAddBottomSheetProps) {
-  const [type, setType] = useState<'expense' | 'income'>('expense');
+  const [type, setType] = useState<'income' | 'expense'>('expense');
   const [amountText, setAmountText] = useState('');
   const [selectedJar, setSelectedJar] = useState<'NEC' | 'FFA' | 'EDU' | 'PLAY' | 'LTSS' | 'GIVE'>('NEC');
+  const [selectedSubcategory, setSelectedSubcategory] = useState('Ăn uống');
   const [note, setNote] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [currentCalendarMonth, setCurrentCalendarMonth] = useState<Date>(new Date());
+
+  const getDateChipLabel = (date: Date) => {
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+    
+    if (date.toDateString() === today.toDateString()) {
+      return 'Hôm nay';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return 'Hôm qua';
+    } else {
+      return date.toLocaleDateString('vi-VN', { day: 'numeric', month: 'numeric' });
+    }
+  };
+
   const formatNumber = (val: string) => {
     const clean = val.replace(/[^0-9]/g, '');
     if (!clean) return '';
-    return parseInt(clean, 10).toLocaleString('en-US');
+    return parseInt(clean, 10).toLocaleString('vi-VN');
   };
 
   const handleAmountChange = (text: string) => {
@@ -55,11 +122,19 @@ export default function QuickAddBottomSheet({
     setValidationError(null);
   };
 
+  const handleJarSelect = (jarType: typeof selectedJar) => {
+    setSelectedJar(jarType);
+    const subcats = SUBCATEGORIES[jarType];
+    if (subcats && subcats.length > 0) {
+      setSelectedSubcategory(subcats[0].name);
+    }
+  };
+
   const handleSave = async () => {
-    const cleanAmount = parseInt(amountText.replace(/,/g, ''), 10);
-    
+    const cleanAmount = parseInt(amountText.replace(/\./g, '').replace(/,/g, ''), 10);
+
     if (isNaN(cleanAmount) || cleanAmount <= 0) {
-      setValidationError('Số tiền giao dịch phải lớn hơn 0.');
+      setValidationError('Số tiền giao dịch phải lớn hơn 0 đ. Vui lòng nhập lại.');
       return;
     }
 
@@ -78,24 +153,29 @@ export default function QuickAddBottomSheet({
       type: type,
       note: note.trim() || null,
       created_by: userId,
-      occurred_at: new Date().toISOString(),
+      occurred_at: selectedDate.toISOString(),
     });
 
     setLoading(false);
 
     if (result.success) {
-      // Reset state
       setAmountText('');
       setNote('');
       setSelectedJar('NEC');
+      setSelectedSubcategory('Ăn uống');
       setType('expense');
-      
+      setSelectedDate(new Date());
       onSaveSuccess();
       onClose();
     } else {
       setValidationError(result.error || 'Có lỗi xảy ra khi lưu giao dịch.');
     }
   };
+
+  const currentJar = JARS.find((j) => j.type === selectedJar) || JARS[0];
+  const subcats = useMemo(() => {
+    return type === 'expense' ? SUBCATEGORIES[selectedJar] : INCOME_SUBCATEGORIES;
+  }, [type, selectedJar]);
 
   return (
     <Modal
@@ -117,8 +197,9 @@ export default function QuickAddBottomSheet({
           {/* Drag Indicator */}
           <View style={styles.dragIndicator} />
 
+          {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>Thêm giao dịch</Text>
+            <Text style={styles.headerTitle}>Thêm Giao Dịch</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Text style={styles.closeButtonText}>✕</Text>
             </TouchableOpacity>
@@ -127,25 +208,26 @@ export default function QuickAddBottomSheet({
           <ScrollView
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
           >
-            {/* Tab Selector: Expense / Income */}
+            {/* Tab Selector: Income / Expense — Khoản thu trước, Khoản chi sau (theo Stitch) */}
             <View style={styles.tabContainer}>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                style={[styles.tab, type === 'expense' && styles.activeTabExpense]}
-                onPress={() => setType('expense')}
-              >
-                <Text style={[styles.tabText, type === 'expense' && styles.activeTabText]}>
-                  Khoản Chi
-                </Text>
-              </TouchableOpacity>
               <TouchableOpacity
                 activeOpacity={0.8}
                 style={[styles.tab, type === 'income' && styles.activeTabIncome]}
                 onPress={() => setType('income')}
               >
                 <Text style={[styles.tabText, type === 'income' && styles.activeTabText]}>
-                  Khoản Thu
+                  Khoản thu
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={[styles.tab, type === 'expense' && styles.activeTabExpense]}
+                onPress={() => setType('expense')}
+              >
+                <Text style={[styles.tabText, type === 'expense' && styles.activeTabText]}>
+                  Khoản chi
                 </Text>
               </TouchableOpacity>
             </View>
@@ -156,7 +238,7 @@ export default function QuickAddBottomSheet({
               <TextInput
                 style={styles.amountInput}
                 placeholder="0"
-                placeholderTextColor="#A89A9B"
+                placeholderTextColor="#C9B3B5"
                 keyboardType="numeric"
                 value={amountText}
                 onChangeText={handleAmountChange}
@@ -164,56 +246,107 @@ export default function QuickAddBottomSheet({
               <Text style={styles.currencyUnit}>đ</Text>
             </View>
 
-            {/* Jars selection */}
-            <Text style={styles.label}>Chọn Hũ Tài Chính</Text>
-            <View style={styles.jarsContainer}>
-              {JARS.map((jar) => {
-                const isSelected = selectedJar === jar.type;
+            {/* Hũ tài chính — only show when expense */}
+            {type === 'expense' && (
+              <>
+                <Text style={styles.label}>Hũ tài chính</Text>
+                <View style={styles.jarsContainer}>
+                  {JARS.map((jar) => {
+                    const isSelected = selectedJar === jar.type;
+                    return (
+                      <TouchableOpacity
+                        key={jar.type}
+                        activeOpacity={0.8}
+                        style={[
+                          styles.jarBadge,
+                          { borderColor: jar.color, backgroundColor: isSelected ? jar.color : jar.bgColor },
+                        ]}
+                        onPress={() => handleJarSelect(jar.type)}
+                      >
+                        <Text style={styles.jarIcon}>{jar.icon}</Text>
+                        <Text
+                          style={[
+                            styles.jarBadgeText,
+                            { color: isSelected ? '#FFFFFF' : '#4A3E3F' },
+                          ]}
+                        >
+                          {jar.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </>
+            )}
+
+            {/* Hạng mục con */}
+            <Text style={styles.label}>Hạng mục con</Text>
+            <View style={styles.subcatContainer}>
+              {subcats.map((cat) => {
+                const isSelected = selectedSubcategory === cat.name;
                 return (
                   <TouchableOpacity
-                    key={jar.type}
+                    key={cat.name}
                     activeOpacity={0.8}
                     style={[
-                      styles.jarBadge,
-                      { borderColor: jar.color },
-                      isSelected && { backgroundColor: jar.color },
+                      styles.subcatBadge,
+                      isSelected && { backgroundColor: '#FFB7C5', borderColor: '#FFB7C5' },
                     ]}
-                    onPress={() => setSelectedJar(jar.type)}
+                    onPress={() => setSelectedSubcategory(cat.name)}
                   >
+                    <Text style={styles.subcatIcon}>{cat.icon}</Text>
                     <Text
                       style={[
-                        styles.jarBadgeText,
-                        isSelected && styles.jarBadgeTextSelected,
+                        styles.subcatText,
+                        isSelected && { color: '#FFFFFF', fontWeight: '700' },
                       ]}
                     >
-                      {jar.name}
+                      {cat.name}
                     </Text>
                   </TouchableOpacity>
                 );
               })}
             </View>
 
-            {/* Note input */}
-            <Text style={styles.label}>Ghi chú</Text>
-            <TextInput
-              style={styles.noteInput}
-              placeholder="Nhập ghi chú (tùy chọn)..."
-              placeholderTextColor="#A89A9B"
-              value={note}
-              onChangeText={(text) => {
-                setNote(text);
-                setValidationError(null);
-              }}
-              maxLength={250}
-              multiline
-            />
+            {/* Thời gian & Ghi chú — row layout like Stitch */}
+            <View style={styles.rowSection}>
+              <View style={styles.rowItem}>
+                <Text style={styles.label}>Thời gian</Text>
+                <TouchableOpacity
+                  style={styles.dateChip}
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    setCurrentCalendarMonth(new Date(selectedDate));
+                    setShowDatePicker(true);
+                  }}
+                  testID="date-picker-button"
+                >
+                  <Text style={styles.dateIcon}>📅</Text>
+                  <Text style={styles.dateText}>{getDateChipLabel(selectedDate)}</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={[styles.rowItem, { marginLeft: 12 }]}>
+                <Text style={styles.label}>Ghi chú</Text>
+                <TextInput
+                  style={styles.noteInputInline}
+                  placeholder="Nhập ghi chú..."
+                  placeholderTextColor="#C9B3B5"
+                  value={note}
+                  onChangeText={(text) => {
+                    setNote(text);
+                    setValidationError(null);
+                  }}
+                  maxLength={200}
+                />
+              </View>
+            </View>
 
-            {/* Validation Error Message */}
+            {/* Validation Error */}
             {validationError && (
               <Text style={styles.errorText}>{validationError}</Text>
             )}
 
-            {/* Action Buttons */}
+            {/* Save button — hồng pastel theo Stitch */}
             <TouchableOpacity
               activeOpacity={0.8}
               style={[styles.saveButton, loading && styles.disabledButton]}
@@ -227,6 +360,96 @@ export default function QuickAddBottomSheet({
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Date Picker Modal */}
+      {showDatePicker && (
+        <Modal
+          transparent
+          visible={showDatePicker}
+          animationType="fade"
+          onRequestClose={() => setShowDatePicker(false)}
+        >
+          <View style={styles.datePickerOverlay}>
+            <View style={styles.datePickerContainer}>
+              <View style={styles.datePickerHeader}>
+                <TouchableOpacity
+                  onPress={() => {
+                    const prev = new Date(currentCalendarMonth);
+                    prev.setMonth(prev.getMonth() - 1);
+                    setCurrentCalendarMonth(prev);
+                  }}
+                  style={styles.monthNavButton}
+                >
+                  <Text style={styles.monthNavText}>◀</Text>
+                </TouchableOpacity>
+                <Text style={styles.datePickerTitle}>
+                  Tháng {currentCalendarMonth.getMonth() + 1}, {currentCalendarMonth.getFullYear()}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    const next = new Date(currentCalendarMonth);
+                    next.setMonth(next.getMonth() + 1);
+                    setCurrentCalendarMonth(next);
+                  }}
+                  style={styles.monthNavButton}
+                >
+                  <Text style={styles.monthNavText}>▶</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Weekday headers */}
+              <View style={styles.weekdayRow}>
+                {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'].map((w, index) => (
+                  <Text key={index} style={styles.weekdayText}>{w}</Text>
+                ))}
+              </View>
+
+              {/* Calendar Days */}
+              <View style={styles.calendarGrid}>
+                {(() => {
+                  const year = currentCalendarMonth.getFullYear();
+                  const month = currentCalendarMonth.getMonth();
+                  const firstDay = new Date(year, month, 1).getDay();
+                  const totalDays = new Date(year, month + 1, 0).getDate();
+                  const cells = [];
+                  
+                  // Empty cells
+                  for (let i = 0; i < firstDay; i++) {
+                    cells.push(<View key={`empty-${i}`} style={styles.calendarCell} />);
+                  }
+                  
+                  // Day cells
+                  for (let d = 1; d <= totalDays; d++) {
+                    const cellDate = new Date(year, month, d);
+                    const isSelected = cellDate.toDateString() === selectedDate.toDateString();
+                    cells.push(
+                      <TouchableOpacity
+                        key={`day-${d}`}
+                        style={[styles.calendarCell, isSelected && styles.selectedCell]}
+                        onPress={() => {
+                          setSelectedDate(cellDate);
+                          setShowDatePicker(false);
+                        }}
+                      >
+                        <Text style={[styles.cellText, isSelected && styles.selectedCellText]}>{d}</Text>
+                      </TouchableOpacity>
+                    );
+                  }
+                  
+                  return cells;
+                })()}
+              </View>
+
+              <TouchableOpacity
+                style={styles.cancelPickerButton}
+                onPress={() => setShowDatePicker(false)}
+              >
+                <Text style={styles.cancelPickerText}>Hủy</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
     </Modal>
   );
 }
@@ -238,24 +461,24 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(74, 62, 63, 0.4)',
+    backgroundColor: 'rgba(74, 62, 63, 0.45)',
   },
   sheetContainer: {
     backgroundColor: '#FFF8F7',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
     paddingTop: 12,
-    maxHeight: '90%',
-    shadowColor: '#4A3E3F',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
+    maxHeight: '92%',
+    shadowColor: '#864E5A',
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
     elevation: 24,
   },
   dragIndicator: {
-    width: 40,
+    width: 44,
     height: 5,
-    backgroundColor: '#FFE5E2',
+    backgroundColor: '#F1DEDF',
     borderRadius: 3,
     alignSelf: 'center',
     marginBottom: 8,
@@ -265,144 +488,312 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 24,
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderColor: '#FFE5E2',
+    borderColor: '#F1DEDF',
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#4A3E3F',
+    fontWeight: '700',
+    color: '#23191A',
   },
   closeButton: {
     padding: 8,
+    backgroundColor: '#F1DEDF',
+    borderRadius: 100,
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   closeButtonText: {
-    fontSize: 18,
-    color: '#8A7A7B',
-    fontWeight: 'bold',
+    fontSize: 14,
+    color: '#864E5A',
+    fontWeight: '700',
   },
   scrollContent: {
     padding: 24,
-    paddingBottom: 40,
+    paddingBottom: 48,
   },
+  // Tab: Khoản thu | Khoản chi
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#FFE5E2',
-    borderRadius: 20,
+    backgroundColor: '#F1DEDF',
+    borderRadius: 100,
     padding: 4,
     marginBottom: 20,
   },
   tab: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 16,
+    paddingVertical: 11,
+    borderRadius: 100,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  activeTabExpense: {
-    backgroundColor: '#FF8C8C',
-  },
   activeTabIncome: {
-    backgroundColor: '#20E3B2',
+    backgroundColor: '#FFB7C5',
+    shadowColor: '#864E5A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  activeTabExpense: {
+    backgroundColor: '#864E5A',
+    shadowColor: '#864E5A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
   },
   tabText: {
     fontSize: 14,
-    fontWeight: 'bold',
-    color: '#8A7A7B',
+    fontWeight: '600',
+    color: '#837375',
   },
   activeTabText: {
     color: '#FFFFFF',
+    fontWeight: '700',
   },
   label: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
-    color: '#4A3E3F',
+    color: '#514345',
     marginBottom: 8,
-    marginTop: 12,
+    marginTop: 4,
+    letterSpacing: 0.3,
   },
+  // Amount
   amountInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 32,
     borderWidth: 1.5,
-    borderColor: '#FFE5E2',
-    paddingHorizontal: 16,
+    borderColor: '#F1DEDF',
+    paddingHorizontal: 18,
     marginBottom: 16,
+    shadowColor: '#864E5A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   amountInput: {
     flex: 1,
-    paddingVertical: 14,
-    fontSize: 24,
-    color: '#4A3E3F',
-    fontWeight: 'bold',
+    paddingVertical: 16,
+    fontSize: 28,
+    color: '#23191A',
+    fontWeight: '700',
   },
   currencyUnit: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#FF8C8C',
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#864E5A',
     marginLeft: 8,
   },
+  // Jars
   jarsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginBottom: 16,
+    marginBottom: 4,
   },
   jarBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1.5,
-    borderRadius: 12,
-    paddingHorizontal: 12,
+    borderRadius: 100,
+    paddingHorizontal: 14,
     paddingVertical: 8,
-    backgroundColor: '#FFFFFF',
+    gap: 5,
+  },
+  jarIcon: {
+    fontSize: 14,
   },
   jarBadgeText: {
     fontSize: 13,
-    fontWeight: 'bold',
-    color: '#4A3E3F',
+    fontWeight: '600',
   },
-  jarBadgeTextSelected: {
-    color: '#FFFFFF',
+  // Subcategories
+  subcatContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 8,
   },
-  noteInput: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+  subcatBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: '#FFE5E2',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: '#4A3E3F',
-    minHeight: 80,
-    textAlignVertical: 'top',
-    marginBottom: 16,
+    borderColor: '#F1DEDF',
+    borderRadius: 100,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: '#FFFFFF',
+    gap: 5,
+  },
+  subcatIcon: {
+    fontSize: 13,
+  },
+  subcatText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#514345',
+  },
+  // Row section (date + note)
+  rowSection: {
+    flexDirection: 'row',
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  rowItem: {
+    flex: 1,
+  },
+  dateChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#F1DEDF',
+    borderRadius: 100,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    gap: 6,
+  },
+  dateIcon: {
+    fontSize: 14,
+  },
+  dateText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#514345',
+  },
+  noteInputInline: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 32,
+    borderWidth: 1.5,
+    borderColor: '#F1DEDF',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 13,
+    color: '#23191A',
+    height: 44,
   },
   errorText: {
-    color: '#E84545',
+    color: '#BA1A1A',
     fontSize: 13,
-    fontWeight: '700',
-    marginBottom: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+    marginTop: 4,
   },
+  // Save button — hồng pastel theo Stitch
   saveButton: {
-    backgroundColor: '#20E3B2',
-    borderRadius: 24,
-    paddingVertical: 14,
+    backgroundColor: '#864E5A',
+    borderRadius: 100,
+    paddingVertical: 16,
     alignItems: 'center',
-    shadowColor: '#20E3B2',
+    shadowColor: '#864E5A',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-    marginTop: 8,
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
+    marginTop: 16,
   },
   disabledButton: {
-    backgroundColor: '#D1C7C8',
+    backgroundColor: '#D6C2C4',
     shadowColor: 'transparent',
   },
   saveButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  // Date Picker Custom Styles
+  datePickerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(35, 25, 26, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  datePickerContainer: {
+    width: '85%',
+    backgroundColor: '#FFF8F7',
+    borderRadius: 24,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#F1DEDF',
+    shadowColor: '#864E5A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  datePickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  monthNavButton: {
+    padding: 8,
+  },
+  monthNavText: {
+    fontSize: 16,
+    color: '#864E5A',
+  },
+  datePickerTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#23191A',
+  },
+  weekdayRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  weekdayText: {
+    width: '14.28%',
+    textAlign: 'center',
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#837375',
+  },
+  calendarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 16,
+  },
+  calendarCell: {
+    width: '14.28%',
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 2,
+  },
+  selectedCell: {
+    backgroundColor: '#FFB7C5',
+    borderRadius: 20,
+  },
+  cellText: {
+    fontSize: 14,
+    color: '#23191A',
+    fontWeight: '500',
+  },
+  selectedCellText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  cancelPickerButton: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1DEDF',
+  },
+  cancelPickerText: {
+    color: '#837375',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

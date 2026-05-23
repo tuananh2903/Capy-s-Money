@@ -148,7 +148,7 @@ export async function updateJarAllocations(
   }
 
   try {
-    for (const alloc of allocations) {
+    const updatePromises = allocations.map(async (alloc) => {
       const { error } = await supabase
         .from('jars')
         .update({ allocation_percentage: alloc.percentage })
@@ -156,14 +156,41 @@ export async function updateJarAllocations(
         .eq('type', alloc.type);
 
       if (error) {
-        console.error(`Error updating jar ${alloc.type}:`, error);
-        return { success: false, error: `Không thể cập nhật hũ ${alloc.type}: ${error.message}` };
+        throw new Error(`Không thể cập nhật hũ ${alloc.type}: ${error.message}`);
       }
-    }
+    });
 
+    await Promise.all(updatePromises);
     return { success: true };
   } catch (err: any) {
     console.error('Unexpected error updating jar allocations:', err);
     return { success: false, error: err.message || 'Lỗi kết nối mạng.' };
   }
 }
+
+/**
+ * Lấy tổng thu nhập của một ví cụ thể từ bảng transactions
+ * 
+ * @param walletId ID ví
+ */
+export async function fetchWalletIncome(walletId: string): Promise<{ success: boolean; data: number; error?: string }> {
+  try {
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('amount')
+      .eq('wallet_id', walletId)
+      .eq('type', 'income');
+
+    if (error) {
+      console.error('Error fetching wallet income:', error);
+      return { success: false, data: 0, error: `Không thể tải dữ liệu thu nhập: ${error.message}` };
+    }
+
+    const totalIncome = (data ?? []).reduce((sum: number, tx: any) => sum + (tx.amount || 0), 0);
+    return { success: true, data: totalIncome };
+  } catch (err: any) {
+    console.error('Unexpected error fetching wallet income:', err);
+    return { success: false, data: 0, error: err.message || 'Lỗi kết nối mạng.' };
+  }
+}
+

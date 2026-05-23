@@ -16,7 +16,7 @@
 - Create: `src/services/authService.ts`
 - Create: `tests/services/authService.test.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```typescript
 import { loginWithEmail } from '../../src/services/authService';
@@ -29,12 +29,12 @@ describe('authService', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx jest tests/services/authService.test.ts`
 Expected: FAIL (Cannot find module)
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```typescript
 export const loginWithEmail = async (email: string, pass: string) => {
@@ -45,12 +45,12 @@ export const loginWithEmail = async (email: string, pass: string) => {
 };
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx jest tests/services/authService.test.ts`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/services/authService.ts tests/services/authService.test.ts
@@ -63,7 +63,7 @@ git commit -m "feat(auth): add email validation logic"
 - Create: `src/screens/LoginScreen.tsx`
 - Create: `tests/screens/LoginScreen.test.tsx`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```tsx
 import React from 'react';
@@ -82,12 +82,12 @@ describe('LoginScreen', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx jest tests/screens/LoginScreen.test.tsx`
 Expected: FAIL
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```tsx
 import React, { useState } from 'react';
@@ -115,12 +115,12 @@ export default function LoginScreen() {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx jest tests/screens/LoginScreen.test.tsx`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/screens/LoginScreen.tsx tests/screens/LoginScreen.test.tsx
