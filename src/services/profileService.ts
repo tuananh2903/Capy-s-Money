@@ -15,7 +15,7 @@ export async function fetchProfile(userId: string): Promise<ProfileFetchResult> 
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, display_name')
+      .select('id, display_name, jars_ratios')
       .eq('id', userId)
       .single();
 

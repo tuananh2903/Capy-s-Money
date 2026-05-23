@@ -194,3 +194,77 @@ export async function fetchWalletIncome(walletId: string): Promise<{ success: bo
   }
 }
 
+/**
+ * Đảm bảo 6 hũ tài chính tồn tại cho ví cụ thể với tỷ lệ phân bổ hợp lệ.
+ * Nếu hũ chưa tồn tại, chèn mới. Nếu hũ đã tồn tại nhưng có tỷ lệ phân bổ là 0%, cập nhật lại tỷ lệ từ profile hoặc mặc định.
+ * 
+ * @param walletId ID của ví
+ * @param currentJars Danh sách hũ hiện tại của ví
+ * @param ratiosFromProfile Tỷ lệ phân bổ từ profile (nếu có)
+ */
+export async function ensureJarsExist(
+  walletId: string,
+  currentJars: Jar[],
+  ratiosFromProfile?: { nec?: number; lt?: number; ffa?: number; edu?: number; play?: number; give?: number } | null
+): Promise<{ success: boolean; error?: string }> {
+  const defaultRatios = { nec: 55, lt: 10, ffa: 10, edu: 10, play: 10, give: 5 };
+  const ratios = ratiosFromProfile || defaultRatios;
+
+  const requiredTypes = [
+    { type: 'NEC', ratio: ratios.nec ?? 55 },
+    { type: 'FFA', ratio: ratios.ffa ?? 10 },
+    { type: 'EDU', ratio: ratios.edu ?? 10 },
+    { type: 'PLAY', ratio: ratios.play ?? 10 },
+    { type: 'LTSS', ratio: ratios.lt ?? 10 },
+    { type: 'GIVE', ratio: ratios.give ?? 5 },
+  ];
+
+  const jarsToUpsert: any[] = [];
+  let needsUpdate = false;
+
+  for (const req of requiredTypes) {
+    const existing = currentJars.find(j => j.type === req.type);
+    if (!existing) {
+      jarsToUpsert.push({
+        wallet_id: walletId,
+        type: req.type,
+        allocation_percentage: req.ratio,
+        budget_limit: 0,
+        spent_amount: 0
+      });
+      needsUpdate = true;
+    } else if (existing.allocation_percentage === 0) {
+      jarsToUpsert.push({
+        id: existing.id,
+        wallet_id: walletId,
+        type: req.type,
+        allocation_percentage: req.ratio,
+        budget_limit: existing.budget_limit || 0,
+        spent_amount: existing.spent_amount || 0
+      });
+      needsUpdate = true;
+    }
+  }
+
+  if (!needsUpdate || jarsToUpsert.length === 0) {
+    return { success: true };
+  }
+
+  try {
+    const { error } = await supabase
+      .from('jars')
+      .upsert(jarsToUpsert);
+
+    if (error) {
+      console.error('Error upserting jars in ensureJarsExist:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Unexpected error in ensureJarsExist:', err);
+    return { success: false, error: err.message || 'Lỗi kết nối mạng.' };
+  }
+}
+
+

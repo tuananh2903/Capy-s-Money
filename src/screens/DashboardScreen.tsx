@@ -14,7 +14,7 @@ import QuickAddBottomSheet from "../components/QuickAddBottomSheet";
 import WalletInviteScreen from "./WalletInviteScreen";
 import WalletJoinScreen from "./WalletJoinScreen";
 import { fetchWalletMembers, removeMember } from "../services/walletInviteService";
-import { fetchWallets, fetchJars, fetchWalletIncome, Wallet, Jar } from "../services/dashboardService";
+import { fetchWallets, fetchJars, fetchWalletIncome, ensureJarsExist, Wallet, Jar } from "../services/dashboardService";
 import { evaluateJarBudget, BudgetAlertStatus } from "../utils/budgetChecker";
 
 const { width } = Dimensions.get("window");
@@ -149,6 +149,7 @@ export default function DashboardScreen({
   const [userPhone, setUserPhone] = useState("");
   const [appLanguage, setAppLanguage] = useState<'vi' | 'en'>('vi');
   const [appTheme, setAppTheme] = useState<'light' | 'dark'>('light');
+  const [userJarsRatios, setUserJarsRatios] = useState<any>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -156,6 +157,15 @@ export default function DashboardScreen({
     const load = async () => {
       try {
         setLoading(true);
+        // Load profile first to get jars ratios
+        const profileRes = await fetchProfile(userId);
+        let currentJarsRatios = null;
+        if (isMounted && profileRes.success && profileRes.data) {
+          setUserDisplayName(profileRes.data.display_name || "Thành viên Capy");
+          setUserJarsRatios(profileRes.data.jars_ratios || null);
+          currentJarsRatios = profileRes.data.jars_ratios || null;
+        }
+
         const walletsRes = await fetchWallets(userId);
         if (isMounted && walletsRes.success && walletsRes.data && walletsRes.data.length > 0) {
           setWallets(walletsRes.data);
@@ -182,6 +192,13 @@ export default function DashboardScreen({
           const jarsRes = await fetchJars(activeWallet.id);
           if (isMounted && jarsRes.success && jarsRes.data) {
             setJars(jarsRes.data);
+            if (jarsRes.data.length < 6 || jarsRes.data.some((j) => j.allocation_percentage === 0)) {
+              const ensureRes = await ensureJarsExist(activeWallet.id, jarsRes.data, currentJarsRatios);
+              if (ensureRes.success && isMounted) {
+                const refetched = await fetchJars(activeWallet.id);
+                if (refetched.success && refetched.data) setJars(refetched.data);
+              }
+            }
           }
           const incomeRes = await fetchWalletIncome(activeWallet.id);
           if (isMounted && incomeRes.success) {
@@ -263,7 +280,16 @@ export default function DashboardScreen({
         }
 
         const jarsRes = await fetchJars(wallet.id);
-        if (jarsRes.success && jarsRes.data) setJars(jarsRes.data);
+        if (jarsRes.success && jarsRes.data) {
+          setJars(jarsRes.data);
+          if (jarsRes.data.length < 6 || jarsRes.data.some((j) => j.allocation_percentage === 0)) {
+            const ensureRes = await ensureJarsExist(wallet.id, jarsRes.data, userJarsRatios);
+            if (ensureRes.success) {
+              const refetched = await fetchJars(wallet.id);
+              if (refetched.success && refetched.data) setJars(refetched.data);
+            }
+          }
+        }
         const incomeRes = await fetchWalletIncome(wallet.id);
         if (incomeRes.success) setWalletIncome(incomeRes.data);
       }
@@ -279,8 +305,17 @@ export default function DashboardScreen({
     } catch (e) {
       console.error("Lỗi khi lưu ví active vào AsyncStorage:", e);
     }
-    fetchJars(wallet.id).then((res) => {
-      if (res.success && res.data) setJars(res.data);
+    fetchJars(wallet.id).then(async (res) => {
+      if (res.success && res.data) {
+        setJars(res.data);
+        if (res.data.length < 6 || res.data.some((j) => j.allocation_percentage === 0)) {
+          const ensureRes = await ensureJarsExist(wallet.id, res.data, userJarsRatios);
+          if (ensureRes.success) {
+            const refetched = await fetchJars(wallet.id);
+            if (refetched.success && refetched.data) setJars(refetched.data);
+          }
+        }
+      }
     });
     fetchWalletIncome(wallet.id).then((res) => {
       if (res.success) setWalletIncome(res.data);

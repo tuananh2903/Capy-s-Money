@@ -25,6 +25,7 @@ jest.mock('../../src/services/dashboardService', () => ({
   fetchJars: jest.fn(),
   createTransaction: jest.fn(),
   fetchWalletIncome: jest.fn(() => Promise.resolve({ success: true, data: 2500000 })),
+  ensureJarsExist: jest.fn(() => Promise.resolve({ success: true })),
 }));
 
 jest.mock('../../src/services/profileService', () => ({

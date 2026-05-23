@@ -1,9 +1,10 @@
-import { fetchWallets, fetchJars, createTransaction, updateJarAllocations, fetchWalletIncome } from '../../src/services/dashboardService';
+import { fetchWallets, fetchJars, createTransaction, updateJarAllocations, fetchWalletIncome, ensureJarsExist } from '../../src/services/dashboardService';
 import { supabase } from '../../src/services/supabaseClient';
 
 const mockSelect = jest.fn();
 const mockInsert = jest.fn();
 const mockUpdate = jest.fn();
+const mockUpsert = jest.fn();
 const mockEq = jest.fn();
 const mockOr = jest.fn();
 
@@ -24,6 +25,7 @@ jest.mock('../../src/services/supabaseClient', () => ({
         return {
           select: mockSelect,
           update: mockUpdate,
+          upsert: mockUpsert,
         };
       }
       if (table === 'transactions') {
@@ -55,6 +57,7 @@ describe('dashboardService', () => {
     mockSelect.mockReturnValue(mockChain);
     mockInsert.mockReturnValue(mockChain);
     mockUpdate.mockReturnValue(mockChain);
+    mockUpsert.mockReturnValue(mockChain);
   });
 
   describe('fetchWallets', () => {
@@ -260,6 +263,52 @@ describe('dashboardService', () => {
       expect(res.success).toBe(false);
       expect(res.data).toBe(0);
       expect(res.error).toBe('Không thể tải dữ liệu thu nhập: DB error');
+    });
+  });
+
+  describe('ensureJarsExist', () => {
+    it('should upsert jars if they do not exist or have 0% allocation', async () => {
+      const mockCurrentJars = [
+        { id: 'j-1', type: 'NEC', allocation_percentage: 0, budget_limit: 0, spent_amount: 0 },
+        { id: 'j-2', type: 'FFA', allocation_percentage: 10, budget_limit: 0, spent_amount: 0 },
+      ] as any[];
+
+      mockUpsert.mockResolvedValue({ error: null });
+
+      const res = await ensureJarsExist('w-123', mockCurrentJars, { nec: 55, lt: 10, ffa: 10, edu: 10, play: 10, give: 5 });
+      expect(res.success).toBe(true);
+      expect(supabase.from).toHaveBeenCalledWith('jars');
+      expect(mockUpsert).toHaveBeenCalled();
+      // Verifies that it upserted NEC (updated to 55%) and missing jars (PLAY, EDU, LTSS, GIVE)
+      // but didn't upsert FFA (since it was already 10%)
+      const upsertedPayload = mockUpsert.mock.calls[0][0];
+      expect(upsertedPayload.length).toBe(5); // NEC, EDU, PLAY, LTSS, GIVE
+      expect(upsertedPayload.find((p: any) => p.type === 'NEC').allocation_percentage).toBe(55);
+      expect(upsertedPayload.find((p: any) => p.type === 'FFA')).toBeUndefined();
+    });
+
+    it('should do nothing if all 6 jars already exist with non-zero allocation', async () => {
+      const mockCurrentJars = [
+        { type: 'NEC', allocation_percentage: 55 },
+        { type: 'FFA', allocation_percentage: 10 },
+        { type: 'EDU', allocation_percentage: 10 },
+        { type: 'PLAY', allocation_percentage: 10 },
+        { type: 'LTSS', allocation_percentage: 10 },
+        { type: 'GIVE', allocation_percentage: 5 },
+      ] as any[];
+
+      const res = await ensureJarsExist('w-123', mockCurrentJars);
+      expect(res.success).toBe(true);
+      expect(mockUpsert).not.toHaveBeenCalled();
+    });
+
+    it('should return error if upsert fails', async () => {
+      const mockCurrentJars = [] as any[];
+      mockUpsert.mockResolvedValue({ error: { message: 'Upsert failed' } });
+
+      const res = await ensureJarsExist('w-123', mockCurrentJars);
+      expect(res.success).toBe(false);
+      expect(res.error).toBe('Upsert failed');
     });
   });
 });
