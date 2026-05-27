@@ -71,7 +71,7 @@ export function LedgerScreen({ activeWalletId }: Props) {
           <>
             {activeTab === 'daily' && <DailyTab transactions={transactions} onSelectTransaction={handleSelectTx} />}
             {activeTab === 'monthly' && <MonthlyTab transactions={transactions} prevMonthSpend={prevMonthSpend} />}
-            {activeTab === 'calendar' && <CalendarTab transactions={transactions} onSelectTransaction={handleSelectTx} />}
+            {activeTab === 'calendar' && <CalendarTab transactions={transactions} onSelectTransaction={handleSelectTx} targetDate={targetDate} />}
           </>
         )}
       </View>

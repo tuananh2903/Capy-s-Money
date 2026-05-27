@@ -1,14 +1,30 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { LedgerTransaction } from '../../services/ledgerService';
 
 interface Props {
   transactions: LedgerTransaction[];
   onSelectTransaction: (tx: LedgerTransaction) => void;
+  targetDate: Date;
 }
 
-export function CalendarTab({ transactions, onSelectTransaction }: Props) {
-  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+export function CalendarTab({ transactions, onSelectTransaction, targetDate }: Props) {
+  const [selectedDay, setSelectedDay] = useState<number | null>(() => {
+    const today = new Date();
+    if (targetDate.getMonth() === today.getMonth() && targetDate.getFullYear() === today.getFullYear()) {
+      return today.getDate();
+    }
+    return 1;
+  });
+
+  useEffect(() => {
+    const today = new Date();
+    if (targetDate.getMonth() === today.getMonth() && targetDate.getFullYear() === today.getFullYear()) {
+      setSelectedDay(today.getDate());
+    } else {
+      setSelectedDay(1);
+    }
+  }, [targetDate]);
 
   const activeDates = useMemo(() => {
     const dates = new Set<number>();
