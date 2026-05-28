@@ -16,6 +16,8 @@ import WalletJoinScreen from "./WalletJoinScreen";
 import { fetchWalletMembers, removeMember } from "../services/walletInviteService";
 import { fetchWallets, fetchJars, fetchWalletIncome, ensureJarsExist, Wallet, Jar } from "../services/dashboardService";
 import { evaluateJarBudget, BudgetAlertStatus } from "../utils/budgetChecker";
+import BudgetScreen from "./BudgetScreen";
+import WalletScreen from "./WalletScreen";
 
 const { width } = Dimensions.get("window");
 
@@ -858,80 +860,15 @@ export default function DashboardScreen({
         )}
 
         {activeTab === "wallets" ? (
-          <View style={styles.walletsTabContainer}>
-            {selectedWallet && (
-              <>
-                {selectedWallet.type === "shared" ? (
-                  <View style={styles.memberCard}>
-                    <Text style={styles.walletTabSectionTitle}>Thành viên Ví chung</Text>
-                    {loadingMembers ? (
-                      <ActivityIndicator size="small" color={COLORS.primary} style={{ marginVertical: 20 }} />
-                    ) : (
-                      <View style={styles.membersList}>
-                        {walletMembers.map((member) => {
-                          const isOwner = member.role === "owner";
-                          const isCurrentUser = member.user_id === userId;
-                          const displayName = member.profiles?.display_name || "Thành viên Capy";
-                          return (
-                            <View key={member.user_id} style={styles.memberRow}>
-                              <View style={styles.memberAvatar}>
-                                <Text style={styles.memberAvatarText}>🦦</Text>
-                              </View>
-                              <View style={styles.memberInfo}>
-                                <Text style={styles.memberName}>
-                                  {displayName} {isCurrentUser && <Text style={styles.selfText}>(Bạn)</Text>}
-                                </Text>
-                                <Text style={styles.memberRoleText}>
-                                  {isOwner ? "Chủ ví" : "Người chỉnh sửa"}
-                                </Text>
-                              </View>
-                              {selectedWallet.user_id === userId && !isOwner && (
-                                <TouchableOpacity
-                                  style={styles.removeBtn}
-                                  onPress={() => handleRemoveMember(member.user_id, displayName)}
-                                  activeOpacity={0.7}
-                                >
-                                  <Text style={styles.removeBtnText}>Xóa</Text>
-                                </TouchableOpacity>
-                              )}
-                            </View>
-                          );
-                        })}
-                      </View>
-                    )}
-
-                    {selectedWallet.user_id === userId && !loadingMembers && walletMembers.length < 3 ? (
-                      <TouchableOpacity
-                        style={styles.inviteButton}
-                        onPress={() => setShowInviteScreen(true)}
-                        activeOpacity={0.8}
-                      >
-                        <Text style={styles.inviteButtonText}>+ Mời thành viên</Text>
-                      </TouchableOpacity>
-                    ) : selectedWallet.user_id === userId && !loadingMembers ? (
-                      <Text style={styles.limitText}>Ví đã đầy thành viên (Tối đa 3 người)</Text>
-                    ) : null}
-                  </View>
-                ) : (
-                  <View style={styles.personalWalletCard}>
-                    <CapyMascot type="thinking" style={styles.personalWalletMascot} />
-                    <Text style={styles.personalWalletTitle}>Đây là ví cá nhân</Text>
-                    <Text style={styles.personalWalletDesc}>
-                      Dữ liệu tài chính ở ví này được bảo mật hoàn toàn riêng tư. Bạn có thể chia sẻ chi tiêu bằng cách tham gia ví chung của bạn bè.
-                    </Text>
-                  </View>
-                )}
-              </>
-            )}
-
-            <TouchableOpacity
-              style={styles.joinWalletMainBtn}
-              onPress={() => setShowJoinScreen(true)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.joinWalletMainBtnText}>Tham gia ví chung bằng mã</Text>
-            </TouchableOpacity>
-          </View>
+          <WalletScreen
+            userId={userId}
+            onWalletSelected={(w) => {
+              handleSelectWallet(w);
+              setActiveTab("home");
+            }}
+          />
+        ) : activeTab === "budget" ? (
+          <BudgetScreen />
         ) : (
           <>
             {/* Mascot Quote Card */}
