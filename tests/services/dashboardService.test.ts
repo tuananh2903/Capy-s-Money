@@ -1,4 +1,4 @@
-import { fetchWallets, fetchJars, createTransaction, updateJarAllocations, fetchWalletIncome, ensureJarsExist } from '../../src/services/dashboardService';
+import { fetchWallets, fetchJars, createTransaction, updateJarAllocations, fetchWalletIncome, ensureJarsExist, createWallet, updateWallet, deleteWallet, setDefaultWallet } from '../../src/services/dashboardService';
 import { supabase } from '../../src/services/supabaseClient';
 
 const mockSelect = jest.fn();
@@ -14,6 +14,8 @@ jest.mock('../../src/services/supabaseClient', () => ({
       if (table === 'wallets') {
         return {
           select: mockSelect,
+          insert: mockInsert,
+          update: mockUpdate,
         };
       }
       if (table === 'wallet_members') {
@@ -228,6 +230,82 @@ describe('dashboardService', () => {
       const res = await updateJarAllocations('w-1', allocations);
       expect(res.success).toBe(false);
       expect(res.error).toBe('Tổng tỷ lệ phân bổ của các hũ phải bằng 100% (hiện tại: 60%).');
+    });
+  });
+
+  describe('createWallet', () => {
+    it('should insert a new wallet successfully', async () => {
+      const walletData = { name: 'Ví tiết kiệm', type: 'personal', created_by: 'user-1' };
+      const mockSingle = jest.fn().mockResolvedValue({ data: { id: 'w-new', ...walletData }, error: null });
+      mockInsert.mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          single: mockSingle
+        })
+      });
+
+      const res = await createWallet(walletData);
+      expect(res.success).toBe(true);
+      expect(res.data).toEqual({ id: 'w-new', ...walletData });
+      expect(supabase.from).toHaveBeenCalledWith('wallets');
+      expect(mockInsert).toHaveBeenCalledWith(walletData);
+    });
+
+    it('should return error if insert fails', async () => {
+      mockInsert.mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          single: jest.fn().mockResolvedValue({ data: null, error: { message: 'Insert failed' } })
+        })
+      });
+
+      const res = await createWallet({ name: 'Ví lỗi' });
+      expect(res.success).toBe(false);
+      expect(res.error).toBe('Insert failed');
+    });
+  });
+
+  describe('updateWallet', () => {
+    it('should update wallet details successfully', async () => {
+      mockEq.mockResolvedValue({ error: null });
+      mockUpdate.mockReturnValue({ eq: mockEq });
+
+      const res = await updateWallet('w-123', { name: 'Tên mới' });
+      expect(res.success).toBe(true);
+      expect(supabase.from).toHaveBeenCalledWith('wallets');
+      expect(mockUpdate).toHaveBeenCalledWith({ name: 'Tên mới' });
+      expect(mockEq).toHaveBeenCalledWith('id', 'w-123');
+    });
+  });
+
+  describe('deleteWallet', () => {
+    it('should soft delete wallet by setting is_deleted to true', async () => {
+      mockEq.mockResolvedValue({ error: null });
+      mockUpdate.mockReturnValue({ eq: mockEq });
+
+      const res = await deleteWallet('w-123');
+      expect(res.success).toBe(true);
+      expect(supabase.from).toHaveBeenCalledWith('wallets');
+      expect(mockUpdate).toHaveBeenCalledWith({ is_deleted: true });
+      expect(mockEq).toHaveBeenCalledWith('id', 'w-123');
+    });
+  });
+
+  describe('setDefaultWallet', () => {
+    it('should call set_default_wallet RPC successfully', async () => {
+      const mockRpc = jest.fn().mockResolvedValue({ error: null });
+      (supabase as any).rpc = mockRpc;
+
+      const res = await setDefaultWallet('w-123', 'user-123');
+      expect(res.success).toBe(true);
+      expect(mockRpc).toHaveBeenCalledWith('set_default_wallet', { p_wallet_id: 'w-123', p_user_id: 'user-123' });
+    });
+
+    it('should return error if RPC fails', async () => {
+      const mockRpc = jest.fn().mockResolvedValue({ error: { message: 'RPC Error' } });
+      (supabase as any).rpc = mockRpc;
+
+      const res = await setDefaultWallet('w-123', 'user-123');
+      expect(res.success).toBe(false);
+      expect(res.error).toBe('RPC Error');
     });
   });
 

@@ -266,4 +266,94 @@ export async function ensureJarsExist(
   }
 }
 
+/**
+ * Tạo ví mới trong hệ thống
+ */
+export async function createWallet(walletData: Partial<Wallet>): Promise<{ success: boolean; data?: Wallet; error?: string }> {
+  try {
+    const { data, error } = await supabase
+      .from('wallets')
+      .insert(walletData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error inserting wallet:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data: data as Wallet };
+  } catch (err: any) {
+    console.error('Unexpected error creating wallet:', err);
+    return { success: false, error: err.message || 'Lỗi kết nối mạng.' };
+  }
+}
+
+/**
+ * Cập nhật thông tin chi tiết của ví
+ */
+export async function updateWallet(walletId: string, walletData: Partial<Wallet>): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase
+      .from('wallets')
+      .update(walletData)
+      .eq('id', walletId);
+
+    if (error) {
+      console.error('Error updating wallet:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Unexpected error updating wallet:', err);
+    return { success: false, error: err.message || 'Lỗi kết nối mạng.' };
+  }
+}
+
+/**
+ * Xóa mềm ví (đánh dấu is_deleted = true)
+ */
+export async function deleteWallet(walletId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase
+      .from('wallets')
+      .update({ is_deleted: true })
+      .eq('id', walletId);
+
+    if (error) {
+      console.error('Error deleting wallet:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Unexpected error deleting wallet:', err);
+    return { success: false, error: err.message || 'Lỗi kết nối mạng.' };
+  }
+}
+
+/**
+ * Đặt ví làm mặc định cho người dùng (gọi RPC set_default_wallet)
+ */
+export async function setDefaultWallet(walletId: string, userId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase.rpc('set_default_wallet', {
+      p_wallet_id: walletId,
+      p_user_id: userId,
+    });
+
+    if (error) {
+      console.error('Error setting default wallet:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Unexpected error setting default wallet:', err);
+    return { success: false, error: err.message || 'Lỗi kết nối mạng.' };
+  }
+}
+
+
 
