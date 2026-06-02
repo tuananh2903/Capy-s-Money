@@ -1,9 +1,11 @@
 import React from 'react';
 import { Alert } from 'react-native';
 import { render, fireEvent, act, waitFor } from '@testing-library/react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import DashboardScreen from '../../src/screens/DashboardScreen';
 import { fetchWallets, fetchJars } from '../../src/services/dashboardService';
 import { fetchProfile, updateProfileName } from '../../src/services/profileService';
+
 
 // Mock AsyncStorage
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -29,6 +31,7 @@ jest.mock('../../src/services/dashboardService', () => ({
   createTransaction: jest.fn(),
   fetchWalletIncome: jest.fn(() => Promise.resolve({ success: true, data: 2500000 })),
   ensureJarsExist: jest.fn(() => Promise.resolve({ success: true })),
+  checkHasTransactionsToday: jest.fn(() => Promise.resolve(false)),
 }));
 
 // Mock profileService
@@ -76,6 +79,21 @@ jest.mock('expo-linear-gradient', () => {
     LinearGradient: ({ children, style }: any) => <View style={style}>{children}</View>,
   };
 });
+
+// Mock expo-notifications
+jest.mock('expo-notifications', () => ({
+  setNotificationHandler: jest.fn(),
+  getPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
+  requestPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
+  cancelAllScheduledNotificationsAsync: jest.fn(() => Promise.resolve()),
+  scheduleNotificationAsync: jest.fn(() => Promise.resolve()),
+}));
+
+// Mock notificationService
+jest.mock('../../src/services/notificationService', () => ({
+  requestNotificationPermissions: jest.fn(() => Promise.resolve(true)),
+  scheduleDailyReminder: jest.fn(() => Promise.resolve()),
+}));
 
 describe('DashboardScreen', () => {
   const mockWallets = [
@@ -292,4 +310,65 @@ describe('DashboardScreen', () => {
     expect(alertSpy).toHaveBeenCalledWith('Thành công', 'Cập nhật tên hiển thị thành công!');
     alertSpy.mockRestore();
   });
+
+  it('displays rollover forecast banner on dashboard when rollover is enabled with surplus', async () => {
+    (fetchWallets as jest.Mock).mockResolvedValue({ success: true, data: mockWallets });
+    (fetchJars as jest.Mock).mockResolvedValue({ success: true, data: mockJars }); // spent sum = 1,450,000đ
+    (AsyncStorage.getItem as jest.Mock).mockImplementation((key) => {
+      if (key.includes('rollover_enabled')) return Promise.resolve('true');
+      if (key.includes('total_budget')) return Promise.resolve('10000000'); // 10M
+      return Promise.resolve(null);
+    });
+
+    const { getByTestId, getByText, queryByText } = render(
+      <DashboardScreen userId="user-123" onSignOut={jest.fn()} />
+    );
+
+    await waitFor(() => {
+      expect(queryByText(/Đang chuẩn bị/i)).toBeNull();
+    });
+
+    // Check rollover banner text for surplus: 10M budget - 2.05M spent = 7.95M surplus
+    await waitFor(() => {
+      expect(getByTestId('banner-rollover-forecast')).toBeTruthy();
+      expect(getByText(/Dự kiến cộng thêm/)).toBeTruthy();
+      expect(getByText(/7[.,]950[.,]000/)).toBeTruthy();
+    });
+
+    // Verify mascot quotes updated
+    expect(getByText(/Duy trì phong độ nhé/)).toBeTruthy();
+  });
+
+  it('displays rollover warning banner on dashboard when rollover is enabled with deficit', async () => {
+    const overspentJars = [
+      { type: 'NEC', allocation_percentage: 55, spent_amount: 8000000, budget_limit: 2750000 },
+      { type: 'PLAY', allocation_percentage: 10, spent_amount: 4000000, budget_limit: 500000 },
+    ]; // spent sum = 12M (exceeds 10M budget by 2M)
+    (fetchWallets as jest.Mock).mockResolvedValue({ success: true, data: mockWallets });
+    (fetchJars as jest.Mock).mockResolvedValue({ success: true, data: overspentJars });
+    (AsyncStorage.getItem as jest.Mock).mockImplementation((key) => {
+      if (key.includes('rollover_enabled')) return Promise.resolve('true');
+      if (key.includes('total_budget')) return Promise.resolve('10000000');
+      return Promise.resolve(null);
+    });
+
+    const { getByTestId, getByText, queryByText } = render(
+      <DashboardScreen userId="user-123" onSignOut={jest.fn()} />
+    );
+
+    await waitFor(() => {
+      expect(queryByText(/Đang chuẩn bị/i)).toBeNull();
+    });
+
+    // Check rollover banner text for deficit: 10M budget - 12M spent = 2M deficit
+    await waitFor(() => {
+      expect(getByTestId('banner-rollover-forecast')).toBeTruthy();
+      expect(getByText(/Lạm chi -2[.,]000[.,]000/)).toBeTruthy();
+    });
+
+    // Verify mascot quotes updated for deficit
+    expect(getByText(/Tiêu quá tay rồi bạn ơi/)).toBeTruthy();
+  });
 });
+
+

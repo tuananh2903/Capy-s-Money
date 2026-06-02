@@ -55,3 +55,42 @@ export function evaluateJarBudget(spent: number, limit: number): BudgetAlertStat
 ## 3. Tối ưu hóa hiệu năng & Cập nhật
 *   **Triggers Đồng bộ lũy kế chi tiêu:** Khi có giao dịch loại `expense` được tạo mới, một trigger database (hoặc logic service) tự động cộng dồn số tiền vào trường `spent_amount` của hũ tương ứng. Khi giao dịch bị xóa hoặc sửa đổi, hệ thống thực hiện hiệu chỉnh ngược lại.
 *   **Reset Hàng tháng:** Vào ngày đầu tiên của mỗi tháng mới, hệ thống tự động reset trường `spent_amount` về `0` cho toàn bộ các hũ để bắt đầu chu kỳ tính toán mới, trong khi giữ nguyên cột `budget_limit` làm cấu hình mặc định cho tháng mới.
+
+---
+
+## 4. Đặc tả kỹ thuật tính năng Dồn ngân sách (Budget Rollover)
+
+### 4.1. Thay đổi cấu trúc cơ sở dữ liệu (Database Schema Modifications)
+Thêm các cột cấu hình vào bảng `public.wallets`:
+
+```sql
+-- Cấu hình dồn ngân sách cho ví
+ALTER TABLE public.wallets 
+ADD COLUMN rollover_enabled BOOLEAN DEFAULT FALSE,
+ADD COLUMN rollover_adjustment NUMERIC(15,2) DEFAULT 0.00;
+```
+
+*   `rollover_enabled`: Trạng thái Bật/Tắt tính năng dồn ngân sách.
+*   `rollover_adjustment`: Lưu trữ số tiền bù trừ dồn từ tháng trước (thặng dư hoặc lạm chi) để cộng vào ngân sách thực tế tháng hiện hành.
+
+### 4.2. Thuật toán xử lý Rollover định kỳ (Monthly Rollover Cron/Trigger)
+Vào thời điểm giao thừa hàng tháng (`00:00:00` ngày 1 đầu tháng):
+
+1.  **Bước 1: Tính toán chênh lệch (diff):**
+    ```typescript
+    // Tính toán cho từng ví có rollover_enabled = true
+    const currentBudget = wallet.total_budget; 
+    const currentSpend = wallet.total_spent; // tổng spent_amount của 6 hũ
+    const diff = currentBudget - currentSpend; // Thặng dư (>0) hoặc Thâm hụt (<0)
+    ```
+2.  **Bước 2: Cập nhật cơ sở dữ liệu:**
+    *   Lưu giá trị `diff` vào cột `rollover_adjustment` của ví cho tháng mới.
+    *   Reset `spent_amount` của toàn bộ các hũ về `0` cho tháng mới.
+    *   Lưu lịch sử kỳ ngân sách vào bảng log `wallet_budget_history` để phục vụ báo cáo.
+
+### 4.3. Công thức tính Ngân sách thực tế trên Giao diện (Client-side)
+Khi hiển thị hạn mức thực tế cho người dùng tại Client:
+$$\text{Ngân sách thực dùng} = \text{Ngân sách gốc (total\_budget)} + \text{Số tiền dồn (rollover\_adjustment)}$$
+$$\text{Hạn mức thực tế hũ } i = \text{Ngân sách thực dùng} \times \text{Tỷ lệ phân bổ hũ } i$$
+
+
