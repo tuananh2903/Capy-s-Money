@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -11,6 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import { createTransaction } from '../services/dashboardService';
+import { supabase } from '../services/supabaseClient';
 
 interface QuickAddBottomSheetProps {
   visible: boolean;
@@ -91,10 +92,30 @@ export default function QuickAddBottomSheet({
   const [note, setNote] = useState('');
   const [validationError, setValidationError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [dbCategories, setDbCategories] = useState<any[]>([]);
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentCalendarMonth, setCurrentCalendarMonth] = useState<Date>(new Date());
+
+  // Load categories from database on visible changes
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const { data, error } = await supabase
+          .from('categories')
+          .select('*');
+        if (!error && data) {
+          setDbCategories(data);
+        }
+      } catch (err) {
+        console.error('Error loading categories in QuickAddBottomSheet:', err);
+      }
+    }
+    if (visible) {
+      loadCategories();
+    }
+  }, [visible]);
 
   const getDateChipLabel = (date: Date) => {
     const today = new Date();
@@ -124,11 +145,33 @@ export default function QuickAddBottomSheet({
 
   const handleJarSelect = (jarType: typeof selectedJar) => {
     setSelectedJar(jarType);
-    const subcats = SUBCATEGORIES[jarType];
-    if (subcats && subcats.length > 0) {
-      setSelectedSubcategory(subcats[0].name);
-    }
   };
+
+  const subcats = useMemo(() => {
+    if (dbCategories.length > 0) {
+      const filtered = dbCategories.filter(
+        (cat) => cat.type === type && (type === 'income' || cat.jar_type === selectedJar)
+      );
+      if (filtered.length > 0) {
+        return filtered.map((cat) => ({
+          id: cat.id,
+          name: cat.name,
+          icon: cat.icon || '💰',
+        }));
+      }
+    }
+    return type === 'expense' ? SUBCATEGORIES[selectedJar] : INCOME_SUBCATEGORIES;
+  }, [type, selectedJar, dbCategories]);
+
+  // Auto-reset subcategory when subcats list changes
+  useEffect(() => {
+    if (subcats.length > 0) {
+      const stillExists = subcats.some(c => c.name === selectedSubcategory);
+      if (!stillExists) {
+        setSelectedSubcategory(subcats[0].name);
+      }
+    }
+  }, [subcats]);
 
   const handleSave = async () => {
     const cleanAmount = parseInt(amountText.replace(/\./g, '').replace(/,/g, ''), 10);
@@ -146,6 +189,9 @@ export default function QuickAddBottomSheet({
     setValidationError(null);
     setLoading(true);
 
+    const selectedCatObj = subcats.find((c) => c.name === selectedSubcategory);
+    const categoryId = selectedCatObj && 'id' in selectedCatObj ? selectedCatObj.id : null;
+
     const result = await createTransaction({
       wallet_id: walletId,
       jar_type: selectedJar,
@@ -154,6 +200,7 @@ export default function QuickAddBottomSheet({
       note: note.trim() || null,
       created_by: userId,
       occurred_at: selectedDate.toISOString(),
+      category_id: categoryId,
     });
 
     setLoading(false);
@@ -173,9 +220,6 @@ export default function QuickAddBottomSheet({
   };
 
   const currentJar = JARS.find((j) => j.type === selectedJar) || JARS[0];
-  const subcats = useMemo(() => {
-    return type === 'expense' ? SUBCATEGORIES[selectedJar] : INCOME_SUBCATEGORIES;
-  }, [type, selectedJar]);
 
   return (
     <Modal

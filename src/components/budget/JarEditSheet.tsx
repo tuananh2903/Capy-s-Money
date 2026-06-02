@@ -3,6 +3,7 @@ import { View, Text, TextInput, ScrollView, TouchableOpacity, Modal, StyleSheet 
 
 interface CategoryItem {
   id?: string;
+  category_id?: string;
   name: string;
   limit: number;
 }

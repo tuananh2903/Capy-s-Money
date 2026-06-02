@@ -152,6 +152,24 @@ export default function DashboardScreen({
   const [appLanguage, setAppLanguage] = useState<'vi' | 'en'>('vi');
   const [appTheme, setAppTheme] = useState<'light' | 'dark'>('light');
   const [userJarsRatios, setUserJarsRatios] = useState<any>(null);
+  const [isRolloverEnabled, setIsRolloverEnabled] = useState<boolean>(false);
+  const [totalBudget, setTotalBudget] = useState<number>(10000000);
+
+  useEffect(() => {
+    async function loadRolloverSettings() {
+      if (!selectedWallet) return;
+      try {
+        const savedEnabled = await AsyncStorage.getItem(`@wallet_rollover_enabled_${selectedWallet.id}`);
+        setIsRolloverEnabled(savedEnabled === 'true');
+        
+        const savedBudget = await AsyncStorage.getItem(`@wallet_total_budget_${selectedWallet.id}`);
+        setTotalBudget(savedBudget ? parseInt(savedBudget, 10) : 10000000);
+      } catch (e) {
+        console.error("Error loading rollover settings on dashboard:", e);
+      }
+    }
+    loadRolloverSettings();
+  }, [selectedWallet?.id, activeTab]);
 
   useEffect(() => {
     let isMounted = true;
@@ -405,6 +423,14 @@ export default function DashboardScreen({
   }, [hasOverBudget, hasSpendingTooFast]);
 
   const getMascotSpeech = () => {
+    if (isRolloverEnabled) {
+      const rolloverDiff = totalBudget - walletSpent;
+      if (rolloverDiff >= 0) {
+        return "Duy trì phong độ nhé! Bạn đang có số dư dồn sang tháng sau đấy.";
+      } else {
+        return "Tiêu quá tay rồi bạn ơi, tháng sau sẽ bị giảm hạn mức đấy nha!";
+      }
+    }
     if (hasOverBudget) return "Ôi bạn ơi! Có hũ bị vượt ngân sách kìa, hãy kiểm soát chi tiêu lại nhé!";
     if (hasSpendingTooFast) return "Cẩn thận nhé, bạn đang tiêu hơi nhanh cho một số hũ đấy!";
     return defaultQuote;
@@ -747,7 +773,8 @@ export default function DashboardScreen({
         </View>
       </Modal>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      {activeTab === "home" ? (
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {selectedWallet && (
           <>
             {/* Total Balance Card */}
@@ -856,21 +883,39 @@ export default function DashboardScreen({
                 </View>
               </View>
             </View>
+
+            {/* Rollover forecast banner */}
+            {isRolloverEnabled && (() => {
+              const diff = totalBudget - walletSpent;
+              const isSurplus = diff >= 0;
+              const absDiff = Math.abs(diff);
+              return (
+                <View
+                  testID="banner-rollover-forecast"
+                  style={[
+                    styles.rolloverBanner,
+                    isSurplus ? styles.rolloverBannerSurplus : styles.rolloverBannerDeficit
+                  ]}
+                >
+                  <Ionicons
+                    name={isSurplus ? "sparkles-outline" : "alert-circle-outline"}
+                    size={16}
+                    color={isSurplus ? COLORS.secondary : COLORS.error}
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text style={[styles.rolloverBannerText, isSurplus ? styles.rolloverBannerTextSurplus : styles.rolloverBannerTextDeficit]}>
+                    {isSurplus 
+                      ? `Dự kiến cộng thêm +${absDiff.toLocaleString()}đ vào hạn mức tháng sau!`
+                      : `Lạm chi -${absDiff.toLocaleString()}đ sẽ khấu trừ vào hạn mức tháng sau!`}
+                  </Text>
+                </View>
+              );
+            })()}
           </>
         )}
 
-        {activeTab === "wallets" ? (
-          <WalletScreen
-            userId={userId}
-            onWalletSelected={(w) => {
-              handleSelectWallet(w);
-              setActiveTab("home");
-            }}
-          />
-        ) : activeTab === "budget" ? (
-          <BudgetScreen />
-        ) : (
           <>
+
             {/* Mascot Quote Card */}
             <View style={styles.quoteCard}>
               <View style={styles.quoteMascotContainer}>
@@ -958,8 +1003,20 @@ export default function DashboardScreen({
               )}
             </View>
           </>
-        )}
-      </ScrollView>
+        </ScrollView>
+      ) : activeTab === "wallets" ? (
+        <WalletScreen
+          userId={userId}
+          onWalletSelected={(w) => {
+            handleSelectWallet(w);
+            setActiveTab("home");
+          }}
+        />
+      ) : activeTab === "budget" ? (
+        <BudgetScreen />
+      ) : activeTab === "ledger" && selectedWallet ? (
+        <LedgerScreen activeWalletId={selectedWallet.id} />
+      ) : null}
 
       {/* Bottom Navigation Bar */}
       <View style={styles.tabBar}>
@@ -1809,4 +1866,33 @@ const styles = StyleSheet.create({
     color: COLORS.onPrimaryContainer,
     fontWeight: "700",
   },
+  rolloverBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    marginHorizontal: 20,
+    marginTop: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  rolloverBannerSurplus: {
+    backgroundColor: '#f0fdf4',
+    borderColor: 'rgba(16, 185, 129, 0.2)',
+  },
+  rolloverBannerDeficit: {
+    backgroundColor: '#fef2f2',
+    borderColor: 'rgba(186, 26, 26, 0.2)',
+  },
+  rolloverBannerText: {
+    fontSize: 12,
+    fontWeight: '600',
+    flex: 1,
+  },
+  rolloverBannerTextSurplus: {
+    color: '#10b981',
+  },
+  rolloverBannerTextDeficit: {
+    color: '#ba1a1a',
+  },
 });
+

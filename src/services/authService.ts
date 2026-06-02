@@ -20,6 +20,19 @@ export interface LoginResult {
 
 export const loginWithGoogle = async (): Promise<LoginResult> => {
   try {
+    if (Platform.OS === 'web') {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
+      if (error) throw error;
+      return {
+        success: true
+      };
+    }
+
     const redirectUrl = Linking.createURL('auth/callback');
     console.log('--- GOOGLE LOGIN DEEP LINK URL ---');
     console.log('Generated Redirect URL:', redirectUrl);
@@ -35,6 +48,7 @@ export const loginWithGoogle = async (): Promise<LoginResult> => {
 
     if (error) throw error;
     if (!data?.url) throw new Error('No OAuth URL returned');
+
 
     // Trên Android: Mở trình duyệt ngoài thực sự để tránh treo/kẹt Custom Tabs trong Expo Go
     if (Platform.OS === 'android') {

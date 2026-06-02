@@ -35,8 +35,11 @@ export function CalendarTab({ transactions, onSelectTransaction, targetDate }: P
   }, [transactions]);
 
   const daysInMonth = useMemo(() => {
-    return Array.from({ length: 30 }, (_, i) => i + 1); // Mock 30 days for simplicity
-  }, []);
+    const year = targetDate.getFullYear();
+    const month = targetDate.getMonth();
+    const numDays = new Date(year, month + 1, 0).getDate();
+    return Array.from({ length: numDays }, (_, i) => i + 1);
+  }, [targetDate]);
 
   const selectedDayTransactions = useMemo(() => {
     if (selectedDay === null) return [];

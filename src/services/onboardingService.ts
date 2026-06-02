@@ -31,66 +31,17 @@ export async function completeOnboarding(
   }
 ): Promise<OnboardingResult> {
   try {
-    // 1. Cập nhật bảng profiles
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({
-        onboarding_completed: true,
-        financial_goal: goal,
-        jars_ratios: jarsRatios,
-      })
-      .eq('id', userId);
+    const { error } = await supabase.rpc('complete_onboarding', {
+      p_user_id: userId,
+      p_goal: goal,
+      p_balance: initialBalance,
+      p_wallet_name: walletName,
+      p_jars_ratios: jarsRatios,
+    });
 
-    if (profileError) {
-      console.error('Error updating profiles:', profileError);
-      return { success: false, error: 'Không thể cập nhật hồ sơ người dùng. Vui lòng thử lại sau.' };
-    }
-
-    // 2. Khởi tạo Ví Tiền Mặt mặc định
-    const { data: walletData, error: walletError } = await supabase
-      .from('wallets')
-      .insert({
-        user_id: userId,
-        name: walletName,
-        balance: initialBalance,
-        is_default: true,
-        type: 'cash',
-      })
-      .select('id')
-      .single();
-
-    if (walletError || !walletData) {
-      console.error('Error creating initial wallet:', walletError);
-      // Ghi nhận lỗi nhưng không rollback hoàn toàn (vì profiles đã hoàn thành)
-      // Trong ứng dụng thực tế, ta nên dùng RPC hoặc quản lý giao dịch kỹ hơn
-      return {
-        success: false,
-        error: 'Cập nhật hồ sơ thành công nhưng không thể khởi tạo ví. Vui lòng tạo ví thủ công ở màn hình chính.',
-      };
-    }
-
-    const walletId = walletData.id;
-
-    // 3. Khởi tạo 6 Hũ tài chính tương ứng cho ví vừa tạo
-    const jarsToInsert = [
-      { wallet_id: walletId, type: 'NEC', allocation_percentage: jarsRatios.nec, budget_limit: 0, spent_amount: 0 },
-      { wallet_id: walletId, type: 'FFA', allocation_percentage: jarsRatios.ffa, budget_limit: 0, spent_amount: 0 },
-      { wallet_id: walletId, type: 'EDU', allocation_percentage: jarsRatios.edu, budget_limit: 0, spent_amount: 0 },
-      { wallet_id: walletId, type: 'PLAY', allocation_percentage: jarsRatios.play, budget_limit: 0, spent_amount: 0 },
-      { wallet_id: walletId, type: 'LTSS', allocation_percentage: jarsRatios.lt, budget_limit: 0, spent_amount: 0 },
-      { wallet_id: walletId, type: 'GIVE', allocation_percentage: jarsRatios.give, budget_limit: 0, spent_amount: 0 },
-    ];
-
-    const { error: jarsError } = await supabase
-      .from('jars')
-      .insert(jarsToInsert);
-
-    if (jarsError) {
-      console.error('Error creating initial jars:', jarsError);
-      return {
-        success: false,
-        error: 'Tạo ví thành công nhưng không thể khởi tạo 6 hũ tài chính. Vui lòng thử lại.',
-      };
+    if (error) {
+      console.error('Error invoking complete_onboarding RPC:', error);
+      return { success: false, error: 'Không thể hoàn tất thiết lập ví. Vui lòng thử lại sau.' };
     }
 
     return { success: true };

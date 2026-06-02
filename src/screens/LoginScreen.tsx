@@ -63,7 +63,7 @@ export default function LoginScreen({ onSwitchToRegister }: LoginScreenProps) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="login-screen">
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoid}
@@ -102,6 +102,7 @@ export default function LoginScreen({ onSwitchToRegister }: LoginScreenProps) {
               >
                 <TextInput
                   style={styles.input}
+                  testID="email-input"
                   placeholder="Email"
                   placeholderTextColor="#8A7A7B"
                   value={email}
@@ -123,6 +124,7 @@ export default function LoginScreen({ onSwitchToRegister }: LoginScreenProps) {
               >
                 <TextInput
                   style={styles.input}
+                  testID="password-input"
                   placeholder="Mật khẩu"
                   placeholderTextColor="#8A7A7B"
                   value={pass}
@@ -144,6 +146,7 @@ export default function LoginScreen({ onSwitchToRegister }: LoginScreenProps) {
               {/* Email Login Button */}
               <TouchableOpacity
                 activeOpacity={0.8}
+                testID="login-button"
                 style={[styles.loginButton, loading && styles.disabledButton]}
                 onPress={handleLogin}
                 disabled={loading}
@@ -175,7 +178,7 @@ export default function LoginScreen({ onSwitchToRegister }: LoginScreenProps) {
             {/* Footer Registration Link */}
             <View style={styles.registerContainer}>
               <Text style={styles.registerText}>Bạn chưa có tài khoản? </Text>
-              <TouchableOpacity activeOpacity={0.7} onPress={onSwitchToRegister}>
+              <TouchableOpacity activeOpacity={0.7} testID="register-link" onPress={onSwitchToRegister}>
                 <Text style={styles.registerLink}>Đăng ký ngay</Text>
               </TouchableOpacity>
             </View>

@@ -355,5 +355,48 @@ export async function setDefaultWallet(walletId: string, userId: string): Promis
   }
 }
 
+/**
+ * Kiểm tra xem người dùng đã ghi giao dịch nào trong ngày hôm nay chưa.
+ * Hàm kiểm tra trên tất cả các ví mà user sở hữu hoặc là thành viên.
+ *
+ * @param userId ID người dùng
+ * @returns true nếu có ít nhất 1 giao dịch hôm nay, false nếu chưa có.
+ */
+export async function checkHasTransactionsToday(userId: string): Promise<boolean> {
+  try {
+    // Lấy ngày hôm nay (00:00:00)
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    // Lấy danh sách wallet ID mà user tham gia
+    const { data: memberRows, error: memberError } = await supabase
+      .from('wallet_members')
+      .select('wallet_id')
+      .eq('user_id', userId);
+
+    if (memberError || !memberRows || memberRows.length === 0) {
+      return false;
+    }
+
+    const walletIds = memberRows.map((r: any) => r.wallet_id);
+
+    // Tìm giao dịch hôm nay trong bất kỳ ví nào
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('id', { count: 'exact', head: true })
+      .in('wallet_id', walletIds)
+      .gte('created_at', todayStart.toISOString());
+
+    if (error) {
+      console.error('Error checking today transactions:', error);
+      return false;
+    }
+
+    return (data as any)?.length > 0 || ((data as any)?.count ?? 0) > 0;
+  } catch (err: any) {
+    console.error('Unexpected error checking today transactions:', err);
+    return false;
+  }
+}
 
 
