@@ -18,6 +18,7 @@ import { fetchWallets, fetchJars, fetchWalletIncome, ensureJarsExist, Wallet, Ja
 import { evaluateJarBudget, BudgetAlertStatus } from "../utils/budgetChecker";
 import BudgetScreen from "./BudgetScreen";
 import WalletScreen from "./WalletScreen";
+import { LedgerScreen } from "./LedgerScreen";
 
 const { width } = Dimensions.get("window");
 
