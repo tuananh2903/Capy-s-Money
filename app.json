@@ -14,9 +14,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.capysmoney.app"
     },
     "android": {
+      "package": "com.capysmoney.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -25,7 +27,21 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    }
+      "favicon": "./assets/favicon.png",
+      "pwa": {
+        "name": "Capy's Money",
+        "shortName": "Capy Money",
+        "description": "Quản lý tài chính cá nhân thảnh thơi cùng Capy",
+        "backgroundBackgroundColor": "#fff8f7",
+        "themeColor": "#864e5a",
+        "display": "standalone",
+        "orientation": "portrait",
+        "startUrl": "/",
+        "icon": "./assets/icon.png"
+      }
+    },
+    "plugins": [
+      "expo-web-browser"
+    ]
   }
 }
