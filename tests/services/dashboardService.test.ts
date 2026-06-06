@@ -319,10 +319,12 @@ describe('dashboardService', () => {
         { amount: 1200000 },
       ];
 
-      const mockEq2 = jest.fn().mockResolvedValue({ data: mockTxData, error: null });
+      const mockEq3 = jest.fn().mockResolvedValue({ data: mockTxData, error: null });
       mockSelect.mockReturnValue({
         eq: jest.fn().mockReturnValue({
-          eq: mockEq2
+          eq: jest.fn().mockReturnValue({
+            eq: mockEq3
+          })
         })
       });
 
@@ -333,10 +335,12 @@ describe('dashboardService', () => {
     });
 
     it('should return error if db query fails', async () => {
-      const mockEq2 = jest.fn().mockResolvedValue({ data: null, error: { message: 'DB error' } });
+      const mockEq3 = jest.fn().mockResolvedValue({ data: null, error: { message: 'DB error' } });
       mockSelect.mockReturnValue({
         eq: jest.fn().mockReturnValue({
-          eq: mockEq2
+          eq: jest.fn().mockReturnValue({
+            eq: mockEq3
+          })
         })
       });
 

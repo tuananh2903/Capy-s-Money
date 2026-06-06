@@ -1,10 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, ActivityIndicator, Text, SafeAreaView, Platform } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Text, SafeAreaView, Platform, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as Linking from 'expo-linking';
 import { supabase } from './src/services/supabaseClient';
 if (Platform.OS === 'web') {
   require('./src/utils/register-sw');
+
+  // Polyfill Alert.alert for Web, since react-native-web implements it as an empty function.
+  Alert.alert = (title: string, message?: string, buttons?: any[]) => {
+    const formattedMsg = message ? `${title}\n${message}` : title;
+    if (buttons && buttons.length > 0) {
+      const confirmResult = window.confirm(formattedMsg);
+      if (confirmResult) {
+        // Trigger the onPress callback of the positive action button (usually the last button in the array)
+        const confirmBtn = buttons[buttons.length - 1];
+        if (confirmBtn && confirmBtn.onPress) confirmBtn.onPress();
+      } else {
+        // Trigger the onPress callback of the cancel action button if it exists
+        const cancelBtn = buttons.find(b => b.style === 'cancel');
+        if (cancelBtn && cancelBtn.onPress) cancelBtn.onPress();
+      }
+    } else {
+      window.alert(formattedMsg);
+    }
+  };
 }
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
@@ -76,7 +95,7 @@ export default function App() {
       // Thay thế '#' bằng '?' để Linking.parse có thể đọc được các tham số trong hash fragment
       const cleanUrl = event.url.includes('#') ? event.url.replace('#', '?') : event.url;
       const parsed = Linking.parse(cleanUrl);
-      
+
       // 1. Kiểm tra Deep Link Mời thành viên (ví dụ: capymoney://invite?code=CAPY-123456)
       const code = parsed.queryParams?.code || (parsed.path && parsed.path.includes('invite') ? parsed.path.split('/').pop() : null);
       if (code) {
@@ -87,9 +106,9 @@ export default function App() {
       // 2. Kiểm tra token OAuth
       const { access_token, refresh_token } = parsed.queryParams || {};
 
-      console.log('Parsed deep link tokens:', { 
-        access_token: access_token ? 'Exists' : 'Missing', 
-        refresh_token: refresh_token ? 'Exists' : 'Missing' 
+      console.log('Parsed deep link tokens:', {
+        access_token: access_token ? 'Exists' : 'Missing',
+        refresh_token: refresh_token ? 'Exists' : 'Missing'
       });
 
       if (access_token && refresh_token) {
@@ -150,7 +169,18 @@ export default function App() {
 
   const handleSignOut = async () => {
     setLoading(true);
-    await supabase.auth.signOut();
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Supabase signOut error:', error.message);
+      }
+    } catch (err) {
+      console.error('Unexpected error during signOut:', err);
+    } finally {
+      setSession(null);
+      setOnboardingCompleted(false);
+      setLoading(false);
+    }
   };
 
   // Màn hình Loading khi đang fetch trạng thái từ database

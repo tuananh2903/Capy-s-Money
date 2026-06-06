@@ -269,9 +269,15 @@ export default function DashboardScreen({
     }
   }, [selectedWallet, activeTab]);
 
-  const loadDashboardData = async (targetWalletId?: string) => {
+  useEffect(() => {
+    if (activeTab === "home" && selectedWallet?.id) {
+      loadDashboardData(selectedWallet.id, true);
+    }
+  }, [activeTab]);
+
+  const loadDashboardData = async (targetWalletId?: string, silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const walletsRes = await fetchWallets(userId);
       if (walletsRes.success && walletsRes.data && walletsRes.data.length > 0) {
         setWallets(walletsRes.data);
@@ -315,7 +321,7 @@ export default function DashboardScreen({
         if (incomeRes.success) setWalletIncome(incomeRes.data);
       }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 

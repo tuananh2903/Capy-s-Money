@@ -23,7 +23,7 @@ export function TransactionDetailSheet({ transaction, isOpen, onClose, onDelete,
 
   return (
     <Modal visible={isOpen} transparent animationType="slide" onRequestClose={onClose}>
-      <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={onClose}>
+      <TouchableOpacity testID="detail-sheet-overlay" style={styles.overlay} activeOpacity={1} onPress={onClose}>
         <View style={styles.sheetContainer} onStartShouldSetResponder={() => true}>
           <View style={styles.handle} />
           <Text style={styles.sheetTitle}>Chi Tiết Giao Dịch</Text>

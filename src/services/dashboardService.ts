@@ -180,7 +180,8 @@ export async function fetchWalletIncome(walletId: string): Promise<{ success: bo
       .from('transactions')
       .select('amount')
       .eq('wallet_id', walletId)
-      .eq('type', 'income');
+      .eq('type', 'income')
+      .eq('is_deleted', false);
 
     if (error) {
       console.error('Error fetching wallet income:', error);
@@ -386,6 +387,7 @@ export async function checkHasTransactionsToday(userId: string): Promise<boolean
       .from('transactions')
       .select('id', { count: 'exact', head: true })
       .in('wallet_id', walletIds)
+      .eq('is_deleted', false)
       .gte('created_at', todayStart.toISOString());
 
     if (error) {

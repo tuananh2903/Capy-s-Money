@@ -360,7 +360,7 @@ export default function BudgetScreen() {
                   </TouchableOpacity>
                 </View>
               ) : (
-                <Text style={styles.amount} onPress={handleStartEditingTotalBudget} testID="text-total-budget">{totalBudget.toLocaleString()}đ</Text>
+                <Text style={styles.amount} onPress={handleStartEditingTotalBudget} testID="text-total-budget">{totalBudget.toLocaleString('vi-VN')}đ</Text>
               )}
               <Text style={[styles.status, totalAllocation !== 100 && styles.error]}>
                 Tổng phân bổ: {totalAllocation}% {totalAllocation === 100 ? '(Hợp lệ)' : '(Phải bằng 100%)'}
@@ -395,10 +395,10 @@ export default function BudgetScreen() {
                   <Text style={styles.previewTitle}>DỰ BÁO NGÂN SÁCH THÁNG SAU</Text>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
                     <Text style={styles.previewAmount} testID="text-next-budget-amount">
-                      {nextMonthBudget.toLocaleString()}đ
+                      {nextMonthBudget.toLocaleString('vi-VN')}đ
                     </Text>
                     <Text style={[styles.previewTag, isSurplus ? styles.previewTagSurplus : styles.previewTagDeficit]}>
-                      {isSurplus ? `+${absDiff.toLocaleString()}đ Dồn dư` : `-${absDiff.toLocaleString()}đ Bù lạm chi`}
+                      {isSurplus ? `+${absDiff.toLocaleString('vi-VN')}đ Dồn dư` : `-${absDiff.toLocaleString('vi-VN')}đ Bù lạm chi`}
                     </Text>
                   </View>
                 </View>

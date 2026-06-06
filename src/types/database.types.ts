@@ -181,6 +181,7 @@ export type Database = {
           invite_locked_until: string | null
           jars_ratios: Json | null
           onboarding_completed: boolean | null
+          tier: string
           updated_at: string | null
         }
         Insert: {
@@ -193,6 +194,7 @@ export type Database = {
           invite_locked_until?: string | null
           jars_ratios?: Json | null
           onboarding_completed?: boolean | null
+          tier?: string
           updated_at?: string | null
         }
         Update: {
@@ -205,6 +207,7 @@ export type Database = {
           invite_locked_until?: string | null
           jars_ratios?: Json | null
           onboarding_completed?: boolean | null
+          tier?: string
           updated_at?: string | null
         }
         Relationships: []
@@ -375,9 +378,12 @@ export type Database = {
       wallets: {
         Row: {
           balance: number
+          color: string | null
           created_at: string | null
+          icon: string | null
           id: string
           is_default: boolean | null
+          is_deleted: boolean | null
           name: string
           type: string | null
           updated_at: string | null
@@ -385,9 +391,12 @@ export type Database = {
         }
         Insert: {
           balance?: number
+          color?: string | null
           created_at?: string | null
+          icon?: string | null
           id?: string
           is_default?: boolean | null
+          is_deleted?: boolean | null
           name: string
           type?: string | null
           updated_at?: string | null
@@ -395,9 +404,12 @@ export type Database = {
         }
         Update: {
           balance?: number
+          color?: string | null
           created_at?: string | null
+          icon?: string | null
           id?: string
           is_default?: boolean | null
+          is_deleted?: boolean | null
           name?: string
           type?: string | null
           updated_at?: string | null

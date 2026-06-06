@@ -99,9 +99,29 @@ export const loginWithGoogle = async (): Promise<LoginResult> => {
 
         if (sessionError) throw sessionError;
 
+        let tier = 'free';
+        try {
+          const { data: userData } = await supabase.auth.getUser();
+          const user = userData?.user;
+          if (user) {
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('tier')
+              .eq('id', user.id)
+              .single();
+            if (profileData?.tier) {
+              tier = profileData.tier;
+            }
+          }
+        } catch (err) {
+          console.warn('Failed to fetch profile tier in OAuth, defaulting to free:', err);
+        }
+
+        const role = tier === 'free' ? 'Free' : 'Premium';
+
         return {
           success: true,
-          role: 'Free' // Default role for OAuth users
+          role
         };
       }
     }
@@ -183,11 +203,28 @@ export const loginWithEmail = async (email: string, pass: string): Promise<Login
     await AsyncStorage.setItem(ATTEMPTS_KEY, '0');
     await AsyncStorage.removeItem(LOCKOUT_KEY);
 
-    // Mock role retrieve (can be updated later with database fetch)
+    let tier = 'free';
+    try {
+      if (data.user) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('tier')
+          .eq('id', data.user.id)
+          .single();
+        if (profileData?.tier) {
+          tier = profileData.tier;
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch profile tier, defaulting to free:', err);
+    }
+
+    const role = tier === 'free' ? 'Free' : 'Premium';
+
     return {
       success: true,
       user: data.user,
-      role: 'Free'
+      role
     };
 
   } catch (e) {
