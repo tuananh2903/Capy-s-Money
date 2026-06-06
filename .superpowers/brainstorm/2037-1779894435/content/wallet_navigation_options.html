@@ -1,0 +1,322 @@
+<style>
+  :root {
+    --primary: #864e5a;
+    --primary-container: #ffb7c5;
+    --secondary: #944652;
+    --secondary-container: #fe9da9;
+    --background: #fff8f7;
+    --surface: #fff8f7;
+    --on-surface: #23191a;
+    --error: #ba1a1a;
+    --error-container: #ffdad6;
+    --outline: #837375;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--on-surface);
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    padding: 24px;
+    margin: 0;
+  }
+
+  .options-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+    margin-top: 24px;
+  }
+
+  .wallet-option-card {
+    background: #ffffff;
+    border: 1px solid #FFDDE2;
+    border-radius: 32px;
+    padding: 24px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 24px rgba(255, 183, 197, 0.15);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .wallet-option-card:hover {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 0 16px 32px rgba(255, 183, 197, 0.25);
+  }
+
+  .wallet-option-card.selected {
+    border: 2px solid var(--primary);
+    background-color: #fffafb;
+  }
+
+  .option-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .option-badge {
+    background: var(--primary-container);
+    color: var(--primary);
+    width: 32px;
+    height: 32px;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+  }
+
+  .option-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--on-surface);
+  }
+
+  .option-desc {
+    font-size: 14px;
+    color: var(--outline);
+    margin: 0 0 20px 0;
+    line-height: 1.4;
+  }
+
+  .mockup-preview {
+    background: var(--background);
+    border-radius: 24px;
+    padding: 16px;
+    flex-grow: 1;
+    border: 1px dashed #ffd5db;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .phone-screen {
+    background: #fff8f7;
+    border-radius: 20px;
+    border: 2px solid #23191a;
+    padding: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    max-width: 280px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .screen-header {
+    font-size: 13px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 12px;
+    color: var(--primary);
+    border-bottom: 1px solid #ffd5db;
+    padding-bottom: 6px;
+  }
+
+  /* Dropdown Switcher */
+  .wallet-dropdown {
+    background: white;
+    border: 1px solid #FFDDE2;
+    border-radius: 12px;
+    padding: 8px 12px;
+    font-size: 11px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .dropdown-arrow {
+    font-size: 10px;
+    color: var(--primary);
+  }
+
+  /* Wallet Tabs */
+  .wallet-tabs-scroll {
+    display: flex;
+    gap: 8px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    padding-bottom: 4px;
+  }
+  .wallet-tab {
+    padding: 6px 12px;
+    border-radius: 9999px;
+    font-size: 10px;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+  .tab-active {
+    background: var(--primary);
+    color: white;
+  }
+  .tab-inactive {
+    background: white;
+    border: 1px solid #FFDDE2;
+    color: var(--outline);
+  }
+
+  /* Budget Group Card */
+  .wallet-group {
+    margin-bottom: 16px;
+  }
+  .group-title {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .budget-card {
+    background: white;
+    border-radius: 16px;
+    padding: 8px 10px;
+    box-shadow: 0 2px 6px rgba(255, 183, 197, 0.1);
+    margin-bottom: 6px;
+    border: 1px solid #FFDDE2;
+  }
+  .budget-card-top {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+  .progress-bar-container {
+    height: 6px;
+    background: #f3f4f6;
+    border-radius: 9999px;
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%;
+    border-radius: 9999px;
+  }
+  .progress-safe { background: #10b981; width: 40%; }
+  .progress-warning { background: #f59e0b; width: 80%; }
+</style>
+
+<h2>Lựa chọn cách chuyển đổi Ví trong Màn hình Ngân sách</h2>
+<p class="subtitle">Mỗi ví sẽ có các hạn mức ngân sách khác nhau. Hãy chọn cách thiết kế điều hướng:</p>
+
+<div class="options-container">
+  <!-- OPTION A: Dropdown Selector -->
+  <div class="wallet-option-card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="option-header">
+      <div class="option-badge">A</div>
+      <h3 class="option-title">Wallet Dropdown Selector</h3>
+    </div>
+    <p class="option-desc">Sử dụng nút bấm mở rộng (dropdown) ở đầu trang. Tiết kiệm không gian, phù hợp khi người dùng có nhiều ví khác nhau.</p>
+    
+    <div class="mockup-preview">
+      <div class="phone-screen">
+        <div class="screen-header">Ngân sách ví 💳</div>
+        
+        <!-- Dropdown element -->
+        <div class="wallet-dropdown">
+          <span>💳 Ví cá nhân (VND)</span>
+          <span class="dropdown-arrow">▼</span>
+        </div>
+
+        <!-- Budget content -->
+        <div class="budget-card">
+          <div class="budget-card-top">
+            <span>Ăn uống 🍕</span>
+            <span style="color: #10b981">400k / 1.000k</span>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar progress-safe"></div>
+          </div>
+        </div>
+
+        <div class="budget-card">
+          <div class="budget-card-top">
+            <span>Mua sắm 🛍️</span>
+            <span style="color: #f59e0b">800k / 1.000k</span>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar progress-warning"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION B: Tab Bar Scroll -->
+  <div class="wallet-option-card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="option-header">
+      <div class="option-badge">B</div>
+      <h3 class="option-title">Wallet Tab Bar</h3>
+    </div>
+    <p class="option-desc">Các ví hiển thị dạng tab tròn (pill tabs) cuộn ngang ở ngay dưới tiêu đề. Người dùng chuyển ví nhanh chỉ bằng 1 lượt chạm.</p>
+    
+    <div class="mockup-preview">
+      <div class="phone-screen">
+        <div class="screen-header">Ngân sách ví 💳</div>
+        
+        <!-- Tabs elements -->
+        <div class="wallet-tabs-scroll">
+          <div class="wallet-tab tab-active">💳 Ví Cá nhân</div>
+          <div class="wallet-tab tab-inactive">🏠 Ví chung (Family)</div>
+        </div>
+
+        <!-- Budget content -->
+        <div class="budget-card">
+          <div class="budget-card-top">
+            <span>Ăn uống 🍕</span>
+            <span style="color: #10b981">400k / 1.000k</span>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar progress-safe"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION C: Unified Grouped Scroll -->
+  <div class="wallet-option-card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="option-header">
+      <div class="option-badge">C</div>
+      <h3 class="option-title">Unified Scroll List</h3>
+    </div>
+    <p class="option-desc">Hiển thị toàn bộ ngân sách của tất cả các ví trên cùng một danh sách kéo dài, phân nhóm rõ ràng theo từng Ví.</p>
+    
+    <div class="mockup-preview">
+      <div class="phone-screen" style="height: 250px; overflow-y: auto;">
+        <div class="screen-header">Tất cả Ngân sách 📊</div>
+        
+        <!-- Group 1: Personal Wallet -->
+        <div class="wallet-group">
+          <div class="group-title">💳 VÍ CÁ NHÂN</div>
+          <div class="budget-card">
+            <div class="budget-card-top">
+              <span>Ăn uống 🍕</span>
+              <span>400k / 1.000k</span>
+            </div>
+            <div class="progress-bar-container"><div class="progress-bar progress-safe"></div></div>
+          </div>
+        </div>
+
+        <!-- Group 2: Shared Wallet -->
+        <div class="wallet-group">
+          <div class="group-title">🏠 VÍ CHUNG (FAMILY)</div>
+          <div class="budget-card">
+            <div class="budget-card-top">
+              <span>Đi chợ 🛒</span>
+              <span>1.600k / 2.000k</span>
+            </div>
+            <div class="progress-bar-container"><div class="progress-bar progress-warning"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

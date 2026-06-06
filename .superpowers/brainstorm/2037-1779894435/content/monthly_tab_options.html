@@ -1,0 +1,453 @@
+<style>
+  .app-preview-container {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+  }
+  
+  .phone-frame {
+    width: 320px;
+    height: 580px;
+    background: #fff8f7;
+    border: 12px solid #23191a;
+    border-radius: 40px;
+    box-shadow: 0 20px 40px rgba(134, 78, 90, 0.15);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+
+  .phone-header {
+    background: #ffffff;
+    padding: 12px 16px;
+    border-bottom: 1px solid #fff0f1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .phone-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #864e5a;
+    text-align: center;
+  }
+
+  .phone-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Capy Card */
+  .capy-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 12px;
+    border: 1px solid #ffd9df;
+    box-shadow: 0 4px 10px rgba(254, 157, 169, 0.08);
+  }
+
+  /* Tab styling */
+  .tab-bar {
+    display: flex;
+    background: #fde9ea;
+    border-radius: 20px;
+    padding: 3px;
+  }
+  .tab-item {
+    flex: 1;
+    text-align: center;
+    font-size: 11px;
+    padding: 6px 0;
+    border-radius: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    color: #71585c;
+  }
+  .tab-item.active {
+    background: #ffffff;
+    color: #864e5a;
+    box-shadow: 0 2px 6px rgba(134, 78, 90, 0.1);
+  }
+
+  /* Dropdown Header */
+  .wallet-dropdown-trigger {
+    align-self: center;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #fde9ea;
+    border: 1px solid #ffd9df;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #864e5a;
+    cursor: pointer;
+  }
+
+  /* Donut chart visualization */
+  .chart-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    margin: 10px 0;
+  }
+  .donut-hole {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: #864e5a;
+  }
+
+  /* Donut Legend */
+  .legend-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    padding: 6px 0;
+    border-bottom: 1px dashed #fde9ea;
+  }
+  .legend-item:last-child {
+    border-bottom: none;
+  }
+  .dot-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 6px;
+  }
+
+  /* Progress bars (design guidelines: pill shaped, rounded) */
+  .jar-item {
+    margin-bottom: 10px;
+  }
+  .jar-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: 600;
+    color: #23191a;
+    margin-bottom: 4px;
+  }
+  .jar-progress-bg {
+    height: 10px;
+    background: #fde9ea;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  .jar-progress-fill {
+    height: 100%;
+    border-radius: 5px;
+  }
+
+  /* MoM Comparison widget */
+  .compare-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #fff0f1;
+  }
+  .compare-row:last-child { border-bottom: none; }
+  .compare-label {
+    font-size: 11px;
+    color: #71585c;
+  }
+  .compare-val {
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  /* Selection UI overlay */
+  .option-card-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+    min-width: 320px;
+    cursor: pointer;
+  }
+</style>
+
+<h2>Cấu trúc Tab "Hàng Tháng" (Monthly report)</h2>
+<p class="subtitle">Hãy click chọn phương án bạn thích nhất và phản hồi ý kiến cho mình ở Terminal nhé!</p>
+
+<div class="options" data-choice-container>
+  <div class="app-preview-container">
+    
+    <!-- OPTION A -->
+    <div class="option-card-wrapper option" data-choice="a" onclick="toggleSelect(this)">
+      <div class="letter" style="margin-bottom: 0.5rem;">A</div>
+      <div class="content" style="text-align: center; margin-bottom: 1rem;">
+        <h3 style="margin-bottom: 4px;">Option A: Biểu đồ tròn & Danh mục thường</h3>
+        <p style="font-size: 0.85rem;">Trực quan hóa chi tiêu theo tỷ lệ phần trăm các danh mục Ăn uống, Mua sắm...</p>
+      </div>
+
+      <!-- Phone mockup for Option A -->
+      <div class="phone-frame">
+        <div class="phone-header">
+          <div class="wallet-dropdown-trigger">
+            <span>👛 Ví Tiền mặt</span>
+            <span style="font-size: 8px;">▼</span>
+          </div>
+          <div class="tab-bar">
+            <div class="tab-item">Hàng ngày</div>
+            <div class="tab-item active">Hàng tháng</div>
+            <div class="tab-item">Lịch biểu</div>
+          </div>
+        </div>
+        <div class="phone-content">
+          <!-- Pie/Donut Chart representation -->
+          <div class="capy-card" style="text-align: center;">
+            <span style="font-size: 11px; font-weight: 700; color: #864e5a; display: block; margin-bottom: 4px;">Chi tiêu tháng 05</span>
+            <div class="chart-container">
+              <!-- SVG Donut Chart -->
+              <svg width="100" height="100" viewBox="0 0 36 36">
+                <!-- Slice 1 (Ăn uống - 50%): Pink -->
+                <circle cx="18" cy="18" r="15.915" fill="none" stroke="#fe9da9" stroke-width="4" stroke-dasharray="50 100" stroke-dashoffset="25"></circle>
+                <!-- Slice 2 (Mua sắm - 35%): Coral -->
+                <circle cx="18" cy="18" r="15.915" fill="none" stroke="#944652" stroke-width="4" stroke-dasharray="35 100" stroke-dashoffset="75"></circle>
+                <!-- Slice 3 (Di chuyển - 15%): Creamy pink -->
+                <circle cx="18" cy="18" r="15.915" fill="none" stroke="#ffd9df" stroke-width="4" stroke-dasharray="15 100" stroke-dashoffset="110"></circle>
+              </svg>
+              <div class="donut-hole">
+                <span style="font-size: 9px; color: #71585c;">Tổng chi</span>
+                <span>-8.45M</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Category details list -->
+          <div class="capy-card">
+            <div class="legend-item">
+              <div style="display: flex; align-items: center;">
+                <span class="dot-indicator" style="background: #fe9da9;"></span>
+                <span>🍔 Ăn uống</span>
+              </div>
+              <strong style="color: #ba1a1a;">-4.225.000đ (50%)</strong>
+            </div>
+            <div class="legend-item">
+              <div style="display: flex; align-items: center;">
+                <span class="dot-indicator" style="background: #944652;"></span>
+                <span>🛍️ Mua sắm</span>
+              </div>
+              <strong style="color: #ba1a1a;">-2.957.500đ (35%)</strong>
+            </div>
+            <div class="legend-item">
+              <div style="display: flex; align-items: center;">
+                <span class="dot-indicator" style="background: #ffd9df;"></span>
+                <span>🚗 Di chuyển</span>
+              </div>
+              <strong style="color: #ba1a1a;">-1.267.500đ (15%)</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pros-cons" style="width: 100%; margin-top: 10px;">
+        <div class="pros">
+          <h4>Ưu điểm</h4>
+          <ul>
+            <li>Rất trực quan và đẹp mắt</li>
+            <li>Dễ nhận diện khoản chi lớn nhất</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Nhược điểm</h4>
+          <ul>
+            <li>Không hiển thị trực tiếp theo 6 Hũ tài chính như thiết lập hũ</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- OPTION B -->
+    <div class="option-card-wrapper option" data-choice="b" onclick="toggleSelect(this)">
+      <div class="letter" style="margin-bottom: 0.5rem;">B</div>
+      <div class="content" style="text-align: center; margin-bottom: 1rem;">
+        <h3 style="margin-bottom: 4px;">Option B: Báo cáo phân bổ theo 6 Hũ tài chính</h3>
+        <p style="font-size: 0.85rem;">Kiểm soát hạn mức theo 6 Hũ. Phù hợp hoàn hảo định hướng cốt lõi của Capy.</p>
+      </div>
+
+      <!-- Phone mockup for Option B -->
+      <div class="phone-frame">
+        <div class="phone-header">
+          <div class="wallet-dropdown-trigger">
+            <span>👛 Ví Tiền mặt</span>
+            <span style="font-size: 8px;">▼</span>
+          </div>
+          <div class="tab-bar">
+            <div class="tab-item">Hàng ngày</div>
+            <div class="tab-item active">Hàng tháng</div>
+            <div class="tab-item">Lịch biểu</div>
+          </div>
+        </div>
+        <div class="phone-content">
+          <!-- 6 Jars breakdown -->
+          <div class="capy-card" style="padding: 10px 14px;">
+            <span style="font-size: 11px; font-weight: 700; color: #864e5a; display: block; margin-bottom: 8px; text-align: center;">Tình hình 6 Hũ tài chính (Tháng 5)</span>
+            
+            <!-- Jar 1 -->
+            <div class="jar-item">
+              <div class="jar-info">
+                <span>🥫 Hũ Thiết yếu (55%)</span>
+                <span>4.5M / 8.2M</span>
+              </div>
+              <div class="jar-progress-bg">
+                <div class="jar-progress-fill" style="width: 55%; background: #fe9da9;"></div>
+              </div>
+            </div>
+
+            <!-- Jar 2 -->
+            <div class="jar-item">
+              <div class="jar-info">
+                <span>🏖️ Hũ Hưởng thụ (10%)</span>
+                <span>1.2M / 1.5M</span>
+              </div>
+              <div class="jar-progress-bg">
+                <div class="jar-progress-fill" style="width: 80%; background: #944652;"></div>
+              </div>
+            </div>
+
+            <!-- Jar 3 -->
+            <div class="jar-item">
+              <div class="jar-info">
+                <span>🎓 Hũ Giáo dục (10%)</span>
+                <span>500k / 1.5M</span>
+              </div>
+              <div class="jar-progress-bg">
+                <div class="jar-progress-fill" style="width: 33%; background: #ffd9df;"></div>
+              </div>
+            </div>
+
+            <!-- Jar 4 -->
+            <div class="jar-item">
+              <div class="jar-info">
+                <span>💰 Hũ Tự do TC (10%)</span>
+                <span>1.0M / 1.5M</span>
+              </div>
+              <div class="jar-progress-bg">
+                <div class="jar-progress-fill" style="width: 67%; background: #fe9da9;"></div>
+              </div>
+            </div>
+            
+            <!-- Jar 5 -->
+            <div class="jar-item" style="margin-bottom: 0;">
+              <div class="jar-info">
+                <span>🏦 Tiết kiệm dài hạn (10%)</span>
+                <span>1.0M / 1.5M</span>
+              </div>
+              <div class="jar-progress-bg">
+                <div class="jar-progress-fill" style="width: 67%; background: #944652;"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      <div class="pros-cons" style="width: 100%; margin-top: 10px;">
+        <div class="pros">
+          <h4>Ưu điểm</h4>
+          <ul>
+            <li>Giúp quản lý tài chính chuẩn 6 Hũ như mục tiêu ứng dụng</li>
+            <li>Biết chính xác hũ nào sắp cạn kiệt</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Nhược điểm</h4>
+          <ul>
+            <li>Thiếu tính trực quan về so sánh danh mục nhỏ</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- OPTION C -->
+    <div class="option-card-wrapper option" data-choice="c" onclick="toggleSelect(this)">
+      <div class="letter" style="margin-bottom: 0.5rem;">C</div>
+      <div class="content" style="text-align: center; margin-bottom: 1rem;">
+        <h3 style="margin-bottom: 4px;">Option C: Dòng tiền & So sánh tháng trước</h3>
+        <p style="font-size: 0.85rem;">So sánh xu hướng tiêu dùng so với tháng trước để điều chỉnh hành vi tiêu dùng.</p>
+      </div>
+
+      <!-- Phone mockup for Option C -->
+      <div class="phone-frame">
+        <div class="phone-header">
+          <div class="wallet-dropdown-trigger">
+            <span>👛 Ví Tiền mặt</span>
+            <span style="font-size: 8px;">▼</span>
+          </div>
+          <div class="tab-bar">
+            <div class="tab-item">Hàng ngày</div>
+            <div class="tab-item active">Hàng tháng</div>
+            <div class="tab-item">Lịch biểu</div>
+          </div>
+        </div>
+        <div class="phone-content">
+          <!-- Flow card -->
+          <div class="capy-card">
+            <span style="font-size: 11px; font-weight: 700; color: #864e5a; display: block; margin-bottom: 6px; text-align: center;">Tóm tắt Dòng tiền (Tháng 5)</span>
+            <div class="compare-row">
+              <span class="compare-label">Thu nhập tháng này</span>
+              <span class="compare-val" style="color: #34c759;">+15.000.000đ</span>
+            </div>
+            <div class="compare-row">
+              <span class="compare-label">Chi tiêu tháng này</span>
+              <span class="compare-val" style="color: #ba1a1a;">-8.450.000đ</span>
+            </div>
+          </div>
+
+          <!-- Comparison card with Capy advice -->
+          <div class="capy-card" style="background: #fff8f7; border-color: #ffd9df;">
+            <div style="display: flex; gap: 8px; align-items: flex-start;">
+              <span style="font-size: 24px;">🦫</span>
+              <div>
+                <span style="font-size: 11px; font-weight: 700; color: #864e5a; display: block; margin-bottom: 4px;">Nhận xét từ Capy</span>
+                <p style="font-size: 10px; color: #23191a; line-height: 1.4;">
+                  Tháng này bạn chi tiêu <strong>8.450.000đ</strong>, ít hơn tháng trước <strong>1.350.000đ (-13.7%)</strong>. Rất tốt! Bạn đang bám sát kế hoạch tiết kiệm đề ra.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pros-cons" style="width: 100%; margin-top: 10px;">
+        <div class="pros">
+          <h4>Ưu điểm</h4>
+          <ul>
+            <li>Giọng điệu Capy thân thiện, tăng gắn kết người dùng</li>
+            <li>Theo dõi xu hướng tốt</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Nhược điểm</h4>
+          <ul>
+            <li>Không đi sâu vào chi tiết hũ hay danh mục sản phẩm cụ thể</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

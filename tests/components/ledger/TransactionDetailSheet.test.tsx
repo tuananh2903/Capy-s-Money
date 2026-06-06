@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
+import { Alert } from 'react-native';
 import { TransactionDetailSheet } from '../../../src/components/ledger/TransactionDetailSheet';
 
 describe('TransactionDetailSheet Tests', () => {
@@ -43,6 +44,13 @@ describe('TransactionDetailSheet Tests', () => {
         onEdit={editSpy}
       />
     );
+    jest.spyOn(Alert, 'alert').mockImplementation((title, message, buttons) => {
+      // Find the 'Xóa' button (usually the second button, or check the text)
+      const deleteButton = buttons?.find(b => b.text === 'Xóa');
+      if (deleteButton && deleteButton.onPress) {
+        deleteButton.onPress();
+      }
+    });
 
     fireEvent.press(getByText('Xóa'));
     expect(deleteSpy).toHaveBeenCalledWith('1');

@@ -1,0 +1,428 @@
+<style>
+  :root {
+    --primary: #864e5a;
+    --primary-container: #ffb7c5;
+    --secondary: #944652;
+    --secondary-container: #fe9da9;
+    --background: #fff8f7;
+    --surface: #fff8f7;
+    --on-surface: #23191a;
+    --error: #ba1a1a;
+    --error-container: #ffdad6;
+    --outline: #837375;
+    --warning: #f59e0b;
+    --warning-container: #fef3c7;
+    --safe: #10b981;
+    --safe-container: #d1fae5;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--on-surface);
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    padding: 24px;
+    margin: 0;
+  }
+
+  .options-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+    margin-top: 24px;
+  }
+
+  .budget-option-card {
+    background: #ffffff;
+    border: 1px solid #FFDDE2;
+    border-radius: 32px;
+    padding: 24px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 24px rgba(255, 183, 197, 0.15);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .budget-option-card:hover {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 0 16px 32px rgba(255, 183, 197, 0.25);
+  }
+
+  .budget-option-card.selected {
+    border: 2px solid var(--primary);
+    background-color: #fffafb;
+  }
+
+  .option-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .option-badge {
+    background: var(--primary-container);
+    color: var(--primary);
+    width: 32px;
+    height: 32px;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+  }
+
+  .option-title {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--on-surface);
+  }
+
+  .option-desc {
+    font-size: 14px;
+    color: var(--outline);
+    margin: 0 0 20px 0;
+    line-height: 1.4;
+  }
+
+  /* Mockup Visuals */
+  .mockup-preview {
+    background: var(--background);
+    border-radius: 24px;
+    padding: 16px;
+    flex-grow: 1;
+    border: 1px dashed #ffd5db;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Screen Layout Mockups */
+  .phone-screen {
+    background: #fff8f7;
+    border-radius: 20px;
+    border: 2px solid #23191a;
+    padding: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    max-width: 280px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .screen-header {
+    font-size: 13px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 12px;
+    color: var(--primary);
+    border-bottom: 1px solid #ffd5db;
+    padding-bottom: 6px;
+  }
+
+  /* Mock Elements for Option A */
+  .budget-card {
+    background: white;
+    border-radius: 16px;
+    padding: 10px;
+    box-shadow: 0 2px 6px rgba(255, 183, 197, 0.1);
+    margin-bottom: 8px;
+    border: 1px solid #FFDDE2;
+  }
+  .budget-card-top {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: bold;
+    margin-bottom: 6px;
+  }
+  .progress-bar-container {
+    height: 8px;
+    background: #f3f4f6;
+    border-radius: 9999px;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+  .progress-bar {
+    height: 100%;
+    border-radius: 9999px;
+  }
+  .progress-safe { background: var(--safe); width: 45%; }
+  .progress-warning { background: var(--warning); width: 82%; }
+  .progress-danger { background: var(--error); width: 105%; }
+
+  .budget-card-bottom {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    color: var(--outline);
+  }
+
+  /* Mock Elements for Option B */
+  .chart-container {
+    background: white;
+    border-radius: 16px;
+    padding: 8px;
+    margin-bottom: 8px;
+    border: 1px solid #FFDDE2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .chart-title {
+    font-size: 10px;
+    font-weight: bold;
+    margin-bottom: 6px;
+  }
+  .bar-chart {
+    display: flex;
+    gap: 8px;
+    height: 60px;
+    align-items: flex-end;
+    width: 100%;
+    justify-content: space-around;
+  }
+  .bar-item {
+    width: 14px;
+    border-radius: 9999px 9999px 0 0;
+    background: var(--primary-container);
+    position: relative;
+  }
+  .bar-item.highlighted {
+    background: var(--secondary-container);
+  }
+  .timeline-days {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    font-size: 8px;
+    color: var(--outline);
+    margin-top: 4px;
+  }
+
+  /* Mock Elements for Option C */
+  .category-budget-row {
+    background: white;
+    border-radius: 12px;
+    padding: 8px;
+    margin-bottom: 6px;
+    border: 1px solid #FFDDE2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .cat-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .cat-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    background: #ffb7c5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+  }
+  .cat-text {
+    display: flex;
+    flex-direction: column;
+  }
+  .cat-name {
+    font-size: 11px;
+    font-weight: bold;
+  }
+  .cat-limit {
+    font-size: 8px;
+    color: var(--outline);
+  }
+  .cat-status-badge {
+    padding: 3px 6px;
+    border-radius: 9999px;
+    font-size: 8px;
+    font-weight: bold;
+  }
+  .badge-safe { background: var(--safe-container); color: var(--safe); }
+  .badge-warning { background: var(--warning-container); color: var(--warning); }
+  .badge-danger { background: var(--error-container); color: var(--error); }
+
+  .floating-pill-button {
+    background: var(--primary);
+    color: white;
+    border-radius: 9999px;
+    padding: 6px 12px;
+    font-size: 10px;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 8px;
+    box-shadow: 0 4px 10px rgba(134, 78, 90, 0.3);
+  }
+</style>
+
+<h2>Hãy lựa chọn Giao diện Màn hình Ngân sách</h2>
+<p class="subtitle">Nhấp chọn phương án bạn thích nhất ở dưới và phản hồi lại ở ô chat nhé!</p>
+
+<div class="options-container">
+  <!-- OPTION A -->
+  <div class="budget-option-card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="option-header">
+      <div class="option-badge">A</div>
+      <h3 class="option-title">Active Budget Dashboard</h3>
+    </div>
+    <p class="option-desc">Tập trung quản lý các mục ngân sách đang chạy với các thanh tiến độ trực quan, cảnh báo màu sắc sinh động kiểu Capybara.</p>
+    
+    <div class="mockup-preview">
+      <div class="phone-screen">
+        <div class="screen-header">Ngân sách của tôi 💸</div>
+        
+        <!-- Budget Card 1: Safe -->
+        <div class="budget-card">
+          <div class="budget-card-top">
+            <span>Ăn uống 🍕</span>
+            <span style="color: var(--safe)">450k / 1.000k</span>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar progress-safe"></div>
+          </div>
+          <div class="budget-card-bottom">
+            <span>Còn lại: 550k (An toàn)</span>
+            <span>45%</span>
+          </div>
+        </div>
+
+        <!-- Budget Card 2: Warning -->
+        <div class="budget-card">
+          <div class="budget-card-top">
+            <span>Mua sắm 🛍️</span>
+            <span style="color: var(--warning)">1.640k / 2.000k</span>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar progress-warning"></div>
+          </div>
+          <div class="budget-card-bottom">
+            <span>Đã dùng 82% (Hạn chế chi)</span>
+            <span>82%</span>
+          </div>
+        </div>
+
+        <!-- Budget Card 3: Alert -->
+        <div class="budget-card">
+          <div class="budget-card-top">
+            <span>Di chuyển 🚗</span>
+            <span style="color: var(--error)">525k / 500k</span>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar progress-danger"></div>
+          </div>
+          <div class="budget-card-bottom">
+            <span style="color: var(--error)">Vượt quá 25k! ⚠️</span>
+            <span>105%</span>
+          </div>
+        </div>
+
+        <div class="floating-pill-button">+ Tạo Ngân Sách Mới</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION B -->
+  <div class="budget-option-card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="option-header">
+      <div class="option-badge">B</div>
+      <h3 class="option-title">Timeline & Trends View</h3>
+    </div>
+    <p class="option-desc">Xem xu hướng chi tiêu theo thời gian thực để tự căn chỉnh kế hoạch tài chính cá nhân một cách chủ động.</p>
+    
+    <div class="mockup-preview">
+      <div class="phone-screen">
+        <div class="screen-header">Xu hướng chi tiêu 📈</div>
+        
+        <div class="chart-container">
+          <div class="chart-title">Tháng 5/2026</div>
+          <div class="bar-chart">
+            <div class="bar-item" style="height: 35px;"></div>
+            <div class="bar-item" style="height: 20px;"></div>
+            <div class="bar-item highlighted" style="height: 55px;"></div>
+            <div class="bar-item" style="height: 40px;"></div>
+            <div class="bar-item" style="height: 25px;"></div>
+            <div class="bar-item" style="height: 15px;"></div>
+          </div>
+          <div class="timeline-days">
+            <span>Tuần 1</span>
+            <span>Tuần 2</span>
+            <span>Tuần 3</span>
+            <span>Tuần 4</span>
+          </div>
+        </div>
+
+        <!-- Info box -->
+        <div class="budget-card" style="border-left: 4px solid var(--secondary)">
+          <div style="font-size: 10px; font-weight: bold; margin-bottom: 4px;">Phân tích thông minh:</div>
+          <div style="font-size: 9px; line-height: 1.3; color: var(--outline)">
+            Tuần 3 chi tiêu cao nhất (mua sắm). Bạn cần tiết kiệm ~120k/ngày ở tuần cuối để không bị lạm chi ngân sách tháng này.
+          </div>
+        </div>
+
+        <div class="floating-pill-button" style="background: var(--secondary)">Thiết lập Ngân sách Ngày</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION C -->
+  <div class="budget-option-card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="option-header">
+      <div class="option-badge">C</div>
+      <h3 class="option-title">Category-Embedded Limits</h3>
+    </div>
+    <p class="option-desc">Tích hợp thẳng hạn mức ngân sách vào quản lý danh mục chi tiêu. Bảng danh mục tinh gọn đi kèm cài đặt nhanh.</p>
+    
+    <div class="mockup-preview">
+      <div class="phone-screen">
+        <div class="screen-header">Hạn mức theo Danh mục 🏷️</div>
+        
+        <!-- Row 1 -->
+        <div class="category-budget-row">
+          <div class="cat-info">
+            <div class="cat-icon">🍔</div>
+            <div class="cat-text">
+              <span class="cat-name">Ăn uống</span>
+              <span class="cat-limit">Hạn mức: 2.000k</span>
+            </div>
+          </div>
+          <span class="cat-status-badge badge-safe">An toàn (40%)</span>
+        </div>
+
+        <!-- Row 2 -->
+        <div class="category-budget-row">
+          <div class="cat-info">
+            <div class="cat-icon" style="background:#ffd9e0">💃</div>
+            <div class="cat-text">
+              <span class="cat-name">Giải trí</span>
+              <span class="cat-limit">Hạn mức: 1.000k</span>
+            </div>
+          </div>
+          <span class="cat-status-badge badge-warning">Cảnh báo (85%)</span>
+        </div>
+
+        <!-- Row 3 -->
+        <div class="category-budget-row">
+          <div class="cat-info">
+            <div class="cat-icon" style="background:#ffe3e3">🏠</div>
+            <div class="cat-text">
+              <span class="cat-name">Nhà cửa</span>
+              <span class="cat-limit">Hạn mức: 5.000k</span>
+            </div>
+          </div>
+          <span class="cat-status-badge badge-danger">Vượt hạn mức!</span>
+        </div>
+
+        <div class="floating-pill-button" style="background: var(--primary)">Sửa nhanh hạn mức</div>
+      </div>
+    </div>
+  </div>
+</div>

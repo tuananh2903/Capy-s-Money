@@ -1,0 +1,18 @@
+﻿appId: com.capysmoney.app
+---
+# Flow: Budget Screen
+
+- clearState
+- launchApp
+
+# Login
+- runFlow: _login.yaml
+
+# Navigate to Budget tab using testID
+- tapOn:
+    id: "tab-budget"
+- waitForAnimationToEnd
+
+# Verify Budget tab is active (FAB still visible)
+- assertVisible:
+    id: "fab-add-transaction"

@@ -29,7 +29,8 @@ export async function fetchUserWallets() {
   try {
     const { data, error } = await supabase
       .from('wallets')
-      .select('id, name');
+      .select('id, name')
+      .eq('is_deleted', false);
     if (error) return { success: false, error: error.message };
     return { success: true, data };
   } catch (err: any) {

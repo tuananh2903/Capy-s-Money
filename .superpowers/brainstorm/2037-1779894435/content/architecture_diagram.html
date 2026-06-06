@@ -1,0 +1,161 @@
+<style>
+  .diagram-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+
+  .flow-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    gap: 2rem;
+  }
+
+  @media (max-width: 768px) {
+    .flow-row {
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .arrow-right {
+      transform: rotate(90deg);
+    }
+  }
+
+  .db-box {
+    background: #ffffff;
+    border: 2px solid #864e5a;
+    border-radius: 16px;
+    padding: 1rem 1.5rem;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(134, 78, 90, 0.08);
+  }
+
+  .hook-box {
+    background: #ffd9df;
+    border: 2px solid #fe9da9;
+    border-radius: 20px;
+    padding: 1.25rem 2rem;
+    text-align: center;
+    box-shadow: 0 6px 15px rgba(254, 157, 169, 0.15);
+    color: #864e5a;
+    font-weight: 700;
+  }
+
+  .tab-card {
+    background: #ffffff;
+    border: 1px solid #ffd9df;
+    border-radius: 16px;
+    padding: 1rem;
+    flex: 1;
+    min-width: 180px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+  }
+
+  .arrow-right {
+    font-size: 20px;
+    color: #fe9da9;
+    font-weight: bold;
+  }
+
+  .arrow-down {
+    font-size: 20px;
+    color: #fe9da9;
+    font-weight: bold;
+    margin: 0.5rem 0;
+  }
+
+  .tech-badge {
+    background: #fde9ea;
+    color: #864e5a;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 700;
+    margin-top: 4px;
+    display: inline-block;
+  }
+</style>
+
+<h2>Kiến Trúc & Luồng Dữ Liệu Sổ Giao Dịch</h2>
+<p class="subtitle">Dưới đây là sơ đồ luồng dữ liệu của Phương án 1 (Client-side Aggregation). Hãy xem và phản hồi ở Terminal nhé!</p>
+
+<div class="diagram-container">
+  
+  <!-- Row 1: Supabase DB -->
+  <div class="db-box">
+    <div style="font-size: 24px;">⚡</div>
+    <strong>Supabase Database</strong>
+    <div style="font-size: 11px; color: #71585c; margin-top: 4px;">
+      Bảng <code>transactions</code> (chứa <code>category_id</code>, <code>jar_type</code>)<br>
+      Bảng <code>categories</code> (danh mục con, liên kết cha)
+    </div>
+  </div>
+
+  <div class="arrow-down">▼</div>
+
+  <!-- Row 2: custom Hook useLedger -->
+  <div class="hook-box">
+    <div style="font-size: 20px;">📦</div>
+    Custom Hook: <code>useLedger(walletId, targetMonth)</code>
+    <div style="font-size: 11px; font-weight: normal; color: #23191a; margin-top: 6px;">
+      1. Fetch danh sách transactions của tháng (kèm joined categories)<br>
+      2. Fetch tổng chi tiêu tháng trước (để so sánh dòng tiền MoM)<br>
+      3. Quản lý trạng thái cache cục bộ và xử lý Optimistic Sửa/Xóa giao dịch
+    </div>
+  </div>
+
+  <div class="arrow-down">▼ useMemo (Client-side Transforms)</div>
+
+  <!-- Row 3: 3 Tabs -->
+  <div class="flow-row">
+    
+    <!-- Tab 1 -->
+    <div class="tab-card">
+      <div style="font-size: 18px;">📅</div>
+      <strong>Tab Hàng Ngày</strong>
+      <div class="tech-badge">Group by Day</div>
+      <p style="font-size: 11px; color: #71585c; margin-top: 6px;">
+        Gom nhóm giao dịch theo YYYY-MM-DD để hiển thị list thẻ từng ngày.
+      </p>
+    </div>
+
+    <!-- Tab 2 -->
+    <div class="tab-card">
+      <div style="font-size: 18px;">📊</div>
+      <strong>Tab Hàng Tháng</strong>
+      <div class="tech-badge">Reduce & Chart</div>
+      <p style="font-size: 11px; color: #71585c; margin-top: 6px;">
+        Cộng dồn chi tiêu theo danh mục cho Donut Chart + Tính MoM so sánh tháng trước.
+      </p>
+    </div>
+
+    <!-- Tab 3 -->
+    <div class="tab-card">
+      <div style="font-size: 18px;">🗓️</div>
+      <strong>Tab Lịch Biểu</strong>
+      <div class="tech-badge">Map of Dates</div>
+      <p style="font-size: 11px; color: #71585c; margin-top: 6px;">
+        Tạo danh sách các ngày chứa giao dịch (dots). Chọn ngày để hiện list bên dưới.
+      </p>
+    </div>
+
+  </div>
+
+  <div class="arrow-down">▼ Tương Tác Người Dùng</div>
+
+  <!-- Row 4: User Actions -->
+  <div class="db-box" style="border-color: #ba1a1a; background: #fff8f7;">
+    <div style="font-size: 20px;">📱</div>
+    <strong>Bottom Sheet Chi Tiết</strong>
+    <p style="font-size: 11px; color: #23191a; margin-top: 4px;">
+      Nhấn giao dịch → Mở Bottom Sheet → Xem chi tiết (kèm Hạng mục con & Hũ).<br>
+      Bấm <strong>Xóa/Sửa</strong> → Gọi Supabase API → Cập nhật tức thì cache của <code>useLedger</code> để UI mượt mà.
+    </p>
+  </div>
+
+</div>

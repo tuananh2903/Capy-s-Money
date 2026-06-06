@@ -18,9 +18,10 @@ interface JarEditSheetProps {
     categories: CategoryItem[];
   };
   onSave: (data: { name: string; icon: string; pct: number; categories: CategoryItem[] }) => void;
+  isSaving?: boolean;
 }
 
-export const JarEditSheet: React.FC<JarEditSheetProps> = ({ visible, onClose, jarData, onSave }) => {
+export const JarEditSheet: React.FC<JarEditSheetProps> = ({ visible, onClose, jarData, onSave, isSaving = false }) => {
   const [name, setName] = useState('');
   const [icon, setIcon] = useState('🍔');
   const [pct, setPct] = useState(10);
@@ -117,8 +118,12 @@ export const JarEditSheet: React.FC<JarEditSheetProps> = ({ visible, onClose, ja
             </View>
           </ScrollView>
 
-          <TouchableOpacity style={styles.saveBtn} onPress={() => onSave({ name, icon, pct, categories })}>
-            <Text style={styles.saveText}>Lưu Cấu Hình</Text>
+          <TouchableOpacity
+            style={[styles.saveBtn, isSaving && { backgroundColor: '#c09aa0' }]}
+            onPress={() => !isSaving && onSave({ name, icon, pct, categories })}
+            disabled={isSaving}
+          >
+            <Text style={styles.saveText}>{isSaving ? 'Đang lưu...' : 'Lưu Cấu Hình'}</Text>
           </TouchableOpacity>
         </View>
       </View>

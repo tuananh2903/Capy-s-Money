@@ -1,0 +1,17 @@
+﻿appId: com.capysmoney.app
+---
+# Flow: Wallet Screen
+
+- clearState
+- launchApp
+
+- runFlow: _login.yaml
+
+# Navigate to Wallets tab
+- tapOn:
+    id: "tab-wallets"
+- waitForAnimationToEnd
+
+# Verify wallet screen loaded by checking if the default personal wallet is visible
+- assertVisible:
+    text: "Vi ca nhan"

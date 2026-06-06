@@ -1,0 +1,565 @@
+<style>
+  .app-preview-container {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+  }
+  
+  .phone-frame {
+    width: 320px;
+    height: 580px;
+    background: #fff8f7;
+    border: 12px solid #23191a;
+    border-radius: 40px;
+    box-shadow: 0 20px 40px rgba(134, 78, 90, 0.15);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+
+  .phone-header {
+    background: #ffffff;
+    padding: 12px 16px;
+    border-bottom: 1px solid #fff0f1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .phone-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #864e5a;
+    text-align: center;
+  }
+
+  .phone-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Capy Card */
+  .capy-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 12px;
+    border: 1px solid #ffd9df;
+    box-shadow: 0 4px 10px rgba(254, 157, 169, 0.08);
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+  .summary-val {
+    font-weight: 700;
+  }
+  .income-val { color: #34c759; }
+  .expense-val { color: #ba1a1a; }
+  .total-val { color: #864e5a; }
+
+  /* Group list items */
+  .group-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: 700;
+    color: #71585c;
+    padding: 4px 4px;
+    border-bottom: 1px solid #fde9ea;
+    margin-bottom: 6px;
+  }
+
+  .tx-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 4px;
+  }
+
+  .tx-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tx-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #ffd9df;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  .tx-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tx-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #23191a;
+  }
+
+  .tx-time {
+    font-size: 10px;
+    color: #71585c;
+  }
+
+  .tx-amount {
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .tx-outflow { color: #ba1a1a; }
+  .tx-inflow { color: #34c759; }
+
+  /* Month Selector */
+  .month-selector {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #864e5a;
+    padding: 4px 0;
+  }
+  .month-btn {
+    background: #fff0f1;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #864e5a;
+  }
+
+  /* Tab styling */
+  .tab-bar {
+    display: flex;
+    background: #fde9ea;
+    border-radius: 20px;
+    padding: 3px;
+  }
+  .tab-item {
+    flex: 1;
+    text-align: center;
+    font-size: 11px;
+    padding: 6px 0;
+    border-radius: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    color: #71585c;
+  }
+  .tab-item.active {
+    background: #ffffff;
+    color: #864e5a;
+    box-shadow: 0 2px 6px rgba(134, 78, 90, 0.1);
+  }
+
+  /* Calendar View */
+  .mini-calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    text-align: center;
+    margin-top: 4px;
+  }
+  .cal-day-name {
+    font-size: 9px;
+    color: #71585c;
+    font-weight: 700;
+  }
+  .cal-day {
+    font-size: 10px;
+    padding: 6px 0;
+    border-radius: 8px;
+    color: #23191a;
+  }
+  .cal-day.today {
+    background: #ffd9df;
+    font-weight: 700;
+    color: #864e5a;
+  }
+  .cal-day.has-tx::after {
+    content: '•';
+    display: block;
+    font-size: 8px;
+    line-height: 4px;
+    color: #fe9da9;
+  }
+
+  /* Filters */
+  .filter-row {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .filter-chip {
+    background: #fde9ea;
+    border-radius: 12px;
+    padding: 4px 10px;
+    font-size: 10px;
+    white-space: nowrap;
+    color: #864e5a;
+    font-weight: 600;
+    border: 1px solid #ffd9df;
+  }
+  .filter-chip.active {
+    background: #864e5a;
+    color: #ffffff;
+  }
+
+  /* Timeline line */
+  .timeline-container {
+    position: relative;
+    padding-left: 20px;
+  }
+  .timeline-line {
+    position: absolute;
+    left: 7px;
+    top: 10px;
+    bottom: 10px;
+    width: 2px;
+    background: #ffd9df;
+  }
+  .timeline-dot {
+    position: absolute;
+    left: 4px;
+    top: 16px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #fe9da9;
+    border: 2px solid #fff8f7;
+  }
+  .timeline-item {
+    position: relative;
+    margin-bottom: 12px;
+  }
+  .timeline-date {
+    font-size: 9px;
+    font-weight: 700;
+    color: #71585c;
+    margin-bottom: 2px;
+  }
+
+  /* Selection UI overlay */
+  .option-card-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+    min-width: 320px;
+    cursor: pointer;
+  }
+</style>
+
+<h2>So sánh 3 thiết kế Sổ Giao Dịch</h2>
+<p class="subtitle">Hãy click chọn phương án bạn thích nhất và phản hồi ý kiến cho mình ở Terminal nhé!</p>
+
+<div class="options" data-choice-container>
+  <div class="app-preview-container">
+    
+    <!-- OPTION A -->
+    <div class="option-card-wrapper option" data-choice="a" onclick="toggleSelect(this)">
+      <div class="letter" style="margin-bottom: 0.5rem;">A</div>
+      <div class="content" style="text-align: center; margin-bottom: 1rem;">
+        <h3 style="margin-bottom: 4px;">Option A: Nhóm theo ngày (Daily Grouping)</h3>
+        <p style="font-size: 0.85rem;">Kiểu truyền thống: cuộn dọc theo dòng thời gian ngày, đổi tháng ở header.</p>
+      </div>
+
+      <!-- Phone mockup for Option A -->
+      <div class="phone-frame">
+        <div class="phone-header">
+          <div class="phone-title">Sổ Giao Dịch</div>
+          <div class="month-selector">
+            <span class="month-btn">‹</span>
+            <span>Tháng 05 / 2026</span>
+            <span class="month-btn">›</span>
+          </div>
+        </div>
+        <div class="phone-content">
+          <!-- Summary card -->
+          <div class="capy-card">
+            <div class="summary-row">
+              <span>Thu nhập:</span>
+              <span class="summary-val income-val">+15.000.000đ</span>
+            </div>
+            <div class="summary-row">
+              <span>Chi tiêu:</span>
+              <span class="summary-val expense-val">-8.450.000đ</span>
+            </div>
+            <hr style="border: 0; border-top: 1px dashed #ffd9df; margin: 6px 0;" />
+            <div class="summary-row" style="margin-bottom: 0; font-size: 12px;">
+              <strong>Số dư net:</strong>
+              <strong class="total-val">+6.550.000đ</strong>
+            </div>
+          </div>
+
+          <!-- Transaction List -->
+          <div class="capy-card">
+            <div class="group-header">
+              <span>Hôm nay (27/05)</span>
+              <span class="expense-val">-125.000đ</span>
+            </div>
+            <div class="tx-item">
+              <div class="tx-left">
+                <div class="tx-icon">☕</div>
+                <div class="tx-info">
+                  <span class="tx-title">Capy Cà phê</span>
+                  <span class="tx-time">Ví Tiền mặt • 09:30</span>
+                </div>
+              </div>
+              <span class="tx-amount tx-outflow">-45.000đ</span>
+            </div>
+            <div class="tx-item">
+              <div class="tx-left">
+                <div class="tx-icon">🍛</div>
+                <div class="tx-info">
+                  <span class="tx-title">Ăn trưa bún chả</span>
+                  <span class="tx-time">Ví Tiền mặt • 12:15</span>
+                </div>
+              </div>
+              <span class="tx-amount tx-outflow">-80.000đ</span>
+            </div>
+          </div>
+
+          <div class="capy-card">
+            <div class="group-header">
+              <span>Hôm qua (26/05)</span>
+              <span class="income-val">+15.000.000đ</span>
+            </div>
+            <div class="tx-item">
+              <div class="tx-left">
+                <div class="tx-icon">💼</div>
+                <div class="tx-info">
+                  <span class="tx-title">Lương tháng 5</span>
+                  <span class="tx-time">Ví Techcombank • 17:00</span>
+                </div>
+              </div>
+              <span class="tx-amount tx-inflow">+15.000.000đ</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pros-cons" style="width: 100%; margin-top: 10px;">
+        <div class="pros">
+          <h4>Ưu điểm</h4>
+          <ul>
+            <li>Quen thuộc, dễ dùng</li>
+            <li>Theo dõi dòng tiền rất rõ ràng</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Nhược điểm</h4>
+          <ul>
+            <li>Khó có cái nhìn tổng quan tháng</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- OPTION B -->
+    <div class="option-card-wrapper option" data-choice="b" onclick="toggleSelect(this)">
+      <div class="letter" style="margin-bottom: 0.5rem;">B</div>
+      <div class="content" style="text-align: center; margin-bottom: 1rem;">
+        <h3 style="margin-bottom: 4px;">Option B: Phân chia theo Tab (Tabbed View)</h3>
+        <p style="font-size: 0.85rem;">Đa dạng góc nhìn: Hàng ngày, Hàng tháng (tổng quan) và xem Lịch trực quan.</p>
+      </div>
+
+      <!-- Phone mockup for Option B -->
+      <div class="phone-frame">
+        <div class="phone-header">
+          <div class="phone-title" style="margin-bottom: 4px;">Sổ Giao Dịch</div>
+          <div class="tab-bar">
+            <div class="tab-item active">Hàng ngày</div>
+            <div class="tab-item">Hàng tháng</div>
+            <div class="tab-item">Lịch biểu</div>
+          </div>
+        </div>
+        <div class="phone-content">
+          <!-- Calendar representation if on Tab 3, or compact summary for tab 1 -->
+          <div class="capy-card" style="padding: 10px;">
+            <div class="mini-calendar">
+              <div class="cal-day-name">T2</div>
+              <div class="cal-day-name">T3</div>
+              <div class="cal-day-name">T4</div>
+              <div class="cal-day-name">T5</div>
+              <div class="cal-day-name">T6</div>
+              <div class="cal-day-name">T7</div>
+              <div class="cal-day-name">CN</div>
+              
+              <div class="cal-day">24</div>
+              <div class="cal-day has-tx">25</div>
+              <div class="cal-day has-tx">26</div>
+              <div class="cal-day today has-tx">27</div>
+              <div class="cal-day">28</div>
+              <div class="cal-day">29</div>
+              <div class="cal-day">30</div>
+            </div>
+          </div>
+
+          <!-- Active tab daily transactions list -->
+          <div class="capy-card">
+            <div class="group-header">
+              <span>Hôm nay, 27 Tháng 5</span>
+              <span class="expense-val">-125.000đ</span>
+            </div>
+            <div class="tx-item">
+              <div class="tx-left">
+                <div class="tx-icon">☕</div>
+                <div class="tx-info">
+                  <span class="tx-title">Capy Cà phê</span>
+                  <span class="tx-time">09:30</span>
+                </div>
+              </div>
+              <span class="tx-amount tx-outflow">-45.000đ</span>
+            </div>
+            <div class="tx-item">
+              <div class="tx-left">
+                <div class="tx-icon">🍛</div>
+                <div class="tx-info">
+                  <span class="tx-title">Ăn trưa bún chả</span>
+                  <span class="tx-time">12:15</span>
+                </div>
+              </div>
+              <span class="tx-amount tx-outflow">-80.000đ</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pros-cons" style="width: 100%; margin-top: 10px;">
+        <div class="pros">
+          <h4>Ưu điểm</h4>
+          <ul>
+            <li>Nhiều chế độ hiển thị phù hợp nhu cầu</li>
+            <li>Lịch biểu giúp tìm kiếm theo ngày nhanh</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Nhược điểm</h4>
+          <ul>
+            <li>Giao diện phức tạp hơn một chút</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- OPTION C -->
+    <div class="option-card-wrapper option" data-choice="c" onclick="toggleSelect(this)">
+      <div class="letter" style="margin-bottom: 0.5rem;">C</div>
+      <div class="content" style="text-align: center; margin-bottom: 1rem;">
+        <h3 style="margin-bottom: 4px;">Option C: Dòng thời gian & Bộ lọc (Timeline & Filter)</h3>
+        <p style="font-size: 0.85rem;">Hiện đại, tinh gọn: Tập trung vào dòng thời gian kết nối và bộ lọc trực tiếp.</p>
+      </div>
+
+      <!-- Phone mockup for Option C -->
+      <div class="phone-frame">
+        <div class="phone-header">
+          <div class="phone-title" style="margin-bottom: 6px;">Sổ Giao Dịch</div>
+          <div class="filter-row">
+            <span class="filter-chip active">🗓️ 7 ngày qua</span>
+            <span class="filter-chip">👛 Tất cả ví</span>
+            <span class="filter-chip">🏷️ Ăn uống</span>
+          </div>
+        </div>
+        <div class="phone-content" style="padding-top: 8px;">
+          <div class="timeline-container">
+            <div class="timeline-line"></div>
+            
+            <!-- Timeline Item 1 -->
+            <div class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div class="timeline-date">Hôm nay - 27 May</div>
+              <div class="capy-card" style="padding: 10px; margin-top: 4px;">
+                <div class="tx-item" style="padding: 0;">
+                  <div class="tx-left">
+                    <div class="tx-icon">☕</div>
+                    <div class="tx-info">
+                      <span class="tx-title">Capy Cà phê</span>
+                      <span class="tx-time">Ví Tiền mặt • 09:30</span>
+                    </div>
+                  </div>
+                  <span class="tx-amount tx-outflow">-45.000đ</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Timeline Item 2 -->
+            <div class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div class="timeline-date">Hôm nay - 27 May</div>
+              <div class="capy-card" style="padding: 10px; margin-top: 4px;">
+                <div class="tx-item" style="padding: 0;">
+                  <div class="tx-left">
+                    <div class="tx-icon">🍛</div>
+                    <div class="tx-info">
+                      <span class="tx-title">Ăn trưa bún chả</span>
+                      <span class="tx-time">Ví Tiền mặt • 12:15</span>
+                    </div>
+                  </div>
+                  <span class="tx-amount tx-outflow">-80.000đ</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Timeline Item 3 -->
+            <div class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div class="timeline-date">26 May</div>
+              <div class="capy-card" style="padding: 10px; margin-top: 4px;">
+                <div class="tx-item" style="padding: 0;">
+                  <div class="tx-left">
+                    <div class="tx-icon">💼</div>
+                    <div class="tx-info">
+                      <span class="tx-title">Lương tháng 5</span>
+                      <span class="tx-time">Techcombank • 17:00</span>
+                    </div>
+                  </div>
+                  <span class="tx-amount tx-inflow">+15.000.000đ</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      <div class="pros-cons" style="width: 100%; margin-top: 10px;">
+        <div class="pros">
+          <h4>Ưu điểm</h4>
+          <ul>
+            <li>Giao diện rất trẻ trung, hiện đại</li>
+            <li>Dễ dàng tìm kiếm nhờ bộ lọc nhanh</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Nhược điểm</h4>
+          <ul>
+            <li>Không hiển thị tổng số tiền theo từng ngày rõ ràng</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,21 @@
+﻿appId: com.capysmoney.app
+---
+# Flow: Wallet Share
+
+- clearState
+- launchApp
+
+- runFlow: _login.yaml
+
+# Navigate to Wallets tab
+- tapOn:
+    id: "tab-wallets"
+- waitForAnimationToEnd
+
+# Verify wallet screen loaded
+- assertVisible:
+    text: "Vi ca nhan"
+
+# Verify fab is visible
+- assertVisible:
+    id: "fab-add-transaction"

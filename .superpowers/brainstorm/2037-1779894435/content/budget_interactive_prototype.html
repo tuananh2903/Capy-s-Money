@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Interactive Budget & Jar Manager Prototype</title>
+  <style>
+    :root {
+      --primary: #864e5a;
+      --primary-container: #ffb7c5;
+      --secondary: #944652;
+      --secondary-container: #fe9da9;
+      --background: #fff8f7;
+      --surface: #fff8f7;
+      --on-surface: #23191a;
+      --error: #ba1a1a;
+      --error-container: #ffdad6;
+      --outline: #837375;
+      --safe: #10b981;
+      --safe-container: #d1fae5;
+      --warning: #f59e0b;
+      --warning-container: #fef3c7;
+    }
+
+    body {
+      background-color: var(--background);
+      color: var(--on-surface);
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      padding: 20px;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+
+    .proto-layout {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 32px;
+      max-width: 1100px;
+      width: 100%;
+    }
+
+    .info-pane {
+      background: white;
+      border: 1px solid #FFDDE2;
+      border-radius: 32px;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(255, 183, 197, 0.15);
+    }
+
+    .phone-container {
+      background: #fff8f7;
+      border: 6px solid #23191a;
+      border-radius: 40px;
+      width: 350px;
+      height: 750px;
+      position: relative;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .phone-header {
+      background: white;
+      padding: 20px 16px 12px 16px;
+      border-bottom: 1px solid #ffd5db;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 10;
+    }
+
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: bold;
+      color: var(--outline);
+    }
+
+    .app-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--primary);
+      text-align: center;
+      margin: 4px 0;
+    }
+
+    .wallet-tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .wallet-tab {
+      padding: 6px 16px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      border: 1px solid #FFDDE2;
+      background: white;
+      color: var(--outline);
+    }
+
+    .wallet-tab.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .phone-body {
+      padding: 16px;
+      overflow-y: auto;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      z-index: 5;
+    }
+
+    .section-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .section-title {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--outline);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin: 0;
+    }
+
+    .add-jar-btn {
+      background: var(--primary-container);
+      color: var(--primary);
+      border: none;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 10px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: background 0.2s;
+    }
+
+    .add-jar-btn:hover {
+      background: #ffd3db;
+    }
+
+    .total-input-card {
+      background: white;
+      border: 1px solid #FFDDE2;
+      border-radius: 24px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .input-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .number-display {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    /* Jars list */
+    .jar-card {
+      background: white;
+      border: 1px solid #FFDDE2;
+      border-radius: 24px;
+      padding: 14px;
+      box-shadow: 0 4px 12px rgba(255, 183, 197, 0.08);
+      position: relative;
+    }
+
+    .jar-main-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .jar-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .jar-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .jar-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .jar-name {
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .jar-percent {
+      font-size: 9px;
+      color: var(--outline);
+    }
+
+    .jar-right {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+
+    .jar-amount {
+      font-size: 12px;
+      font-weight: bold;
+      color: var(--primary);
+    }
+
+    .jar-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+      justify-content: flex-end;
+      border-top: 1px solid #fff2f4;
+      padding-top: 8px;
+    }
+
+    .icon-action-btn {
+      background: none;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .icon-action-btn.edit {
+      background: #fbf0f2;
+    }
+    .icon-action-btn.edit:hover {
+      background: var(--primary-container);
+    }
+
+    .icon-action-btn.delete {
+      background: #fff0f0;
+    }
+    .icon-action-btn.delete:hover {
+      background: var(--error-container);
+    }
+
+    /* Toggle switch */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 28px;
+      height: 16px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #e4e4e7;
+      transition: .3s;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 12px;
+      width: 12px;
+      left: 2px;
+      bottom: 2px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--primary);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(12px);
+    }
+
+    .progress-bar-bg {
+      height: 6px;
+      background: #f3f4f6;
+      border-radius: 9999px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 9999px;
+      width: 0%;
+      transition: width 0.5s ease-out;
+    }
+
+    /* Categories container */
+    .categories-list {
+      margin-top: 8px;
+      border-top: 1px dashed #ffd5db;
+      padding-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .category-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+    }
+
+    .cat-title {
+      font-size: 11px;
+      color: #374151;
+      font-weight: 500;
+    }
+
+    .cat-limit-container {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Alert counts overlay */
+    .alerts-counter {
+      background: var(--primary-container);
+      color: var(--primary);
+      border-radius: 12px;
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Bottom Sheet Modal */
+    .sheet-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(35, 25, 26, 0.4);
+      display: flex;
+      justify-content: flex-end;
+      flex-direction: column;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .sheet-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .bottom-sheet {
+      background: white;
+      border-radius: 32px 32px 0 0;
+      padding: 20px;
+      box-shadow: 0 -10px 25px rgba(0,0,0,0.1);
+      border-top: 1px solid #FFDDE2;
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      max-height: 80%;
+      overflow-y: auto;
+    }
+
+    .sheet-overlay.active .bottom-sheet {
+      transform: translateY(0);
+    }
+
+    .sheet-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid #fff2f4;
+      padding-bottom: 10px;
+    }
+
+    .sheet-title {
+      font-size: 15px;
+      font-weight: bold;
+      color: var(--primary);
+    }
+
+    .sheet-close {
+      background: none;
+      border: none;
+      font-size: 16px;
+      color: var(--outline);
+      cursor: pointer;
+    }
+
+    /* Form Styles */
+    .form-group {
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .form-label {
+      font-size: 11px;
+      font-weight: bold;
+      color: var(--outline);
+    }
+
+    .form-input {
+      border: 1px solid #FFDDE2;
+      border-radius: 12px;
+      padding: 8px 12px;
+      font-size: 12px;
+      outline: none;
+    }
+
+    .form-input:focus {
+      border-color: var(--primary);
+    }
+
+    .save-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 9999px;
+      padding: 10px;
+      font-weight: bold;
+      font-size: 12px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 10px;
+      box-shadow: 0 4px 12px rgba(134, 78, 90, 0.3);
+    }
+
+    /* Category management lists */
+    .cat-manage-item {
+      background: var(--background);
+      border-radius: 12px;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      border: 1px solid #fff0f2;
+    }
+
+    .cat-manage-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .cat-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      padding: 4px;
+    }
+
+    /* Quick Alert Premium modal */
+    .modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(35, 25, 26, 0.4);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 110;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: white;
+      border-radius: 28px;
+      padding: 20px;
+      width: 260px;
+      text-align: center;
+      border: 1px solid #FFDDE2;
+    }
+
+    .allocation-total-bar {
+      background: var(--safe-container);
+      color: var(--safe);
+      border-radius: 12px;
+      padding: 6px;
+      font-size: 10px;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    .allocation-total-bar.error {
+      background: var(--error-container);
+      color: var(--error);
+    }
+  </style>
+</head>
+<body>
+
+<div class="proto-layout">
+  
+  <!-- Left Side: Interactive Guidance -->
+  <div class="info-pane">
+    <h2 style="color: var(--primary); margin-top: 0;">Nguyên Mẫu: Tối Giản Nút Thao Tác</h2>
+    <p>Tôi đã tối ưu hóa và tinh giản giao diện của các nút Thêm, Sửa, Xóa Hũ để trở nên gọn gàng, tinh tế và đồng bộ hơn với hệ thống thiết kế:</p>
+    
+    <h3 style="color: var(--secondary);">Các điểm cập nhật:</h3>
+    <ol style="line-height: 1.6; font-size: 14px;">
+      <li><b>Loại bỏ chữ ở nút Sửa/Xóa</b>: Các nút hành động cho Hũ bên ngoài Dashboard giờ chỉ hiển thị Icon dạng tròn tối giản (✏️ cho Sửa và 🗑️ cho Xóa), không kèm chữ rườm rà.</li>
+      <li><b>Tối giản nút Thêm/Xóa Hạng mục con</b>: Trong Bottom Sheet chỉnh sửa, giao diện quản lý hạng mục con cũng được tối giản các nút thêm và xóa.</li>
+      <li><b>Thiết kế dạng Pill & Circle nhẹ nhàng</b>: Bo tròn mềm mại, chuyển đổi màu dịu mắt khi rê chuột vào.</li>
+    </ol>
+  </div>
+
+  <!-- Right Side: Phone simulator -->
+  <div>
+    <div class="phone-container">
+      
+      <!-- Phone Header -->
+      <div class="phone-header">
+        <div class="status-bar">
+          <span>21:06 ⏱️</span>
+          <span>LTE 🔋 95%</span>
+        </div>
+        <div class="app-title">Capy's Money 💰</div>
+        
+        <!-- Wallet Switcher Tab -->
+        <div class="wallet-tabs">
+          <div class="wallet-tab active" id="tab-personal" onclick="switchWallet('personal')">💳 Ví Cá nhân</div>
+          <div class="wallet-tab" id="tab-family" onclick="switchWallet('family')">🏠 Ví Gia đình</div>
+        </div>
+      </div>
+
+      <!-- Phone Body -->
+      <div class="phone-body" id="phone-body">
+        
+        <!-- Counter info -->
+        <div class="alerts-counter">
+          <span>🔔 Cảnh báo đã bật:</span>
+          <span id="alert-count-badge">2 / 3</span>
+        </div>
+
+        <!-- Total budget setup card -->
+        <div class="total-input-card">
+          <span class="section-title">Tổng ngân sách ví</span>
+          <div class="input-row">
+            <span style="font-size: 11px; color: var(--outline);">Hạn mức tháng:</span>
+            <span class="number-display" id="total-budget-display">10,000,000đ</span>
+          </div>
+          <div class="allocation-total-bar" id="allocation-status">
+            Tổng phân bổ: 100% (Hợp lệ)
+          </div>
+        </div>
+
+        <div class="section-title-row">
+          <span class="section-title">Danh sách hũ tài chính</span>
+          <button class="add-jar-btn" onclick="openAddJarSheet()">➕ Thêm Hũ</button>
+        </div>
+
+        <!-- 6 Jars List -->
+        <div id="jars-list-container" style="display: flex; flex-direction: column; gap: 10px;">
+          <!-- Populated by JS -->
+        </div>
+
+      </div>
+
+      <!-- BOTTOM SHEET (Add/Edit Jar & Child Categories) -->
+      <div class="sheet-overlay" id="jar-sheet-overlay">
+        <div class="bottom-sheet" id="jar-bottom-sheet">
+          <div class="sheet-header">
+            <span class="sheet-title" id="sheet-title">Chỉnh sửa Hũ</span>
+            <button class="sheet-close" onclick="closeJarSheet()">✕</button>
+          </div>
+
+          <!-- Jar Inputs -->
+          <input type="hidden" id="form-jar-index">
+          <div class="form-group">
+            <label class="form-label">Tên hũ</label>
+            <input type="text" class="form-input" id="form-jar-name" placeholder="Ví dụ: Hưởng thụ (PLAY)">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Icon (Emoji)</label>
+            <input type="text" class="form-input" id="form-jar-icon" placeholder="🍔">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tỷ lệ phân bổ (%)</label>
+            <div style="display:flex; justify-content:space-between; font-size:11px;">
+              <span id="form-pct-label">10%</span>
+            </div>
+            <input type="range" class="range-input" id="form-jar-pct" min="0" max="100" step="5" oninput="document.getElementById('form-pct-label').innerText = this.value + '%'">
+          </div>
+
+          <!-- Child categories management list -->
+          <div style="margin-top: 16px; border-top: 1px dashed #ffd5db; padding-top: 12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+              <span class="form-label" style="font-size: 11px;">Hạng mục con (Ngân sách danh mục)</span>
+              <button class="add-jar-btn" style="padding: 2px 8px; font-size:9px;" onclick="addCategoryRow()">+ Thêm</button>
+            </div>
+            
+            <div id="form-categories-container">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <button class="save-btn" onclick="saveJarForm()">Lưu Cấu Hình</button>
+        </div>
+      </div>
+
+      <!-- Premium Modal Overlay -->
+      <div class="modal-overlay" id="premium-modal">
+        <div class="modal-card">
+          <div style="font-size: 32px; margin-bottom: 8px;">🦫✨</div>
+          <div style="font-size: 14px; font-weight: bold; color: var(--primary); margin-bottom: 6px;">Giới Hạn Cảnh Báo Free</div>
+          <div style="font-size: 11px; color: var(--outline); margin-bottom: 12px; line-height: 1.4;">
+            Tài khoản Free chỉ được bật tối đa 3 cảnh báo ngân sách. Hãy nâng cấp Premium để nhận cảnh báo không giới hạn!
+          </div>
+          <button class="save-btn" style="margin-top:0; padding:8px;" onclick="alert('Cảm ơn bạn đã lựa chọn Premium!')">Nâng Cấp Premium (12k/tháng)</button>
+          <button class="sheet-close" style="font-size:11px; margin-top:6px;" onclick="closePremiumModal()">Để sau</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Prototype State Data
+  const wallets = {
+    personal: {
+      totalBudget: 10000000,
+      jars: [
+        { type: 'NEC', name: 'Thiết yếu (NEC)', icon: '🍔', pct: 55, spent: 3400000, color: 'var(--primary)', alert: true,
+          categories: [
+            { name: 'Ăn uống', limit: 3000000, alert: true },
+            { name: 'Điện nước', limit: 1500000, alert: false }
+          ]
+        },
+        { type: 'FFA', name: 'Tự do TC (FFA)', icon: '📈', pct: 15, spent: 200000, color: '#10b981', alert: false,
+          categories: [
+            { name: 'Đầu tư cổ phiếu', limit: 1000000, alert: false }
+          ]
+        },
+        { type: 'PLAY', name: 'Hưởng thụ (PLAY)', icon: '💃', pct: 30, spent: 950000, color: '#ec4899', alert: false,
+          categories: [
+            { name: 'Cà phê bạn bè', limit: 700000, alert: false }
+          ]
+        }
+      ]
+    },
+    family: {
+      totalBudget: 20000000,
+      jars: [
+        { type: 'NEC', name: 'Thiết yếu (NEC)', icon: '🏡', pct: 70, spent: 12000000, color: 'var(--primary)', alert: true,
+          categories: [
+            { name: 'Tiền thuê nhà', limit: 8000000, alert: true },
+            { name: 'Tiền chợ', limit: 5000000, alert: false }
+          ]
+        },
+        { type: 'EDU', name: 'Giáo dục (EDU)', icon: '🎒', pct: 30, spent: 3000000, color: '#3b82f6', alert: false,
+          categories: [
+            { name: 'Học phí của con', limit: 3750000, alert: false }
+          ]
+        }
+      ]
+    }
+  };
+
+  let currentWallet = 'personal';
+  let expandedJars = new Set(['NEC']);
+
+  function formatVND(value) {
+    return new Intl.NumberFormat('vi-VN').format(value) + 'đ';
+  }
+
+  function getActiveAlertsCount() {
+    let count = 0;
+    wallets[currentWallet].jars.forEach(jar => {
+      if (jar.alert) count++;
+      jar.categories.forEach(cat => {
+        if (cat.alert) count++;
+      });
+    });
+    return count;
+  }
+
+  function handleAlertToggle(checkbox, type, jarType, catName) {
+    const isChecked = checkbox.checked;
+    const currentCount = getActiveAlertsCount();
+
+    if (isChecked && currentCount >= 3) {
+      checkbox.checked = false;
+      document.getElementById('premium-modal').classList.add('active');
+      return;
+    }
+
+    if (type === 'jar') {
+      const jar = wallets[currentWallet].jars.find(j => j.type === jarType);
+      if (jar) jar.alert = isChecked;
+    } else {
+      const jar = wallets[currentWallet].jars.find(j => j.type === jarType);
+      if (jar) {
+        const cat = jar.categories.find(c => c.name === catName);
+        if (cat) cat.alert = isChecked;
+      }
+    }
+    updateAlertBadge();
+  }
+
+  function updateAlertBadge() {
+    const count = getActiveAlertsCount();
+    document.getElementById('alert-count-badge').innerText = `${count} / 3`;
+  }
+
+  function closePremiumModal() {
+    document.getElementById('premium-modal').classList.remove('active');
+  }
+
+  function toggleJarExpand(jarType) {
+    if (expandedJars.has(jarType)) {
+      expandedJars.delete(jarType);
+    } else {
+      expandedJars.add(jarType);
+    }
+    renderJars();
+  }
+
+  function checkAllocationSum() {
+    let sum = 0;
+    wallets[currentWallet].jars.forEach(jar => sum += jar.pct);
+    const statusEl = document.getElementById('allocation-status');
+    if (sum === 100) {
+      statusEl.className = "allocation-total-bar";
+      statusEl.innerText = `Tổng phân bổ: 100% (Hợp lệ)`;
+    } else {
+      statusEl.className = "allocation-total-bar error";
+      statusEl.innerText = `Tổng phân bổ: ${sum}% (Phải bằng 100%)`;
+    }
+  }
+
+  // Render outside main dashboard
+  function renderJars() {
+    const container = document.getElementById('jars-list-container');
+    container.innerHTML = '';
+    const currentData = wallets[currentWallet];
+    
+    currentData.jars.forEach((jar, index) => {
+      const jarLimit = currentData.totalBudget * (jar.pct / 100);
+      const isExpanded = expandedJars.has(jar.type);
+      const progressPercent = Math.min(Math.round((jar.spent / jarLimit) * 100), 120);
+
+      let progressColor = 'var(--safe)';
+      if (progressPercent >= 100) progressColor = 'var(--error)';
+      else if (progressPercent >= 80) progressColor = 'var(--warning)';
+
+      const card = document.createElement('div');
+      card.className = 'jar-card';
+      
+      let categoriesHtml = '';
+      if (isExpanded) {
+        categoriesHtml = `<div class="categories-list">`;
+        if (jar.categories.length === 0) {
+          categoriesHtml += `<div style="font-size:10px; color:var(--outline); text-align:center; padding: 4px 0;">Không có danh mục con</div>`;
+        } else {
+          jar.categories.forEach(cat => {
+            const isChecked = cat.alert ? 'checked' : '';
+            categoriesHtml += `
+              <div class="category-row">
+                <span class="cat-title">🍔 ${cat.name}</span>
+                <div class="cat-limit-container">
+                  <span style="font-size: 11px; font-weight: bold;">${formatVND(cat.limit)}</span>
+                  <label class="toggle-switch">
+                    <input type="checkbox" ${isChecked} onchange="handleAlertToggle(this, 'category', '${jar.type}', '${cat.name}')">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+            `;
+          });
+        }
+        categoriesHtml += `</div>`;
+      }
+
+      const isJarChecked = jar.alert ? 'checked' : '';
+
+      card.innerHTML = `
+        <div class="jar-main-row">
+          <div class="jar-left" onclick="toggleJarExpand('${jar.type}')">
+            <div class="jar-icon" style="background: var(--primary-container); color: var(--primary)">
+              ${jar.icon}
+            </div>
+            <div class="jar-info">
+              <span class="jar-name">${jar.name}</span>
+              <span class="jar-percent">${jar.pct}%</span>
+            </div>
+          </div>
+          
+          <div class="jar-right">
+            <span class="jar-amount">${formatVND(jarLimit)}</span>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:9px; color:var(--outline);">Đã tiêu: ${formatVND(jar.spent)}</span>
+              <label class="toggle-switch">
+                <input type="checkbox" ${isJarChecked} onchange="handleAlertToggle(this, 'jar', '${jar.type}')">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="progress-bar-bg" onclick="toggleJarExpand('${jar.type}')">
+          <div class="progress-bar-fill" style="width: ${progressPercent}%; background: ${progressColor}"></div>
+        </div>
+
+        <div class="jar-actions">
+          <button class="icon-action-btn edit" onclick="openEditJarSheet(${index})" title="Chỉnh sửa hũ">✏️</button>
+          <button class="icon-action-btn delete" onclick="deleteJar(${index})" title="Xóa hũ">🗑️</button>
+        </div>
+
+        ${categoriesHtml}
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  // Delete Jar
+  function deleteJar(index) {
+    if (confirm("Bạn có chắc chắn muốn xóa hũ này? Các danh mục con bên trong cũng sẽ bị xóa.")) {
+      wallets[currentWallet].jars.splice(index, 1);
+      renderJars();
+      checkAllocationSum();
+      updateAlertBadge();
+    }
+  }
+
+  // Open sheet for adding a new Jar
+  function openAddJarSheet() {
+    document.getElementById('sheet-title').innerText = "Thêm Hũ Mới";
+    document.getElementById('form-jar-index').value = "-1";
+    document.getElementById('form-jar-name').value = "";
+    document.getElementById('form-jar-icon').value = "💰";
+    document.getElementById('form-jar-pct').value = "10";
+    document.getElementById('form-pct-label').innerText = "10%";
+    document.getElementById('form-categories-container').innerHTML = "";
+    
+    document.getElementById('jar-sheet-overlay').classList.add('active');
+  }
+
+  // Open sheet for editing existing Jar
+  let currentEditingCategories = [];
+  function openEditJarSheet(index) {
+    const jar = wallets[currentWallet].jars[index];
+    document.getElementById('sheet-title').innerText = `Chỉnh sửa: ${jar.name}`;
+    document.getElementById('form-jar-index').value = index;
+    document.getElementById('form-jar-name').value = jar.name;
+    document.getElementById('form-jar-icon').value = jar.icon;
+    document.getElementById('form-jar-pct').value = jar.pct;
+    document.getElementById('form-pct-label').innerText = `${jar.pct}%`;
+
+    // Clone categories array
+    currentEditingCategories = JSON.parse(JSON.stringify(jar.categories));
+    renderFormCategories();
+
+    document.getElementById('jar-sheet-overlay').classList.add('active');
+  }
+
+  function closeJarSheet() {
+    document.getElementById('jar-sheet-overlay').classList.remove('active');
+  }
+
+  // Render child categories inside form sheet
+  function renderFormCategories() {
+    const container = document.getElementById('form-categories-container');
+    container.innerHTML = "";
+    currentEditingCategories.forEach((cat, idx) => {
+      const row = document.createElement('div');
+      row.className = 'cat-manage-item';
+      row.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:2px;">
+          <input type="text" value="${cat.name}" style="font-size:12px; font-weight:bold; border:none; background:none;" onchange="currentEditingCategories[${idx}].name=this.value">
+          <div style="display:flex; align-items:center; gap:4px; font-size:10px; color:var(--outline);">
+            <span>Hạn mức:</span>
+            <input type="number" value="${cat.limit}" style="width:70px; font-size:10px; border:1px solid #FFDDE2; border-radius:4px; padding:1px 4px;" onchange="currentEditingCategories[${idx}].limit=parseInt(this.value)||0">
+          </div>
+        </div>
+        <div class="cat-manage-actions">
+          <button class="cat-btn" style="color:var(--error);" onclick="deleteCategoryRow(${idx})">🗑️</button>
+        </div>
+      `;
+      container.appendChild(row);
+    });
+  }
+
+  function addCategoryRow() {
+    currentEditingCategories.push({ name: 'Hạng mục mới', limit: 500000, alert: false });
+    renderFormCategories();
+  }
+
+  function deleteCategoryRow(idx) {
+    currentEditingCategories.splice(idx, 1);
+    renderFormCategories();
+  }
+
+  // Save Jar and category budgets
+  function saveJarForm() {
+    const idx = parseInt(document.getElementById('form-jar-index').value);
+    const name = document.getElementById('form-jar-name').value || "Hũ mới";
+    const icon = document.getElementById('form-jar-icon').value || "💰";
+    const pct = parseInt(document.getElementById('form-jar-pct').value);
+
+    if (idx === -1) {
+      // Add new
+      const newJar = {
+        type: 'CUSTOM_' + Date.now(),
+        name: name,
+        icon: icon,
+        pct: pct,
+        spent: 0,
+        color: '#8b5cf6',
+        alert: false,
+        categories: currentEditingCategories
+      };
+      wallets[currentWallet].jars.push(newJar);
+    } else {
+      // Update existing
+      const jar = wallets[currentWallet].jars[idx];
+      jar.name = name;
+      jar.icon = icon;
+      jar.pct = pct;
+      jar.categories = currentEditingCategories;
+    }
+
+    renderJars();
+    checkAllocationSum();
+    updateAlertBadge();
+    closeJarSheet();
+  }
+
+  function switchWallet(walletId) {
+    currentWallet = walletId;
+    document.getElementById('tab-personal').className = `wallet-tab ${walletId === 'personal' ? 'active' : ''}`;
+    document.getElementById('tab-family').className = `wallet-tab ${walletId === 'family' ? 'active' : ''}`;
+    document.getElementById('total-budget-display').innerText = formatVND(wallets[walletId].totalBudget);
+    renderJars();
+    updateAlertBadge();
+    checkAllocationSum();
+  }
+
+  // Initial Run
+  switchWallet('personal');
+</script>
+
+</body>
+</html>

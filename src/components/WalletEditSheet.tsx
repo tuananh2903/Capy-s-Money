@@ -207,6 +207,12 @@ export default function WalletEditSheet({
   const isOwner = wallet.user_id === userId;
   const isViewer = wallet.type === 'shared' && !isOwner && members.find(m => m.user_id === userId)?.role === 'viewer';
 
+  // While members are loading for shared wallets where user is not owner,
+  // return null to prevent briefly showing the sheet to a viewer before roles load
+  if (wallet.type === 'shared' && !isOwner && loadingMembers) {
+    return null;
+  }
+
   if (isViewer) {
     return null; // Return null if viewer as required by "A. Hide Settings button completely for Viewer"
   }

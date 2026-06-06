@@ -1,0 +1,32 @@
+﻿appId: com.capysmoney.app
+---
+# Flow: Ledger
+
+- clearState
+- launchApp
+
+# Login
+- runFlow: _login.yaml
+
+# Open Quick Add sheet
+- tapOn:
+    id: "fab-add-transaction"
+- waitForAnimationToEnd
+
+# Enter amount (tap the amount field - contains "0")
+- tapOn:
+    text: "0"
+- inputText: "150000"
+
+# Dismiss keyboard and close sheet
+- hideKeyboard
+- waitForAnimationToEnd
+
+# Navigate to ledger tab
+- tapOn:
+    id: "tab-ledger"
+- waitForAnimationToEnd
+
+# Verify ledger tab is shown
+- assertVisible:
+    id: "fab-add-transaction"

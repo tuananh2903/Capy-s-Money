@@ -1,0 +1,26 @@
+﻿appId: com.capysmoney.app
+---
+# Subflow: Login Helper
+
+- extendedWaitUntil:
+    visible:
+      id: "login-screen"
+    timeout: 30000
+
+- tapOn:
+    id: "email-input"
+- inputText: "test@capysmoney.com"
+
+- tapOn:
+    id: "password-input"
+- inputText: "TestCapy2024!"
+
+- hideKeyboard
+
+- tapOn:
+    id: "login-button"
+
+- extendedWaitUntil:
+    visible:
+      id: "tab-home"
+    timeout: 30000

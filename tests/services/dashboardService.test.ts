@@ -50,6 +50,7 @@ describe('dashboardService', () => {
     // Setup chainable mock methods
     mockChain.eq = mockEq.mockReturnValue(mockChain);
     mockChain.or = mockOr.mockReturnValue(mockChain);
+    mockChain.select = mockSelect.mockReturnValue(mockChain);
     
     // Default promise resolution for the chain
     mockChain.then = jest.fn((onFulfilled) => {
@@ -68,15 +69,17 @@ describe('dashboardService', () => {
         { id: 'w-1', name: 'Ví Cá Nhân', type: 'personal', balance: 5000000 },
       ];
 
-      // Both wallet_members and wallets use .select().eq() chain:
-      //   mockSelect() returns mockChain, then mockEq resolves data
-      mockSelect.mockReturnValue(mockChain);
-
-      // Call 1: wallet_members .eq() → empty list (no shared wallets)
-      // Call 2: wallets .eq()        → mockWallets
-      mockEq
-        .mockResolvedValueOnce({ data: [], error: null })
-        .mockResolvedValueOnce({ data: mockWallets, error: null });
+      let callCount = 0;
+      mockChain.then = jest.fn((onFulfilled) => {
+        callCount++;
+        if (callCount === 1) {
+          // wallet_members query
+          return Promise.resolve(onFulfilled({ data: [], error: null }));
+        } else {
+          // wallets query
+          return Promise.resolve(onFulfilled({ data: mockWallets, error: null }));
+        }
+      });
 
       const res = await fetchWallets('user-123');
       expect(res.success).toBe(true);
@@ -86,9 +89,9 @@ describe('dashboardService', () => {
     });
 
     it('should return error if fetching wallet_members fails', async () => {
-      // wallet_members .select().eq() → error
-      mockSelect.mockReturnValue(mockChain);
-      mockEq.mockResolvedValueOnce({ data: null, error: { message: 'Database Error' } });
+      mockChain.then = jest.fn((onFulfilled) => {
+        return Promise.resolve(onFulfilled({ data: null, error: { message: 'Database Error' } }));
+      });
 
       const res = await fetchWallets('user-123');
       expect(res.success).toBe(false);

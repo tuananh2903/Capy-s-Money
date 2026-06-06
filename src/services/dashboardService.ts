@@ -54,14 +54,15 @@ export async function fetchWallets(userId: string): Promise<{ success: boolean; 
 
     const sharedWalletIds = (memberRows ?? []).map((row: any) => row.wallet_id);
 
-    // Bước 2: Lấy tất cả ví mà user sở hữu hoặc là thành viên
-    let query = supabase.from('wallets').select('*').eq('user_id', userId);
+    // Bước 2: Lấy tất cả ví mà user sở hữu hoặc là thành viên (không kể ví đã xóa)
+    let query = supabase.from('wallets').select('*').eq('user_id', userId).eq('is_deleted', false);
 
     if (sharedWalletIds.length > 0) {
       query = supabase
         .from('wallets')
         .select('*')
-        .or(`user_id.eq.${userId},id.in.(${sharedWalletIds.join(',')})`);
+        .or(`user_id.eq.${userId},id.in.(${sharedWalletIds.join(',')})`)
+        .eq('is_deleted', false);
     }
 
     const { data, error } = await query;

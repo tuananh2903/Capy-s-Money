@@ -34,6 +34,7 @@ export default function BudgetScreen() {
   const [editingJarIndex, setEditingJarIndex] = useState<number | null>(null);
   const [isEditSheetVisible, setIsEditSheetVisible] = useState(false);
   const [isPremiumModalVisible, setIsPremiumModalVisible] = useState(false);
+  const [isSavingJar, setIsSavingJar] = useState(false);
 
   const [isEditingTotalBudget, setIsEditingTotalBudget] = useState(false);
   const [totalBudgetInput, setTotalBudgetInput] = useState('');
@@ -199,6 +200,14 @@ export default function BudgetScreen() {
         Alert.alert('Lỗi', 'Không thể bật/tắt cảnh báo Hũ');
       }
     } else {
+      // Guard: temp ID means this category has no budget record yet
+      if (id.startsWith('temp-')) {
+        Alert.alert(
+          'Chưa có hạn mức',
+          'Bạn cần đặt hạn mức chi tiêu cho danh mục này trước khi bật cảnh báo. Hãy nhấn ✏️ trên hũ tương ứng để thiết lập.'
+        );
+        return;
+      }
       const res = await toggleCategoryBudgetAlert(id, value);
       if (res.success) {
         setCategoryBudgets(prev => prev.map(b => b.id === id ? { ...b, enable_alerts: value } : b));
@@ -235,18 +244,25 @@ export default function BudgetScreen() {
     if (editingJarIndex === null) return;
     const jar = jars[editingJarIndex];
     
+    setIsSavingJar(true);
+    
     // Save Jar Allocation & Cash Limit
     const jarLimit = totalBudget * (config.pct / 100);
     const allocationRes = await saveJarAllocation(activeWalletId, jar.type, config.pct, jarLimit);
     if (!allocationRes.success) {
-      Alert.alert('Lỗi', 'Lưu tỷ lệ phân bổ Hũ thất bại');
+      setIsSavingJar(false);
+      Alert.alert('Lỗi', 'Lưu tỷ lệ phân bổ Hũ thất bại: ' + (allocationRes.error || ''));
       return;
     }
 
     // Save Category Budgets
     const userRes = await supabase.auth.getUser();
     const userId = userRes.data.user?.id;
-    if (!userId) return;
+    if (!userId) {
+      setIsSavingJar(false);
+      Alert.alert('Lỗi', 'Không thể xác thực người dùng. Vui lòng đăng nhập lại.');
+      return;
+    }
 
     // Find existing budgets for this jar to detect deletions
     const existingBudgetsForJar = categoryBudgets.filter(b => b.categories?.jar_type === jar.type);
@@ -296,8 +312,10 @@ export default function BudgetScreen() {
       }
     }
 
+    setIsSavingJar(false);
     setIsEditSheetVisible(false);
     loadBudgetData();
+    Alert.alert('Đã lưu', `Cấu hình hũ ${jar.name} đã được cập nhật thành công!`);
   };
 
   const totalAllocation = jars.reduce((sum, j) => sum + j.pct, 0);
@@ -445,6 +463,7 @@ export default function BudgetScreen() {
               })
           }}
           onSave={handleSaveJarConfig}
+          isSaving={isSavingJar}
         />
       )}
 

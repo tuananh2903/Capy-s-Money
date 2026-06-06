@@ -1,0 +1,31 @@
+﻿appId: com.capysmoney.app
+---
+# Flow: Dashboard - verify tabs and quick add sheet
+
+- clearState
+- launchApp
+
+- runFlow: _login.yaml
+
+# Verify all 4 tabs visible
+- assertVisible:
+    id: "tab-home"
+- assertVisible:
+    id: "tab-ledger"
+- assertVisible:
+    id: "tab-budget"
+- assertVisible:
+    id: "tab-wallets"
+
+# Verify FAB visible
+- assertVisible:
+    id: "fab-add-transaction"
+
+# Open Quick Add sheet
+- tapOn:
+    id: "fab-add-transaction"
+- waitForAnimationToEnd
+
+# Verify sheet opened by checking amount field "0" is visible
+- assertVisible:
+    text: "0"

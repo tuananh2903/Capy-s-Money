@@ -1,0 +1,37 @@
+﻿appId: com.capysmoney.app
+---
+# Flow: Register - Navigate to register screen and verify UI
+
+- clearState
+- launchApp
+
+# Wait for login screen
+- extendedWaitUntil:
+    visible:
+      id: "login-screen"
+    timeout: 30000
+
+- assertVisible:
+    id: "login-screen"
+
+# Tap register link
+- tapOn:
+    id: "register-link"
+- waitForAnimationToEnd
+
+# Verify register screen is visible (brand shows on register screen too)
+- assertVisible:
+    text: "CAPY'S MONEY"
+
+# Enter email (English placeholder - safe)
+- tapOn:
+    text: "Email"
+- inputText: "newuser@capysmoney.com"
+
+# Enter name field instead of hide keyboard (scroll down if needed)
+- tapOn:
+    text: "Email"
+
+# Final assertion - still on app
+- assertVisible:
+    text: "CAPY'S MONEY"

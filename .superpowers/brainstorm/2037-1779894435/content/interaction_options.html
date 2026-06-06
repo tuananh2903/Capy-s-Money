@@ -1,0 +1,531 @@
+<style>
+  .app-preview-container {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+  }
+  
+  .phone-frame {
+    width: 320px;
+    height: 580px;
+    background: #fff8f7;
+    border: 12px solid #23191a;
+    border-radius: 40px;
+    box-shadow: 0 20px 40px rgba(134, 78, 90, 0.15);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+
+  .phone-header {
+    background: #ffffff;
+    padding: 12px 16px;
+    border-bottom: 1px solid #fff0f1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .phone-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #864e5a;
+    text-align: center;
+  }
+
+  .phone-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Capy Card */
+  .capy-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 12px;
+    border: 1px solid #ffd9df;
+    box-shadow: 0 4px 10px rgba(254, 157, 169, 0.08);
+  }
+
+  .group-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: 700;
+    color: #71585c;
+    padding: 4px 4px;
+    border-bottom: 1px solid #fde9ea;
+    margin-bottom: 6px;
+  }
+
+  .tx-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 4px;
+  }
+
+  .tx-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tx-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #ffd9df;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  .tx-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tx-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #23191a;
+  }
+
+  .tx-time {
+    font-size: 10px;
+    color: #71585c;
+  }
+
+  .tx-amount {
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .tx-outflow { color: #ba1a1a; }
+  .tx-inflow { color: #34c759; }
+
+  /* Tab styling */
+  .tab-bar {
+    display: flex;
+    background: #fde9ea;
+    border-radius: 20px;
+    padding: 3px;
+  }
+  .tab-item {
+    flex: 1;
+    text-align: center;
+    font-size: 11px;
+    padding: 6px 0;
+    border-radius: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    color: #71585c;
+  }
+  .tab-item.active {
+    background: #ffffff;
+    color: #864e5a;
+    box-shadow: 0 2px 6px rgba(134, 78, 90, 0.1);
+  }
+
+  /* Dropdown Header */
+  .wallet-dropdown-trigger {
+    align-self: center;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #fde9ea;
+    border: 1px solid #ffd9df;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #864e5a;
+    cursor: pointer;
+  }
+
+  /* Bottom sheet mockup */
+  .bottom-sheet-overlay {
+    position: absolute;
+    left: 0; right: 0; top: 0; bottom: 0;
+    background: rgba(35, 25, 26, 0.4);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+  .bottom-sheet {
+    background: #ffffff;
+    border-radius: 30px 30px 0 0;
+    padding: 20px 16px;
+    border-top: 1px solid #ffd9df;
+    box-shadow: 0 -8px 24px rgba(134, 78, 90, 0.15);
+  }
+  .sheet-handle {
+    width: 40px;
+    height: 4px;
+    background: #e8d6d7;
+    border-radius: 2px;
+    margin: 0 auto 12px auto;
+  }
+  .sheet-btn-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .sheet-btn {
+    flex: 1;
+    border: none;
+    border-radius: 20px;
+    padding: 8px 0;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+  }
+  .btn-secondary {
+    background: #fde9ea;
+    color: #864e5a;
+    border: 1px solid #ffd9df;
+  }
+  .btn-danger {
+    background: #ba1a1a;
+    color: #ffffff;
+  }
+
+  /* Swipe action styles */
+  .swipe-container {
+    position: relative;
+    background: #ffd9df;
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+  }
+  .swipe-actions {
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: 100px;
+    display: flex;
+  }
+  .swipe-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #ffffff;
+    cursor: pointer;
+  }
+  .swipe-content {
+    background: #ffffff;
+    width: 100%;
+    transform: translateX(-90px);
+    transition: transform 0.2s ease;
+    border-radius: 12px;
+    border: 1px solid #ffd9df;
+    padding: 8px 12px;
+    z-index: 2;
+  }
+
+  /* Inline expand styles */
+  .expandable-tx {
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .expandable-tx.expanded {
+    border-color: #fe9da9;
+    box-shadow: 0 4px 12px rgba(254, 157, 169, 0.12);
+  }
+  .expanded-details {
+    padding-top: 8px;
+    margin-top: 6px;
+    border-top: 1px dashed #fde9ea;
+    font-size: 10px;
+    color: #71585c;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .expanded-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+    justify-content: flex-end;
+  }
+  .action-text-btn {
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  /* Selection UI overlay */
+  .option-card-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+    min-width: 320px;
+    cursor: pointer;
+  }
+</style>
+
+<h2>Tương tác trên giao dịch (Sửa/Xóa)</h2>
+<p class="subtitle">Hãy click chọn phương án bạn thích nhất và phản hồi ý kiến cho mình ở Terminal nhé!</p>
+
+<div class="options" data-choice-container>
+  <div class="app-preview-container">
+    
+    <!-- OPTION A -->
+    <div class="option-card-wrapper option" data-choice="a" onclick="toggleSelect(this)">
+      <div class="letter" style="margin-bottom: 0.5rem;">A</div>
+      <div class="content" style="text-align: center; margin-bottom: 1rem;">
+        <h3 style="margin-bottom: 4px;">Option A: Mở Bottom Sheet chi tiết</h3>
+        <p style="font-size: 0.85rem;">Bấm vào giao dịch mở ra một panel từ cạnh dưới chứa thông tin chi tiết & nút Sửa/Xóa.</p>
+      </div>
+
+      <!-- Phone mockup for Option A -->
+      <div class="phone-frame">
+        <div class="phone-header">
+          <div class="wallet-dropdown-trigger">
+            <span>👛 Ví Tiền mặt</span>
+            <span style="font-size: 8px;">▼</span>
+          </div>
+          <div class="tab-bar">
+            <div class="tab-item active">Hàng ngày</div>
+            <div class="tab-item">Hàng tháng</div>
+            <div class="tab-item">Lịch biểu</div>
+          </div>
+        </div>
+        <div class="phone-content" style="opacity: 0.6;">
+          <!-- Content background -->
+          <div class="capy-card">
+            <div class="group-header"><span>Hôm nay (27/05)</span></div>
+            <div class="tx-item" style="background: #ffd9df; border-radius: 8px;">
+              <div class="tx-left">
+                <div class="tx-icon">☕</div>
+                <div class="tx-info">
+                  <span class="tx-title">Capy Cà phê</span>
+                  <span class="tx-time">09:30</span>
+                </div>
+              </div>
+              <span class="tx-amount tx-outflow">-45.000đ</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Sheet Overlay -->
+        <div class="bottom-sheet-overlay">
+          <div class="bottom-sheet">
+            <div class="sheet-handle"></div>
+            <div style="text-align: center; margin-bottom: 10px;">
+              <span style="font-size: 24px;">☕</span>
+              <h3 style="margin-top: 4px; color: #864e5a;">Chi tiết Giao dịch</h3>
+            </div>
+            <div style="font-size: 11px; color: #71585c; display: flex; flex-direction: column; gap: 4px;">
+              <div><strong>Số tiền:</strong> <span class="tx-outflow">-45.000đ</span></div>
+              <div><strong>Hũ:</strong> Hũ Hưởng thụ (PLAY)</div>
+              <div><strong>Thời gian:</strong> 27/05/2026 09:30</div>
+              <div><strong>Ghi chú:</strong> Đi cafe trò chuyện cùng bạn bè.</div>
+            </div>
+            <div class="sheet-btn-group">
+              <button class="sheet-btn btn-secondary">✏️ Sửa</button>
+              <button class="sheet-btn btn-danger">🗑️ Xóa</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pros-cons" style="width: 100%; margin-top: 10px;">
+        <div class="pros">
+          <h4>Ưu điểm</h4>
+          <ul>
+            <li>Rất trực quan, chi tiết và hiện đại</li>
+            <li>Dễ bấm chính xác, hạn chế lỡ tay xóa</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Nhược điểm</h4>
+          <ul>
+            <li>Thêm một bước đóng/mở panel</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- OPTION B -->
+    <div class="option-card-wrapper option" data-choice="b" onclick="toggleSelect(this)">
+      <div class="letter" style="margin-bottom: 0.5rem;">B</div>
+      <div class="content" style="text-align: center; margin-bottom: 1rem;">
+        <h3 style="margin-bottom: 4px;">Option B: Vuốt (Swipe) để thao tác nhanh</h3>
+        <p style="font-size: 0.85rem;">Vuốt trực tiếp trên dòng danh sách để lộ nhanh nút Sửa (phải) hoặc Xóa (trái).</p>
+      </div>
+
+      <!-- Phone mockup for Option B -->
+      <div class="phone-frame">
+        <div class="phone-header">
+          <div class="wallet-dropdown-trigger">
+            <span>👛 Ví Tiền mặt</span>
+            <span style="font-size: 8px;">▼</span>
+          </div>
+          <div class="tab-bar">
+            <div class="tab-item active">Hàng ngày</div>
+            <div class="tab-item">Hàng tháng</div>
+            <div class="tab-item">Lịch biểu</div>
+          </div>
+        </div>
+        <div class="phone-content">
+          
+          <div class="capy-card" style="padding: 6px;">
+            <div class="group-header"><span>Hôm nay (27/05)</span></div>
+            
+            <!-- Swiped Item Mockup -->
+            <div class="swipe-container">
+              <!-- Swiped content -->
+              <div class="swipe-content">
+                <div class="tx-item" style="padding: 0;">
+                  <div class="tx-left">
+                    <div class="tx-icon">☕</div>
+                    <div class="tx-info">
+                      <span class="tx-title">Capy Cà phê</span>
+                      <span class="tx-time">09:30</span>
+                    </div>
+                  </div>
+                  <span class="tx-amount tx-outflow">-45.000đ</span>
+                </div>
+              </div>
+              <!-- Swiped buttons (hidden under card content, revealed by translation) -->
+              <div class="swipe-actions">
+                <div class="swipe-btn" style="background: #fe9da9; color: #864e5a;">✏️</div>
+                <div class="swipe-btn" style="background: #ba1a1a;">🗑️</div>
+              </div>
+            </div>
+
+            <!-- Standard Item Mockup -->
+            <div class="tx-item" style="margin-top: 6px;">
+              <div class="tx-left">
+                <div class="tx-icon">🍛</div>
+                <div class="tx-info">
+                  <span class="tx-title">Ăn trưa bún chả</span>
+                  <span class="tx-time">12:15</span>
+                </div>
+              </div>
+              <span class="tx-amount tx-outflow">-80.000đ</span>
+            </div>
+
+          </div>
+
+          <div style="font-size: 10px; color: #71585c; text-align: center; margin-top: 10px;">
+            <i>(Vuốt thẻ Cà phê sang trái để hiện Sửa/Xóa)</i>
+          </div>
+
+        </div>
+      </div>
+      <div class="pros-cons" style="width: 100%; margin-top: 10px;">
+        <div class="pros">
+          <h4>Ưu điểm</h4>
+          <ul>
+            <li>Thao tác cực kỳ nhanh chóng</li>
+            <li>Giữ danh sách sạch, không bị che khuất</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Nhược điểm</h4>
+          <ul>
+            <li>Khó thao tác bằng một tay hoặc dễ bị kích hoạt nhầm khi cuộn</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- OPTION C -->
+    <div class="option-card-wrapper option" data-choice="c" onclick="toggleSelect(this)">
+      <div class="letter" style="margin-bottom: 0.5rem;">C</div>
+      <div class="content" style="text-align: center; margin-bottom: 1rem;">
+        <h3 style="margin-bottom: 4px;">Option C: Mở rộng trực tiếp tại dòng</h3>
+        <p style="font-size: 0.85rem;">Nhấn vào giao dịch sẽ mở rộng kích thước dòng để hiện ghi chú và các tùy chọn hành động.</p>
+      </div>
+
+      <!-- Phone mockup for Option C -->
+      <div class="phone-frame">
+        <div class="phone-header">
+          <div class="wallet-dropdown-trigger">
+            <span>👛 Ví Tiền mặt</span>
+            <span style="font-size: 8px;">▼</span>
+          </div>
+          <div class="tab-bar">
+            <div class="tab-item active">Hàng ngày</div>
+            <div class="tab-item">Hàng tháng</div>
+            <div class="tab-item">Lịch biểu</div>
+          </div>
+        </div>
+        <div class="phone-content">
+          
+          <div class="capy-card">
+            <div class="group-header"><span>Hôm nay (27/05)</span></div>
+            
+            <!-- Expanded Item -->
+            <div class="capy-card expandable-tx expanded" style="margin-bottom: 8px; border-color: #fe9da9; padding: 8px 10px;">
+              <div class="tx-item" style="padding: 0;">
+                <div class="tx-left">
+                  <div class="tx-icon">☕</div>
+                  <div class="tx-info">
+                    <span class="tx-title">Capy Cà phê</span>
+                    <span class="tx-time">09:30</span>
+                  </div>
+                </div>
+                <span class="tx-amount tx-outflow">-45.000đ</span>
+              </div>
+              <div class="expanded-details">
+                <div>📝 Ghi chú: Đi cafe tán gẫu cùng bạn bè.</div>
+                <div>🏷️ Hũ: Hưởng thụ (PLAY)</div>
+                <div class="expanded-actions">
+                  <span class="action-text-btn" style="color: #864e5a;">✏️ Sửa nhanh</span>
+                  <span class="action-text-btn" style="color: #ba1a1a;">🗑️ Xóa</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Normal Item -->
+            <div class="tx-item">
+              <div class="tx-left">
+                <div class="tx-icon">🍛</div>
+                <div class="tx-info">
+                  <span class="tx-title">Ăn trưa bún chả</span>
+                  <span class="tx-time">12:15</span>
+                </div>
+              </div>
+              <span class="tx-amount tx-outflow">-80.000đ</span>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+      <div class="pros-cons" style="width: 100%; margin-top: 10px;">
+        <div class="pros">
+          <h4>Ưu điểm</h4>
+          <ul>
+            <li>Xem được thông tin nhanh không cần rời trang</li>
+            <li>Giao diện sinh động</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Nhược điểm</h4>
+          <ul>
+            <li>Làm xáo trộn chiều cao các dòng, giao diện bị giật khi mở rộng</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

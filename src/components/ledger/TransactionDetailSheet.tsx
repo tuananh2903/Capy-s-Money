@@ -1,12 +1,12 @@
 import React from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { LedgerTransaction } from '../../services/ledgerService';
 
 interface Props {
   transaction: LedgerTransaction | null;
   isOpen: boolean;
   onClose: () => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => Promise<boolean>;
   onEdit: (tx: LedgerTransaction) => void;
 }
 
@@ -53,7 +53,29 @@ export function TransactionDetailSheet({ transaction, isOpen, onClose, onDelete,
             <TouchableOpacity style={[styles.btn, styles.editBtn]} onPress={() => { onEdit(transaction); onClose(); }}>
               <Text style={styles.btnText}>Sửa</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.btn, styles.deleteBtn]} onPress={() => { onDelete(transaction.id); onClose(); }}>
+            <TouchableOpacity
+              style={[styles.btn, styles.deleteBtn]}
+              onPress={() => {
+                Alert.alert(
+                  'Xác nhận xóa',
+                  'Bạn có chắc chắn muốn xóa giao dịch này không?',
+                  [
+                    { text: 'Hủy', style: 'cancel' },
+                    {
+                      text: 'Xóa',
+                      style: 'destructive',
+                      onPress: async () => {
+                        const success = await onDelete(transaction.id);
+                        onClose();
+                        if (!success) {
+                          Alert.alert('Lỗi', 'Không thể xóa giao dịch. Vui lòng thử lại.');
+                        }
+                      },
+                    },
+                  ]
+                );
+              }}
+            >
               <Text style={[styles.btnText, styles.deleteBtnText]}>Xóa</Text>
             </TouchableOpacity>
           </View>
