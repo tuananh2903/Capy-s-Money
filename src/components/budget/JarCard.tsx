@@ -40,11 +40,11 @@ export const JarCard: React.FC<JarCardProps> = ({ jar, categories, onToggleAlert
           <Text style={styles.icon}>{jar.icon}</Text>
           <View>
             <Text style={styles.name}>{jar.name} ({jar.pct}%)</Text>
-            <Text style={styles.subtext}>Đã chi: {jar.spent.toLocaleString()}đ</Text>
+            <Text style={styles.subtext}>Đã chi: {jar.spent.toLocaleString('vi-VN')}đ</Text>
           </View>
         </View>
         <View style={styles.right}>
-          <Text style={styles.limit}>{jar.limit.toLocaleString()}đ</Text>
+          <Text style={styles.limit}>{jar.limit.toLocaleString('vi-VN')}đ</Text>
           <Switch
             value={jar.enableAlerts}
             onValueChange={(val) => onToggleAlert('jar', jar.id, val)}
@@ -75,7 +75,7 @@ export const JarCard: React.FC<JarCardProps> = ({ jar, categories, onToggleAlert
               <View key={cat.id} style={styles.catRow}>
                 <Text style={styles.catName}>🍔 {cat.name}</Text>
                 <View style={styles.catRight}>
-                  <Text style={styles.catLimit}>{cat.amountLimit.toLocaleString()}đ</Text>
+                  <Text style={styles.catLimit}>{cat.amountLimit.toLocaleString('vi-VN')}đ</Text>
                   <Switch
                     value={cat.enableAlerts}
                     onValueChange={(val) => onToggleAlert('category', cat.id, val)}

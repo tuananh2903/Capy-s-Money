@@ -357,8 +357,8 @@ export default function WalletEditSheet({
                 (totalPercentage !== 100 || saving) && styles.disabledButton,
               ]}
               onPress={handleSaveAllocations}
-              disabled={totalPercentage !== 100 || saving}
-              accessibilityState={{ disabled: totalPercentage !== 100 || saving }}
+              disabled={saving}
+              accessibilityState={{ disabled: saving }}
             >
               {saving ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />

@@ -117,6 +117,7 @@ export default function WalletCreateSheet({
         style={styles.overlay}
       >
         <TouchableOpacity
+          testID="create-wallet-backdrop"
           activeOpacity={1}
           style={styles.backdrop}
           onPress={onClose}
@@ -149,7 +150,6 @@ export default function WalletCreateSheet({
                 setName(text);
                 setValidationError(null);
               }}
-              maxLength={32}
             />
 
             {/* Wallet Type */}

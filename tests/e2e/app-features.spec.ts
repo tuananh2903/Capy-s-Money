@@ -63,6 +63,14 @@ async function setupDashboardMocks(page: any, dynamicTransactions: any[], dynami
     });
   });
 
+  await page.route('**/auth/v1/user*', async (route: any) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(mockUser)
+    });
+  });
+
   await page.route('**/auth/v1/token*', async (route: any) => {
     await route.fulfill({
       status: 200,
