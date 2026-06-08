@@ -194,17 +194,6 @@ export default function App() {
     );
   }
 
-  // Màn hình Overlay khi đang lưu dữ liệu onboarding lên DB
-  if (savingOnboarding) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#20E3B2" />
-        <Text style={[styles.loadingText, { color: '#20E3B2' }]}>Capy đang chia hũ và khởi tạo Ví của bạn...</Text>
-        <StatusBar style="auto" />
-      </View>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.rootContainer}>
       {/* 5. Cấu hình Định tuyến thông minh (Route Protection) */}
@@ -227,6 +216,14 @@ export default function App() {
           onClearInviteCode={() => setPendingInviteCode(null)}
         />
       )}
+      
+      {/* Màn hình Overlay khi đang lưu dữ liệu onboarding lên DB */}
+      {savingOnboarding && (
+        <View style={styles.overlayLoadingContainer}>
+          <ActivityIndicator size="large" color="#20E3B2" />
+          <Text style={[styles.loadingText, { color: '#20E3B2' }]}>Capy đang chia hũ và khởi tạo Ví của bạn...</Text>
+        </View>
+      )}
       <StatusBar style="auto" />
     </SafeAreaView>
   );
@@ -245,6 +242,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF8F7',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  overlayLoadingContainer: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 248, 247, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 999,
   },
   loadingText: {
     marginTop: 16,

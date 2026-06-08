@@ -33,7 +33,7 @@ BEGIN
 
   -- 3. Create initial cash wallet
   INSERT INTO public.wallets (user_id, name, balance, is_default, type, created_at, updated_at)
-  VALUES (p_user_id, p_wallet_name, p_balance, TRUE, 'cash', NOW(), NOW())
+  VALUES (p_user_id, p_wallet_name, p_balance, TRUE, 'personal', NOW(), NOW())
   RETURNING id INTO v_wallet_id;
 
   -- 4. Create 6 financial jars
