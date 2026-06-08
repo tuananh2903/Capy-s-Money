@@ -344,8 +344,10 @@ export default function WalletEditSheet({
               })
             )}
 
-            {validationError && (
-              <Text style={styles.errorText}>{validationError}</Text>
+            {(validationError || totalPercentage !== 100) && (
+              <Text style={styles.errorText}>
+                {validationError || `Tổng tỷ lệ phân bổ của các hũ phải bằng 100% (hiện tại: ${totalPercentage}%).`}
+              </Text>
             )}
 
             {/* Allocation Save Button */}
