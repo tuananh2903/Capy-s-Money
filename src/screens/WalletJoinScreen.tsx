@@ -204,11 +204,11 @@ export default function WalletJoinScreen({ visible, onClose, initialCode, onJoin
                 <TouchableOpacity
                   style={[
                     styles.actionButton,
-                    (!code.trim() || loading) && styles.actionButtonDisabled,
+                    loading && styles.actionButtonDisabled,
                     errorCode === 'E-wallet-005' && styles.actionButtonLocked
                   ]}
                   onPress={() => handleJoin()}
-                  disabled={loading || !code.trim() || errorCode === 'E-wallet-005'}
+                  disabled={loading || errorCode === 'E-wallet-005'}
                   activeOpacity={0.8}
                 >
                   {loading ? (

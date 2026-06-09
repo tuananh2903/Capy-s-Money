@@ -66,20 +66,20 @@
   },
   "suites": [
     {
-      "title": "wallet.spec.ts",
-      "file": "wallet.spec.ts",
+      "title": "wallet-invite.spec.ts",
+      "file": "wallet-invite.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "WalletScreen — Hiển thị & Điều hướng chi tiết",
-          "file": "wallet.spec.ts",
-          "line": 184,
+          "title": "WalletInviteScreen — Mời thành viên vào Ví chung",
+          "file": "wallet-invite.spec.ts",
+          "line": 148,
           "column": 6,
           "specs": [
             {
-              "title": "should display all wallet cards with correct info",
+              "title": "should display WalletInviteScreen with correct elements",
               "ok": true,
               "tags": [],
               "tests": [
@@ -94,12 +94,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 34420,
+                      "duration": 26542,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-08T15:23:24.423Z",
+                      "startTime": "2026-06-09T15:31:17.187Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -107,13 +107,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "27e87c8ff6887d69f80e-a6e00d100d0997852372",
-              "file": "wallet.spec.ts",
-              "line": 195,
+              "id": "fa74fecf6acf9f68522e-b56f633eaa894cdede57",
+              "file": "wallet-invite.spec.ts",
+              "line": 165,
               "column": 7
             },
             {
-              "title": "should show settings icon for each wallet",
+              "title": "should show copy button that changes to \"Đã chép!\" after clicking",
               "ok": true,
               "tags": [],
               "tests": [
@@ -128,12 +128,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 33485,
+                      "duration": 26875,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-08T15:23:24.313Z",
+                      "startTime": "2026-06-09T15:31:17.181Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -141,13 +141,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "27e87c8ff6887d69f80e-89d31095f44d9cf3c76e",
-              "file": "wallet.spec.ts",
-              "line": 209,
+              "id": "fa74fecf6acf9f68522e-bf62fdda5ff2c67eb9ca",
+              "file": "wallet-invite.spec.ts",
+              "line": 180,
               "column": 7
             },
             {
-              "title": "clicking wallet card navigates to Dashboard with that wallet selected",
+              "title": "should close WalletInviteScreen when clicking close button",
               "ok": true,
               "tags": [],
               "tests": [
@@ -162,12 +162,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 34078,
+                      "duration": 26501,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-08T15:23:24.358Z",
+                      "startTime": "2026-06-09T15:31:17.120Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -175,13 +175,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "27e87c8ff6887d69f80e-fdb9a3d0fc0c68eeb9ad",
-              "file": "wallet.spec.ts",
-              "line": 214,
+              "id": "fa74fecf6acf9f68522e-a21d92b6fd7ccf12626e",
+              "file": "wallet-invite.spec.ts",
+              "line": 194,
               "column": 7
             },
             {
-              "title": "should show quota limit warning when 2 personal + 1 shared reached",
+              "title": "should display wallet name in instruction text",
               "ok": true,
               "tags": [],
               "tests": [
@@ -196,12 +196,12 @@
                       "workerIndex": 3,
                       "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 36138,
+                      "duration": 25054,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-08T15:23:24.319Z",
+                      "startTime": "2026-06-09T15:31:17.440Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -209,123 +209,21 @@
                   "status": "expected"
                 }
               ],
-              "id": "27e87c8ff6887d69f80e-d4740602e9f4b4817900",
-              "file": "wallet.spec.ts",
-              "line": 222,
+              "id": "fa74fecf6acf9f68522e-06a7781e5b1e18e59758",
+              "file": "wallet-invite.spec.ts",
+              "line": 201,
               "column": 7
             }
           ]
         },
         {
-          "title": "WalletCreateSheet — Tạo ví mới",
-          "file": "wallet.spec.ts",
-          "line": 242,
+          "title": "WalletInviteScreen — Trường hợp lỗi tạo mã mời",
+          "file": "wallet-invite.spec.ts",
+          "line": 206,
           "column": 6,
           "specs": [
             {
-              "title": "should display WalletCreateSheet with all required fields",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
-                      "status": "passed",
-                      "duration": 3726,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-08T15:23:58.201Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "27e87c8ff6887d69f80e-86c92cc54e1fcd999033",
-              "file": "wallet.spec.ts",
-              "line": 255,
-              "column": 7
-            },
-            {
-              "title": "should show validation error when wallet name is empty",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 2,
-                      "parallelIndex": 2,
-                      "status": "passed",
-                      "duration": 3407,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-08T15:23:58.885Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "27e87c8ff6887d69f80e-447698127b160a723747",
-              "file": "wallet.spec.ts",
-              "line": 274,
-              "column": 7
-            },
-            {
-              "title": "should show validation error when wallet name exceeds 32 characters",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 4010,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-08T15:23:59.193Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "27e87c8ff6887d69f80e-3b0888f704233f15606a",
-              "file": "wallet.spec.ts",
-              "line": 280,
-              "column": 7
-            },
-            {
-              "title": "should switch between Personal and Shared wallet type",
+              "title": "should show error state with retry button when invite code generation fails",
               "ok": true,
               "tags": [],
               "tests": [
@@ -340,12 +238,12 @@
                       "workerIndex": 3,
                       "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 15622,
+                      "duration": 4293,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-08T15:24:00.784Z",
+                      "startTime": "2026-06-09T15:31:43.544Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -353,81 +251,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "27e87c8ff6887d69f80e-d82c655d2eee9330cca4",
-              "file": "wallet.spec.ts",
-              "line": 287,
+              "id": "fa74fecf6acf9f68522e-22d39ca80849b38f4bc2",
+              "file": "wallet-invite.spec.ts",
+              "line": 221,
               "column": 7
             },
             {
-              "title": "should create a personal wallet successfully and appear in wallet list",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
-                      "status": "passed",
-                      "duration": 15569,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-08T15:24:01.958Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "27e87c8ff6887d69f80e-e3752c0d7b088b8c38bc",
-              "file": "wallet.spec.ts",
-              "line": 300,
-              "column": 7
-            },
-            {
-              "title": "should close WalletCreateSheet when clicking close button",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 2,
-                      "parallelIndex": 2,
-                      "status": "passed",
-                      "duration": 15186,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-08T15:24:02.323Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "27e87c8ff6887d69f80e-958a731339be72a429a3",
-              "file": "wallet.spec.ts",
-              "line": 316,
-              "column": 7
-            },
-            {
-              "title": "should close WalletCreateSheet when clicking backdrop",
+              "title": "should trigger regeneration when clicking Retry",
               "ok": true,
               "tags": [],
               "tests": [
@@ -442,12 +272,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 14984,
+                      "duration": 6412,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-08T15:24:03.241Z",
+                      "startTime": "2026-06-09T15:31:44.330Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -455,259 +285,21 @@
                   "status": "expected"
                 }
               ],
-              "id": "27e87c8ff6887d69f80e-a0ee4c8ad3f9f6cf7a49",
-              "file": "wallet.spec.ts",
-              "line": 323,
-              "column": 7
-            },
-            {
-              "title": "should format balance input with thousand separators",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 3,
-                      "parallelIndex": 3,
-                      "status": "passed",
-                      "duration": 5831,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-08T15:24:16.444Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "27e87c8ff6887d69f80e-0b8c85a16e1f680b5db9",
-              "file": "wallet.spec.ts",
-              "line": 331,
-              "column": 7
-            },
-            {
-              "title": "should create a shared wallet type",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 2,
-                      "parallelIndex": 2,
-                      "status": "passed",
-                      "duration": 7013,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-08T15:24:17.555Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "27e87c8ff6887d69f80e-11bc483e751a4a55a1a2",
-              "file": "wallet.spec.ts",
-              "line": 340,
+              "id": "fa74fecf6acf9f68522e-f11a1950275a9d91e0ec",
+              "file": "wallet-invite.spec.ts",
+              "line": 228,
               "column": 7
             }
           ]
         },
         {
-          "title": "WalletEditSheet — Cài đặt ví",
-          "file": "wallet.spec.ts",
-          "line": 358,
+          "title": "WalletJoinScreen — Tham gia Ví chung bằng mã mời",
+          "file": "wallet-invite.spec.ts",
+          "line": 241,
           "column": 6,
           "specs": [
             {
-              "title": "should display WalletEditSheet with correct header for the wallet",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
-                      "status": "passed",
-                      "duration": 5639,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-08T15:24:17.675Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "27e87c8ff6887d69f80e-af0dadbe71e130cb9c40",
-              "file": "wallet.spec.ts",
-              "line": 372,
-              "column": 7
-            },
-            {
-              "title": "should display Save and Reset buttons",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 5599,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-08T15:24:18.289Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "27e87c8ff6887d69f80e-ea452a7836a8c3ee36a7",
-              "file": "wallet.spec.ts",
-              "line": 387,
-              "column": 7
-            },
-            {
-              "title": "should show footer actions (Set Default / Delete)",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 3,
-                      "parallelIndex": 3,
-                      "status": "passed",
-                      "duration": 6219,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-08T15:24:22.324Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "27e87c8ff6887d69f80e-e2a1885ea22b38c3defe",
-              "file": "wallet.spec.ts",
-              "line": 392,
-              "column": 7
-            },
-            {
-              "title": "should show Set Default button for non-default wallet",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
-                      "status": "passed",
-                      "duration": 6499,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-08T15:24:23.507Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "27e87c8ff6887d69f80e-458bd78be5fcb43d8451",
-              "file": "wallet.spec.ts",
-              "line": 399,
-              "column": 7
-            },
-            {
-              "title": "should adjust jar allocation with + and - buttons",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 6022,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-08T15:24:23.964Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "27e87c8ff6887d69f80e-b13f7f296c9d22bc3b4b",
-              "file": "wallet.spec.ts",
-              "line": 412,
-              "column": 7
-            },
-            {
-              "title": "should show validation error when total allocation != 100%",
+              "title": "should open join modal via join button and validate empty invite code",
               "ok": true,
               "tags": [],
               "tests": [
@@ -722,12 +314,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 6504,
+                      "duration": 3851,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-08T15:24:24.673Z",
+                      "startTime": "2026-06-09T15:31:44.339Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -735,47 +327,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "27e87c8ff6887d69f80e-4835ace371483e67ce4a",
-              "file": "wallet.spec.ts",
-              "line": 425,
+              "id": "fa74fecf6acf9f68522e-ffdacb749bf322495189",
+              "file": "wallet-invite.spec.ts",
+              "line": 333,
               "column": 7
             },
             {
-              "title": "should reset allocations to default values",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 3,
-                      "parallelIndex": 3,
-                      "status": "passed",
-                      "duration": 5516,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-08T15:24:28.712Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "27e87c8ff6887d69f80e-5c2307fde22532c4d3dc",
-              "file": "wallet.spec.ts",
-              "line": 433,
-              "column": 7
-            },
-            {
-              "title": "should save jar allocations successfully when total is 100%",
+              "title": "WalletJoinScreen — displays input form with correct placeholder",
               "ok": true,
               "tags": [],
               "tests": [
@@ -790,12 +348,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 5854,
+                      "duration": 4436,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-08T15:24:30.050Z",
+                      "startTime": "2026-06-09T15:31:44.775Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -803,13 +361,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "27e87c8ff6887d69f80e-d32195e99c38686729c3",
-              "file": "wallet.spec.ts",
-              "line": 444,
+              "id": "fa74fecf6acf9f68522e-6a6004021c69f2bf31f2",
+              "file": "wallet-invite.spec.ts",
+              "line": 350,
               "column": 7
             },
             {
-              "title": "should delete wallet with confirmation dialog",
+              "title": "WalletJoinScreen — validates empty code on submit",
               "ok": true,
               "tags": [],
               "tests": [
@@ -821,15 +379,15 @@
                   "projectName": "chromium",
                   "results": [
                     {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
                       "status": "passed",
-                      "duration": 6720,
+                      "duration": 3897,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-08T15:24:30.059Z",
+                      "startTime": "2026-06-09T15:31:47.866Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -837,13 +395,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "27e87c8ff6887d69f80e-3790743e20f54712c065",
-              "file": "wallet.spec.ts",
-              "line": 454,
+              "id": "fa74fecf6acf9f68522e-170beb351031009e882e",
+              "file": "wallet-invite.spec.ts",
+              "line": 362,
               "column": 7
             },
             {
-              "title": "should cancel wallet delete when dismissing dialog",
+              "title": "WalletJoinScreen — validates wrong code format",
               "ok": true,
               "tags": [],
               "tests": [
@@ -858,12 +416,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 7439,
+                      "duration": 3223,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-08T15:24:31.251Z",
+                      "startTime": "2026-06-09T15:31:48.217Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -871,47 +429,13 @@
                   "status": "expected"
                 }
               ],
-              "id": "27e87c8ff6887d69f80e-5badc4d6b8501c4c1f39",
-              "file": "wallet.spec.ts",
-              "line": 467,
+              "id": "fa74fecf6acf9f68522e-9c08bf573bb2abb692a8",
+              "file": "wallet-invite.spec.ts",
+              "line": 379,
               "column": 7
             },
             {
-              "title": "should close WalletEditSheet when clicking close button",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 3,
-                      "parallelIndex": 3,
-                      "status": "passed",
-                      "duration": 5214,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-08T15:24:34.311Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "27e87c8ff6887d69f80e-d8fb0dd4b94d4406ba98",
-              "file": "wallet.spec.ts",
-              "line": 478,
-              "column": 7
-            },
-            {
-              "title": "should set wallet as default when clicking Set Default",
+              "title": "WalletJoinScreen — auto-uppercase input text",
               "ok": true,
               "tags": [],
               "tests": [
@@ -926,12 +450,12 @@
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "passed",
-                      "duration": 7112,
+                      "duration": 3544,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-08T15:24:35.982Z",
+                      "startTime": "2026-06-09T15:31:49.243Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -939,55 +463,55 @@
                   "status": "expected"
                 }
               ],
-              "id": "27e87c8ff6887d69f80e-9a32eac0bfc71afa2fcf",
-              "file": "wallet.spec.ts",
-              "line": 485,
+              "id": "fa74fecf6acf9f68522e-d22437a644d7019a942c",
+              "file": "wallet-invite.spec.ts",
+              "line": 397,
+              "column": 7
+            },
+            {
+              "title": "WalletJoinScreen — adds CAPY- prefix when typing only digits",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3865,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-09T15:31:50.793Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "fa74fecf6acf9f68522e-6ac19567af17a1e8195a",
+              "file": "wallet-invite.spec.ts",
+              "line": 415,
               "column": 7
             }
           ]
         },
         {
-          "title": "WalletEditSheet — Ví chung (Shared Wallet)",
-          "file": "wallet.spec.ts",
-          "line": 504,
+          "title": "WalletJoinScreen — Trạng thái thành công",
+          "file": "wallet-invite.spec.ts",
+          "line": 437,
           "column": 6,
           "specs": [
             {
-              "title": "should display members section for shared wallet",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 4320,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-08T15:24:36.945Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "27e87c8ff6887d69f80e-2913acb422af47aa1ed0",
-              "file": "wallet.spec.ts",
-              "line": 540,
-              "column": 7
-            },
-            {
-              "title": "should show invite button when under 3 members",
+              "title": "success state displays wallet name and privacy note",
               "ok": true,
               "tags": [],
               "tests": [
@@ -1002,12 +526,12 @@
                       "workerIndex": 2,
                       "parallelIndex": 2,
                       "status": "passed",
-                      "duration": 5265,
+                      "duration": 2401,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-08T15:24:38.790Z",
+                      "startTime": "2026-06-09T15:31:51.467Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -1015,221 +539,9 @@
                   "status": "expected"
                 }
               ],
-              "id": "27e87c8ff6887d69f80e-6fc1b21ea018c3899dc1",
-              "file": "wallet.spec.ts",
-              "line": 548,
-              "column": 7
-            },
-            {
-              "title": "should open WalletInviteScreen when clicking invite",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 3,
-                      "parallelIndex": 3,
-                      "status": "passed",
-                      "duration": 5247,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-08T15:24:39.585Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "27e87c8ff6887d69f80e-07e7aa4f24965abb6d93",
-              "file": "wallet.spec.ts",
-              "line": 552,
-              "column": 7
-            },
-            {
-              "title": "should show remove button for non-owner members (owner view)",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 4681,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-08T15:24:41.521Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "27e87c8ff6887d69f80e-9a10aa9baaa7c8c74551",
-              "file": "wallet.spec.ts",
-              "line": 558,
-              "column": 7
-            },
-            {
-              "title": "should remove a member with confirmation",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
-                      "status": "passed",
-                      "duration": 6019,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-08T15:24:43.231Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "27e87c8ff6887d69f80e-74a97d47d3138a460307",
-              "file": "wallet.spec.ts",
-              "line": 563,
-              "column": 7
-            },
-            {
-              "title": "should cancel member removal when dismissing dialog",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 2,
-                      "parallelIndex": 2,
-                      "status": "passed",
-                      "duration": 5647,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-08T15:24:44.220Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "27e87c8ff6887d69f80e-8a98267956bf202b3845",
-              "file": "wallet.spec.ts",
-              "line": 578,
-              "column": 7
-            }
-          ]
-        },
-        {
-          "title": "Full Wallet Management E2E Flows",
-          "file": "wallet.spec.ts",
-          "line": 596,
-          "column": 6,
-          "specs": [
-            {
-              "title": "full flow: create wallet → verify in list → open settings",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 3,
-                      "parallelIndex": 3,
-                      "status": "passed",
-                      "duration": 6081,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-08T15:24:44.966Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "27e87c8ff6887d69f80e-3951ea4afa2535588877",
-              "file": "wallet.spec.ts",
-              "line": 606,
-              "column": 7
-            },
-            {
-              "title": "full flow: navigate wallets → add transaction → verify balance in wallet list",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 6212,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-06-08T15:24:46.299Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "27e87c8ff6887d69f80e-0446bba3d2df900c9163",
-              "file": "wallet.spec.ts",
-              "line": 630,
+              "id": "fa74fecf6acf9f68522e-4ca83b823eae90f4b440",
+              "file": "wallet-invite.spec.ts",
+              "line": 439,
               "column": 7
             }
           ]
@@ -1239,9 +551,9 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-06-08T15:23:19.497Z",
-    "duration": 93370.131,
-    "expected": 33,
+    "startTime": "2026-06-09T15:31:12.471Z",
+    "duration": 42975.655,
+    "expected": 13,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

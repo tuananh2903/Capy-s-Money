@@ -1018,6 +1018,7 @@ export default function DashboardScreen({
             handleSelectWallet(w);
             setActiveTab("home");
           }}
+          onOpenJoinScreen={() => setShowJoinScreen(true)}
         />
       ) : activeTab === "budget" ? (
         <BudgetScreen />

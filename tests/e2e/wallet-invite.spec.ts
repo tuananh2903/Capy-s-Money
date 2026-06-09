@@ -330,21 +330,21 @@ test.describe('WalletJoinScreen — Tham gia Ví chung bằng mã mời', () => 
     await page.waitForSelector('text=Ví của tôi', { timeout: 5000 });
   }
 
-  test('should validate empty invite code', async ({ page }) => {
+  test('should open join modal via join button and validate empty invite code', async ({ page }) => {
     await setupJoinMocks(page, { status: 200, body: { success: true, walletName: 'Ví Test' } });
     await openJoinScreen(page);
 
-    // Find and click join wallet button (may be a separate action)
-    // The WalletJoinScreen is triggered as a modal — check if accessible from dashboard
-    // Try from Dashboard notification or dedicated action
-    await page.locator('text=Trang chủ').click();
-    await page.waitForSelector("text=Capy's Money", { timeout: 5000 });
+    // Click on the new join button
+    await page.getByTestId('join-wallet-btn').click();
 
-    // Look for a join wallet button/link in the UI
-    // Based on the codebase, WalletJoinScreen is a modal opened from App.tsx
-    // Test by directly navigating to the join route if available
-    await page.goto('/?join=true');
-    await page.waitForTimeout(1000);
+    // Verify modal is open
+    await expect(page.locator('text=Tham gia Ví chung')).toBeVisible();
+
+    // Click join without typing code
+    await page.locator('text="Tham gia ví"').click();
+
+    // Verify error is shown
+    await expect(page.locator('text=Vui lòng nhập mã mời.')).toBeVisible();
   });
 
   test('WalletJoinScreen — displays input form with correct placeholder', async ({ page }) => {

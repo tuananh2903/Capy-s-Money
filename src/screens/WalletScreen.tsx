@@ -9,6 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+// @ts-ignore
 import { Ionicons } from '@expo/vector-icons';
 import { Wallet, fetchWallets } from '../services/dashboardService';
 import WalletCreateSheet from '../components/WalletCreateSheet';
@@ -18,6 +19,7 @@ import { supabase } from '../services/supabaseClient';
 interface WalletScreenProps {
   userId: string;
   onWalletSelected?: (wallet: Wallet) => void;
+  onOpenJoinScreen?: () => void;
 }
 
 const COLORS = {
@@ -32,7 +34,7 @@ const COLORS = {
   disabledText: '#837375',
 };
 
-export default function WalletScreen({ userId, onWalletSelected }: WalletScreenProps) {
+export default function WalletScreen({ userId, onWalletSelected, onOpenJoinScreen }: WalletScreenProps) {
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [roles, setRoles] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -103,7 +105,7 @@ export default function WalletScreen({ userId, onWalletSelected }: WalletScreenP
             const isViewer = !isPersonal && !isOwner && role === 'viewer';
 
             // Premium gradient styling based on type
-            const gradientColors = isPersonal
+            const gradientColors: [string, string] = isPersonal
               ? ['#FFB7C5', '#944652'] // Personal: Pastel Pink to Deep Red
               : ['#FE9DA9', '#71585C']; // Shared: Soft Coral to Warm Grey
 
@@ -175,6 +177,18 @@ export default function WalletScreen({ userId, onWalletSelected }: WalletScreenP
         >
           <Text style={[styles.createBtnText, isLimitReached && styles.disabledCreateBtnText]}>
             ➕ Tạo ví mới
+          </Text>
+        </TouchableOpacity>
+
+        {/* Join Wallet Button */}
+        <TouchableOpacity
+          testID="join-wallet-btn"
+          activeOpacity={0.8}
+          style={styles.joinBtn}
+          onPress={onOpenJoinScreen}
+        >
+          <Text style={styles.joinBtnText}>
+            🔑 Nhập mã mời ví chung
           </Text>
         </TouchableOpacity>
       </ScrollView>
@@ -332,5 +346,24 @@ const styles = StyleSheet.create({
   },
   disabledCreateBtnText: {
     color: COLORS.disabledText,
+  },
+  joinBtn: {
+    backgroundColor: '#FFF8F7',
+    borderWidth: 1.5,
+    borderColor: '#944652',
+    borderRadius: 9999,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 12,
+    shadowColor: '#944652',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  joinBtnText: {
+    color: '#944652',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });

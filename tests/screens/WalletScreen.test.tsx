@@ -189,4 +189,28 @@ describe('WalletScreen', () => {
 
     expect(getByTestId('wallet-edit-sheet')).toBeTruthy();
   });
+
+  it('calls onOpenJoinScreen when "🔑 Nhập mã mời ví chung" button is pressed', async () => {
+    (fetchWallets as jest.Mock).mockResolvedValue({
+      success: true,
+      data: [mockPersonalWallets[0]],
+    });
+
+    const mockOnOpenJoinScreen = jest.fn();
+
+    const { findByText, getByTestId } = render(
+      <WalletScreen
+        userId={mockUserId}
+        onWalletSelected={mockOnWalletSelected}
+        onOpenJoinScreen={mockOnOpenJoinScreen}
+      />
+    );
+
+    await findByText('Ví Ăn Tiêu');
+
+    const joinBtn = getByTestId('join-wallet-btn');
+    fireEvent.press(joinBtn);
+
+    expect(mockOnOpenJoinScreen).toHaveBeenCalled();
+  });
 });
