@@ -13,8 +13,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Wallet, Jar, fetchJars, updateJarAllocations, deleteWallet, setDefaultWallet } from '../services/dashboardService';
-import { fetchWalletMembers, RemoveMemberResponse, removeMember } from '../services/walletInviteService';
-import WalletInviteScreen from '../screens/WalletInviteScreen';
 
 interface WalletEditSheetProps {
   visible: boolean;
@@ -42,9 +40,6 @@ export default function WalletEditSheet({
 }: WalletEditSheetProps) {
   const [jars, setJars] = useState<Jar[]>([]);
   const [loadingJars, setLoadingJars] = useState(false);
-  const [members, setMembers] = useState<any[]>([]);
-  const [loadingMembers, setLoadingMembers] = useState(false);
-  const [showInviteModal, setShowInviteModal] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -61,16 +56,13 @@ export default function WalletEditSheet({
   useEffect(() => {
     if (visible && wallet?.id) {
       loadJars();
-      if (wallet.type === 'shared') {
-        loadMembers();
-      }
       setValidationError(null);
     }
   }, [visible, wallet]);
 
   const loadJars = async () => {
     setLoadingJars(true);
-    const res = await fetchJars(wallet.id);
+    const res = await fetchJars(wallet.user_id);
     setLoadingJars(false);
     if (res.success && res.data && res.data.length > 0) {
       setJars(res.data);
@@ -82,14 +74,7 @@ export default function WalletEditSheet({
     }
   };
 
-  const loadMembers = async () => {
-    setLoadingMembers(true);
-    const res = await fetchWalletMembers(wallet.id);
-    setLoadingMembers(false);
-    if (res.success && res.data) {
-      setMembers(res.data);
-    }
-  };
+
 
   const totalPercentage = Object.values(allocations).reduce((sum, val) => sum + val, 0);
 
@@ -127,7 +112,7 @@ export default function WalletEditSheet({
       percentage: allocations[type],
     }));
 
-    const res = await updateJarAllocations(wallet.id, apiAllocations);
+    const res = await updateJarAllocations(wallet.user_id, apiAllocations);
     setSaving(false);
 
     if (res.success) {
@@ -178,44 +163,7 @@ export default function WalletEditSheet({
     );
   };
 
-  const handleRemoveMemberClick = (memberId: string, displayName: string) => {
-    Alert.alert(
-      'Xác nhận xóa thành viên',
-      `Bạn có chắc chắn muốn xóa thành viên "${displayName}" ra khỏi ví chung không?`,
-      [
-        { text: 'Hủy', style: 'cancel' },
-        {
-          text: 'Xóa',
-          style: 'destructive',
-          onPress: async () => {
-            setLoadingMembers(true);
-            const res = await removeMember(wallet.id, memberId);
-            setLoadingMembers(false);
-            if (res.success) {
-              Alert.alert('Thành công', 'Đã xóa thành viên khỏi ví chung.');
-              loadMembers();
-              onSaveSuccess();
-            } else {
-              Alert.alert('Lỗi', res.error || 'Không thể xóa thành viên.');
-            }
-          },
-        },
-      ]
-    );
-  };
-
   const isOwner = wallet.user_id === userId;
-  const isViewer = wallet.type === 'shared' && !isOwner && members.find(m => m.user_id === userId)?.role === 'viewer';
-
-  // While members are loading for shared wallets where user is not owner,
-  // return null to prevent briefly showing the sheet to a viewer before roles load
-  if (wallet.type === 'shared' && !isOwner && loadingMembers) {
-    return null;
-  }
-
-  if (isViewer) {
-    return null; // Return null if viewer as required by "A. Hide Settings button completely for Viewer"
-  }
 
   return (
     <Modal
@@ -250,54 +198,6 @@ export default function WalletEditSheet({
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
           >
-            {/* Shared Members Section */}
-            {wallet.type === 'shared' && (
-              <View style={styles.membersSection}>
-                <Text style={styles.sectionHeading}>Thành viên ví ({members.length}/3)</Text>
-                {loadingMembers ? (
-                  <ActivityIndicator size="small" color="#864E5A" style={{ marginVertical: 12 }} />
-                ) : (
-                  <>
-                    <View style={styles.membersList}>
-                      {members.map((member) => {
-                        const mIsOwner = member.role === 'owner';
-                        const mIsCurrentUser = member.user_id === userId;
-                        const nameText = member.profiles?.display_name || 'Thành viên Capy';
-                        return (
-                          <View key={member.user_id} style={styles.memberRow}>
-                            <Text style={styles.memberName}>
-                              🦦 {nameText} {mIsCurrentUser && '(Bạn)'}
-                            </Text>
-                            <Text style={styles.memberRole}>
-                              {mIsOwner ? 'Chủ ví' : 'Người chỉnh sửa'}
-                            </Text>
-                            {isOwner && !mIsOwner && (
-                              <TouchableOpacity
-                                style={styles.removeMemberBtn}
-                                onPress={() => handleRemoveMemberClick(member.user_id, nameText)}
-                              >
-                                <Text style={styles.removeMemberText}>Xóa</Text>
-                              </TouchableOpacity>
-                            )}
-                          </View>
-                        );
-                      })}
-                    </View>
-
-                    {isOwner && members.length < 3 && (
-                      <TouchableOpacity
-                        style={styles.inviteButton}
-                        activeOpacity={0.8}
-                        onPress={() => setShowInviteModal(true)}
-                      >
-                        <Text style={styles.inviteButtonText}>➕ Mời thành viên mới</Text>
-                      </TouchableOpacity>
-                    )}
-                  </>
-                )}
-              </View>
-            )}
-
             {/* Jar Allocations Section */}
             <View style={styles.allocHeader}>
               <Text style={styles.sectionHeading}>Tỷ lệ phân bổ hũ</Text>
@@ -400,18 +300,7 @@ export default function WalletEditSheet({
         </View>
       </KeyboardAvoidingView>
 
-      {/* Nested Invite Modal */}
-      {showInviteModal && (
-        <WalletInviteScreen
-          visible={showInviteModal}
-          onClose={() => {
-            setShowInviteModal(false);
-            loadMembers();
-          }}
-          walletId={wallet.id}
-          walletName={wallet.name}
-        />
-      )}
+
     </Modal>
   );
 }

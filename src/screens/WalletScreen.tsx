@@ -19,7 +19,6 @@ import { supabase } from '../services/supabaseClient';
 interface WalletScreenProps {
   userId: string;
   onWalletSelected?: (wallet: Wallet) => void;
-  onOpenJoinScreen?: () => void;
 }
 
 const COLORS = {
@@ -34,7 +33,7 @@ const COLORS = {
   disabledText: '#837375',
 };
 
-export default function WalletScreen({ userId, onWalletSelected, onOpenJoinScreen }: WalletScreenProps) {
+export default function WalletScreen({ userId, onWalletSelected }: WalletScreenProps) {
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [roles, setRoles] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -78,8 +77,7 @@ export default function WalletScreen({ userId, onWalletSelected, onOpenJoinScree
   };
 
   const personalCount = wallets.filter((w) => w.type === 'personal').length;
-  const sharedCount = wallets.filter((w) => w.type === 'shared').length;
-  const isLimitReached = personalCount >= 2 && sharedCount >= 1;
+  const isLimitReached = personalCount >= 2;
 
   if (loading) {
     return (
@@ -162,7 +160,7 @@ export default function WalletScreen({ userId, onWalletSelected, onOpenJoinScree
         {/* Quota limit notice */}
         {isLimitReached && (
           <Text style={styles.warningText}>
-            Bạn đã đạt giới hạn ví miễn phí (2 cá nhân, 1 chung). Nâng cấp Premium để tạo thêm
+            Bạn đã đạt giới hạn ví miễn phí (tối đa 2 ví cá nhân). Nâng cấp Premium để tạo thêm
           </Text>
         )}
 
@@ -180,17 +178,7 @@ export default function WalletScreen({ userId, onWalletSelected, onOpenJoinScree
           </Text>
         </TouchableOpacity>
 
-        {/* Join Wallet Button */}
-        <TouchableOpacity
-          testID="join-wallet-btn"
-          activeOpacity={0.8}
-          style={styles.joinBtn}
-          onPress={onOpenJoinScreen}
-        >
-          <Text style={styles.joinBtnText}>
-            🔑 Nhập mã mời ví chung
-          </Text>
-        </TouchableOpacity>
+
       </ScrollView>
 
       {/* Sheets */}

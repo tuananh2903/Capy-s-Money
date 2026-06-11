@@ -38,7 +38,6 @@ export default function App() {
   const [savingOnboarding, setSavingOnboarding] = useState<boolean>(false);
   const [onboardingError, setOnboardingError] = useState<string | null>(null);
   const [authScreen, setAuthScreen] = useState<'login' | 'register'>('login');
-  const [pendingInviteCode, setPendingInviteCode] = useState<string | null>(null);
 
   // 1. Kiểm tra trạng thái Onboarding của người dùng
   const checkOnboardingStatus = async (userId: string) => {
@@ -86,7 +85,7 @@ export default function App() {
       }
     });
 
-    // --- DEEP LINK LISTENER FOR OAUTH & WALLET INVITATIONS ---
+    // --- DEEP LINK LISTENER FOR OAUTH ---
     const handleDeepLink = async (event: { url: string }) => {
       console.log('--- RECEIVED DEEP LINK URL ---');
       console.log('URL:', event.url);
@@ -95,13 +94,6 @@ export default function App() {
       // Thay thế '#' bằng '?' để Linking.parse có thể đọc được các tham số trong hash fragment
       const cleanUrl = event.url.includes('#') ? event.url.replace('#', '?') : event.url;
       const parsed = Linking.parse(cleanUrl);
-
-      // 1. Kiểm tra Deep Link Mời thành viên (ví dụ: capymoney://invite?code=CAPY-123456)
-      const code = parsed.queryParams?.code || (parsed.path && parsed.path.includes('invite') ? parsed.path.split('/').pop() : null);
-      if (code) {
-        console.log('Detected invite code from deep link:', code);
-        setPendingInviteCode(Array.isArray(code) ? code[0] : code);
-      }
 
       // 2. Kiểm tra token OAuth
       const { access_token, refresh_token } = parsed.queryParams || {};
@@ -212,8 +204,6 @@ export default function App() {
         <DashboardScreen
           userId={session.user.id}
           onSignOut={handleSignOut}
-          initialInviteCode={pendingInviteCode}
-          onClearInviteCode={() => setPendingInviteCode(null)}
         />
       )}
       

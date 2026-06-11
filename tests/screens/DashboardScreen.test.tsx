@@ -167,8 +167,8 @@ describe('DashboardScreen', () => {
       fireEvent.press(otherWalletOption);
     });
 
-    // Verify fetchJars was called for the second wallet ID 'w-2'
-    expect(fetchJars).toHaveBeenLastCalledWith('w-2');
+    // Verify fetchJars was called for the account user-123
+    expect(fetchJars).toHaveBeenLastCalledWith('user-123');
   });
 
   it('opens and closes QuickAddBottomSheet when FAB/Button is clicked', async () => {

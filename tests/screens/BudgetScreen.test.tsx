@@ -42,11 +42,36 @@ jest.mock('../../src/services/budgetService', () => ({
 }));
 
 // Mock supabaseClient
+let mockTotalBudget = 10000000;
+const mockProfileUpdate = jest.fn().mockResolvedValue({ error: null });
+
 jest.mock('../../src/services/supabaseClient', () => ({
   supabase: {
     auth: {
       getUser: jest.fn(() => Promise.resolve({ data: { user: { id: 'user-123' } }, error: null })),
     },
+    from: jest.fn((table: string) => {
+      if (table === 'profiles') {
+        return {
+          select: jest.fn(() => ({
+            eq: jest.fn(() => ({
+              single: jest.fn(() => Promise.resolve({ data: { total_budget: mockTotalBudget }, error: null }))
+            }))
+          })),
+          update: jest.fn((data: any) => {
+            mockProfileUpdate(data);
+            return {
+              eq: jest.fn().mockResolvedValue({ error: null })
+            };
+          })
+        };
+      }
+      return {
+        select: jest.fn(() => ({
+          eq: jest.fn().mockResolvedValue({ data: [], error: null })
+        }))
+      };
+    })
   },
 }));
 
@@ -128,11 +153,11 @@ describe('BudgetScreen', () => {
   });
 
   it('loads wallets, loads budget from AsyncStorage, and displays values', async () => {
+    mockTotalBudget = 5000000;
     (fetchUserWallets as jest.Mock).mockResolvedValue({ success: true, data: mockWallets });
     (fetchJars as jest.Mock).mockResolvedValue({ success: true, data: mockJars });
     (fetchCategoryBudgets as jest.Mock).mockResolvedValue({ success: true, data: [] });
     (fetchCategories as jest.Mock).mockResolvedValue({ success: true, data: mockCategories });
-    (AsyncStorage.getItem as jest.Mock).mockResolvedValue('5000000');
 
     const { getByText, queryByText, getByTestId } = render(<BudgetScreen />);
 
@@ -141,8 +166,8 @@ describe('BudgetScreen', () => {
       expect(getByText('Thiết yếu (NEC)')).toBeTruthy();
     });
 
-    // Check that AsyncStorage was queried with correct key
-    expect(AsyncStorage.getItem).toHaveBeenCalledWith('@wallet_total_budget_w-1');
+    // Check that AsyncStorage was queried for rollover
+    expect(AsyncStorage.getItem).toHaveBeenCalledWith('@wallet_rollover_enabled_w-1');
 
     // Total budget is 5M, should display "5.000.000đ"
     expect(getByText(/5[.,]000[.,]000/)).toBeTruthy();
@@ -151,11 +176,11 @@ describe('BudgetScreen', () => {
   });
 
   it('allows starting edit mode for total budget and saving changes', async () => {
+    mockTotalBudget = 10000000;
     (fetchUserWallets as jest.Mock).mockResolvedValue({ success: true, data: mockWallets });
     (fetchJars as jest.Mock).mockResolvedValue({ success: true, data: mockJars });
     (fetchCategoryBudgets as jest.Mock).mockResolvedValue({ success: true, data: [] });
     (fetchCategories as jest.Mock).mockResolvedValue({ success: true, data: mockCategories });
-    (AsyncStorage.getItem as jest.Mock).mockResolvedValue('10000000');
     (saveJarAllocation as jest.Mock).mockResolvedValue({ success: true });
 
     const { getByTestId, getByPlaceholderText, getByText } = render(<BudgetScreen />);
@@ -181,11 +206,11 @@ describe('BudgetScreen', () => {
       fireEvent.press(getByTestId('btn-save-total-budget'));
     });
 
-    // Verify it updates AsyncStorage and database allocations
-    expect(AsyncStorage.setItem).toHaveBeenCalledWith('@wallet_total_budget_w-1', '15000000');
+    // Verify it updates profiles and database allocations
+    expect(mockProfileUpdate).toHaveBeenCalledWith({ total_budget: 15000000 });
     expect(saveJarAllocation).toHaveBeenCalledTimes(2); // Since there are 2 jars
-    expect(saveJarAllocation).toHaveBeenCalledWith('w-1', 'NEC', 50, 7500000); // 15M * 50%
-    expect(saveJarAllocation).toHaveBeenCalledWith('w-1', 'PLAY', 50, 7500000); // 15M * 50%
+    expect(saveJarAllocation).toHaveBeenCalledWith('user-123', 'NEC', 50, 7500000); // 15M * 50%
+    expect(saveJarAllocation).toHaveBeenCalledWith('user-123', 'PLAY', 50, 7500000); // 15M * 50%
   });
 
   it('validates total budget must be greater than 0', async () => {
@@ -218,12 +243,12 @@ describe('BudgetScreen', () => {
   });
 
   it('loads rollover setting from AsyncStorage and displays correct preview for surplus', async () => {
+    mockTotalBudget = 10000000;
     (fetchUserWallets as jest.Mock).mockResolvedValue({ success: true, data: mockWallets });
     (fetchJars as jest.Mock).mockResolvedValue({ success: true, data: mockJars }); // spent sum = 1,500,000đ
     (fetchCategoryBudgets as jest.Mock).mockResolvedValue({ success: true, data: [] });
     (fetchCategories as jest.Mock).mockResolvedValue({ success: true, data: mockCategories });
     (AsyncStorage.getItem as jest.Mock).mockImplementation((key) => {
-      if (key.includes('total_budget')) return Promise.resolve('10000000');
       if (key.includes('rollover_enabled')) return Promise.resolve('true');
       return Promise.resolve(null);
     });
@@ -246,6 +271,7 @@ describe('BudgetScreen', () => {
   });
 
   it('displays correct preview for deficit when spending exceeds budget with rollover enabled', async () => {
+    mockTotalBudget = 10000000;
     const overspentJars = [
       { id: 'j-1', type: 'NEC', allocation_percentage: 50, spent_amount: 8000000, enable_alerts: true },
       { id: 'j-2', type: 'PLAY', allocation_percentage: 50, spent_amount: 4000000, enable_alerts: false }
@@ -255,7 +281,6 @@ describe('BudgetScreen', () => {
     (fetchCategoryBudgets as jest.Mock).mockResolvedValue({ success: true, data: [] });
     (fetchCategories as jest.Mock).mockResolvedValue({ success: true, data: mockCategories });
     (AsyncStorage.getItem as jest.Mock).mockImplementation((key) => {
-      if (key.includes('total_budget')) return Promise.resolve('10000000');
       if (key.includes('rollover_enabled')) return Promise.resolve('true');
       return Promise.resolve(null);
     });
@@ -271,12 +296,12 @@ describe('BudgetScreen', () => {
   });
 
   it('allows toggling rollover setting and updates AsyncStorage', async () => {
+    mockTotalBudget = 10000000;
     (fetchUserWallets as jest.Mock).mockResolvedValue({ success: true, data: mockWallets });
     (fetchJars as jest.Mock).mockResolvedValue({ success: true, data: mockJars });
     (fetchCategoryBudgets as jest.Mock).mockResolvedValue({ success: true, data: [] });
     (fetchCategories as jest.Mock).mockResolvedValue({ success: true, data: mockCategories });
     (AsyncStorage.getItem as jest.Mock).mockImplementation((key) => {
-      if (key.includes('total_budget')) return Promise.resolve('10000000');
       if (key.includes('rollover_enabled')) return Promise.resolve('false');
       return Promise.resolve(null);
     });

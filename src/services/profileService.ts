@@ -15,7 +15,7 @@ export async function fetchProfile(userId: string): Promise<ProfileFetchResult> 
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, display_name, jars_ratios')
+      .select('id, display_name, jars_ratios, total_budget')
       .eq('id', userId)
       .single();
 
@@ -46,6 +46,25 @@ export async function updateProfileName(userId: string, displayName: string): Pr
     return { success: true };
   } catch (err) {
     console.error('Unexpected error updating name:', err);
+    return { success: false, error: 'Lỗi kết nối máy chủ.' };
+  }
+}
+
+export async function updateProfileTotalBudget(userId: string, totalBudget: number): Promise<ProfileUpdateResult> {
+  try {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ total_budget: totalBudget })
+      .eq('id', userId);
+
+    if (error) {
+      console.error('Error updating total budget:', error);
+      return { success: false, error: 'Không thể cập nhật tổng ngân sách.' };
+    }
+
+    return { success: true };
+  } catch (err) {
+    console.error('Unexpected error updating total budget:', err);
     return { success: false, error: 'Lỗi kết nối máy chủ.' };
   }
 }

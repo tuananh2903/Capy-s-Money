@@ -30,10 +30,6 @@ describe('WalletCreateSheet', () => {
     expect(getByText('Tạo Ví Mới')).toBeTruthy();
     expect(getByPlaceholderText('Nhập tên ví (ví dụ: Ví Ăn Tiêu)')).toBeTruthy();
     expect(getByPlaceholderText('0')).toBeTruthy(); // Initial balance placeholder
-    
-    // Type segments
-    expect(getByText('Cá nhân')).toBeTruthy();
-    expect(getByText('Ví chung')).toBeTruthy();
   });
 
   it('shows error if trying to save with empty wallet name', async () => {

@@ -92,7 +92,7 @@ describe('WalletScreen', () => {
   it('renders wallet cards correctly when loaded', async () => {
     (fetchWallets as jest.Mock).mockResolvedValue({
       success: true,
-      data: [...mockPersonalWallets, ...mockSharedWallets],
+      data: mockPersonalWallets,
     });
 
     const { findByText, queryByText } = render(
@@ -101,18 +101,16 @@ describe('WalletScreen', () => {
 
     expect(await findByText('Ví Ăn Tiêu')).toBeTruthy();
     expect(await findByText('Ví Tiết Kiệm')).toBeTruthy();
-    expect(await findByText('Ví Nhóm')).toBeTruthy();
 
     // Verify balances formatted
     expect(await findByText('5.000.000 đ')).toBeTruthy();
     expect(await findByText('10.000.000 đ')).toBeTruthy();
-    expect(await findByText('15.000.000 đ')).toBeTruthy();
   });
 
-  it('gating check: disables "+ Tạo ví mới" button and shows warning if user has >=2 personal AND >=1 shared wallets', async () => {
+  it('gating check: disables "+ Tạo ví mới" button and shows warning if user has >=2 personal wallets', async () => {
     (fetchWallets as jest.Mock).mockResolvedValue({
       success: true,
-      data: [...mockPersonalWallets, ...mockSharedWallets], // 2 personal, 1 shared
+      data: mockPersonalWallets, // 2 personal
     });
 
     const { findByText, getByTestId } = render(
@@ -125,7 +123,7 @@ describe('WalletScreen', () => {
     expect(createBtn.props.accessibilityState?.disabled).toBe(true);
 
     const warningText = await findByText(
-      'Bạn đã đạt giới hạn ví miễn phí (2 cá nhân, 1 chung). Nâng cấp Premium để tạo thêm'
+      'Bạn đã đạt giới hạn ví miễn phí (tối đa 2 ví cá nhân). Nâng cấp Premium để tạo thêm'
     );
     expect(warningText).toBeTruthy();
   });
@@ -145,7 +143,7 @@ describe('WalletScreen', () => {
     const createBtn = getByTestId('create-wallet-btn');
     expect(createBtn.props.accessibilityState?.disabled ?? false).toBe(false);
     expect(
-      queryByText('Bạn đã đạt giới hạn ví miễn phí (2 cá nhân, 1 chung). Nâng cấp Premium để tạo thêm')
+      queryByText('Bạn đã đạt giới hạn ví miễn phí (tối đa 2 ví cá nhân). Nâng cấp Premium để tạo thêm')
     ).toBeNull();
   });
 
@@ -190,27 +188,5 @@ describe('WalletScreen', () => {
     expect(getByTestId('wallet-edit-sheet')).toBeTruthy();
   });
 
-  it('calls onOpenJoinScreen when "🔑 Nhập mã mời ví chung" button is pressed', async () => {
-    (fetchWallets as jest.Mock).mockResolvedValue({
-      success: true,
-      data: [mockPersonalWallets[0]],
-    });
 
-    const mockOnOpenJoinScreen = jest.fn();
-
-    const { findByText, getByTestId } = render(
-      <WalletScreen
-        userId={mockUserId}
-        onWalletSelected={mockOnWalletSelected}
-        onOpenJoinScreen={mockOnOpenJoinScreen}
-      />
-    );
-
-    await findByText('Ví Ăn Tiêu');
-
-    const joinBtn = getByTestId('join-wallet-btn');
-    fireEvent.press(joinBtn);
-
-    expect(mockOnOpenJoinScreen).toHaveBeenCalled();
-  });
 });

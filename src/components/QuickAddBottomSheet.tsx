@@ -93,29 +93,68 @@ export default function QuickAddBottomSheet({
   const [validationError, setValidationError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [dbCategories, setDbCategories] = useState<any[]>([]);
+  const [activeJars, setActiveJars] = useState<any[]>([]);
+  const [activeBudgets, setActiveBudgets] = useState<any[]>([]);
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentCalendarMonth, setCurrentCalendarMonth] = useState<Date>(new Date());
 
-  // Load categories from database on visible changes
+  // Load categories, jars, and budgets from database on visible changes
   useEffect(() => {
-    async function loadCategories() {
+    async function loadDbData() {
       try {
-        const { data, error } = await supabase
-          .from('categories')
-          .select('*');
-        if (!error && data) {
-          setDbCategories(data);
+        const [categoriesRes, jarsRes, budgetsRes] = await Promise.all([
+          supabase.from('categories').select('*'),
+          supabase.from('jars').select('*').eq('user_id', userId),
+          supabase.from('budgets').select('*, categories(*)').eq('user_id', userId)
+        ]);
+
+        if (categoriesRes.data) {
+          setDbCategories(categoriesRes.data);
+        }
+        if (jarsRes.data) {
+          // Filter to only include jars that have allocation_percentage > 0
+          const activeJarsFromDb = jarsRes.data.filter(j => j.allocation_percentage > 0);
+          setActiveJars(activeJarsFromDb);
+        }
+        if (budgetsRes.data) {
+          setActiveBudgets(budgetsRes.data);
         }
       } catch (err) {
-        console.error('Error loading categories in QuickAddBottomSheet:', err);
+        console.error('Error loading data in QuickAddBottomSheet:', err);
       }
     }
-    if (visible) {
-      loadCategories();
+    if (visible && userId) {
+      loadDbData();
     }
-  }, [visible]);
+  }, [visible, userId]);
+
+  const renderedJars = useMemo(() => {
+    if (activeJars.length > 0) {
+      return activeJars.map(aj => {
+        const meta = JARS.find(j => j.type === aj.type);
+        return {
+          type: aj.type,
+          name: meta?.name || aj.type,
+          icon: meta?.icon || '💰',
+          color: meta?.color || '#FFB7C5',
+          bgColor: meta?.bgColor || '#FFF0F1'
+        };
+      });
+    }
+    return JARS;
+  }, [activeJars]);
+
+  // Auto-select the first active jar if the current selected jar is not active
+  useEffect(() => {
+    if (activeJars.length > 0) {
+      const isCurrentSelectedActive = activeJars.some(j => j.type === selectedJar);
+      if (!isCurrentSelectedActive) {
+        setSelectedJar(activeJars[0].type);
+      }
+    }
+  }, [activeJars, selectedJar]);
 
   const getDateChipLabel = (date: Date) => {
     const today = new Date();
@@ -148,20 +187,31 @@ export default function QuickAddBottomSheet({
   };
 
   const subcats = useMemo(() => {
-    if (dbCategories.length > 0) {
-      const filtered = dbCategories.filter(
-        (cat) => cat.type === type && (type === 'income' || cat.jar_type === selectedJar)
-      );
-      if (filtered.length > 0) {
-        return filtered.map((cat) => ({
-          id: cat.id,
-          name: cat.name,
-          icon: cat.icon || '💰',
+    if (type === 'income') {
+      const incomeCats = dbCategories.filter(c => c.type === 'income');
+      if (incomeCats.length > 0) {
+        return incomeCats.map(c => ({
+          id: c.id,
+          name: c.name,
+          icon: c.icon || '💰',
         }));
       }
+      return INCOME_SUBCATEGORIES;
+    } else {
+      // Filter category budgets to only show those active for the selected jar
+      const expenseBudgets = activeBudgets.filter(
+        b => b.categories && b.categories.jar_type === selectedJar
+      );
+      if (expenseBudgets.length > 0) {
+        return expenseBudgets.map(b => ({
+          id: b.category_id,
+          name: b.categories.name,
+          icon: b.categories.icon || '💰',
+        }));
+      }
+      return [];
     }
-    return type === 'expense' ? SUBCATEGORIES[selectedJar] : INCOME_SUBCATEGORIES;
-  }, [type, selectedJar, dbCategories]);
+  }, [type, selectedJar, dbCategories, activeBudgets]);
 
   // Auto-reset subcategory when subcats list changes
   useEffect(() => {
@@ -171,7 +221,7 @@ export default function QuickAddBottomSheet({
         setSelectedSubcategory(subcats[0].name);
       }
     }
-  }, [subcats]);
+  }, [subcats, selectedSubcategory]);
 
   const handleSave = async () => {
     const cleanAmount = parseInt(amountText.replace(/\./g, '').replace(/,/g, ''), 10);
@@ -295,7 +345,7 @@ export default function QuickAddBottomSheet({
               <>
                 <Text style={styles.label}>Hũ tài chính</Text>
                 <View style={styles.jarsContainer}>
-                  {JARS.map((jar) => {
+                  {renderedJars.map((jar) => {
                     const isSelected = selectedJar === jar.type;
                     return (
                       <TouchableOpacity

@@ -22,7 +22,7 @@ describe('profileService', () => {
     const result = await fetchProfile('u1');
 
     expect(supabase.from).toHaveBeenCalledWith('profiles');
-    expect(mockSelect).toHaveBeenCalledWith('id, display_name, jars_ratios');
+    expect(mockSelect).toHaveBeenCalledWith('id, display_name, jars_ratios, total_budget');
     expect(mockEq).toHaveBeenCalledWith('id', 'u1');
     expect(result.success).toBe(true);
     expect(result.data).toEqual(mockData);

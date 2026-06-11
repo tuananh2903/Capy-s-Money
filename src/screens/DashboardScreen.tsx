@@ -11,9 +11,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 import CapyMascot from "../components/CapyMascot";
 import QuickAddBottomSheet from "../components/QuickAddBottomSheet";
-import WalletInviteScreen from "./WalletInviteScreen";
-import WalletJoinScreen from "./WalletJoinScreen";
-import { fetchWalletMembers, removeMember } from "../services/walletInviteService";
 import { fetchWallets, fetchJars, fetchWalletIncome, ensureJarsExist, Wallet, Jar } from "../services/dashboardService";
 import { evaluateJarBudget, BudgetAlertStatus } from "../utils/budgetChecker";
 import BudgetScreen from "./BudgetScreen";
@@ -118,15 +115,11 @@ const defaultQuote = "Ghi chép mỗi ngày, tâm hồn thảnh thơi cùng Capy
 interface DashboardScreenProps {
   userId: string;
   onSignOut: () => void;
-  initialInviteCode?: string | null;
-  onClearInviteCode?: () => void;
 }
 
 export default function DashboardScreen({
   userId,
   onSignOut,
-  initialInviteCode,
-  onClearInviteCode,
 }: DashboardScreenProps) {
   const [loading, setLoading] = useState(true);
   const [wallets, setWallets] = useState<Wallet[]>([]);
@@ -138,12 +131,6 @@ export default function DashboardScreen({
   const [walletIncome, setWalletIncome] = useState<number>(0);
   const [showTotalBalance, setShowTotalBalance] = useState<boolean>(true);
 
-  // Invite and Share wallet state
-  const [showInviteScreen, setShowInviteScreen] = useState(false);
-  const [showJoinScreen, setShowJoinScreen] = useState(false);
-  const [inviteCodeToJoin, setInviteCodeToJoin] = useState<string | null>(null);
-  const [walletMembers, setWalletMembers] = useState<any[]>([]);
-  const [loadingMembers, setLoadingMembers] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showUserInfoModal, setShowUserInfoModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -210,13 +197,13 @@ export default function DashboardScreen({
           }
           
           setSelectedWallet(activeWallet);
-          const jarsRes = await fetchJars(activeWallet.id);
+          const jarsRes = await fetchJars(userId);
           if (isMounted && jarsRes.success && jarsRes.data) {
             setJars(jarsRes.data);
             if (jarsRes.data.length < 6 || jarsRes.data.some((j) => j.allocation_percentage === 0)) {
-              const ensureRes = await ensureJarsExist(activeWallet.id, jarsRes.data, currentJarsRatios);
+              const ensureRes = await ensureJarsExist(userId, jarsRes.data, currentJarsRatios);
               if (ensureRes.success && isMounted) {
-                const refetched = await fetchJars(activeWallet.id);
+                const refetched = await fetchJars(userId);
                 if (refetched.success && refetched.data) setJars(refetched.data);
               }
             }
@@ -238,36 +225,7 @@ export default function DashboardScreen({
     };
   }, []);
 
-  // Listen to deep link code
-  useEffect(() => {
-    if (initialInviteCode) {
-      setInviteCodeToJoin(initialInviteCode);
-      setShowJoinScreen(true);
-      if (onClearInviteCode) {
-        onClearInviteCode();
-      }
-    }
-  }, [initialInviteCode]);
 
-  const loadMembers = async (walletId: string) => {
-    try {
-      setLoadingMembers(true);
-      const res = await fetchWalletMembers(walletId);
-      if (res.success && res.data) {
-        setWalletMembers(res.data);
-      }
-    } catch (err) {
-      console.error("Lỗi khi load thành viên:", err);
-    } finally {
-      setLoadingMembers(false);
-    }
-  };
-
-  useEffect(() => {
-    if (selectedWallet && activeTab === "wallets") {
-      loadMembers(selectedWallet.id);
-    }
-  }, [selectedWallet, activeTab]);
 
   useEffect(() => {
     if (activeTab === "home" && selectedWallet?.id) {
@@ -306,13 +264,13 @@ export default function DashboardScreen({
           console.error("Lỗi khi lưu ví active vào AsyncStorage:", e);
         }
 
-        const jarsRes = await fetchJars(wallet.id);
+        const jarsRes = await fetchJars(userId);
         if (jarsRes.success && jarsRes.data) {
           setJars(jarsRes.data);
           if (jarsRes.data.length < 6 || jarsRes.data.some((j) => j.allocation_percentage === 0)) {
-            const ensureRes = await ensureJarsExist(wallet.id, jarsRes.data, userJarsRatios);
+            const ensureRes = await ensureJarsExist(userId, jarsRes.data, userJarsRatios);
             if (ensureRes.success) {
-              const refetched = await fetchJars(wallet.id);
+              const refetched = await fetchJars(userId);
               if (refetched.success && refetched.data) setJars(refetched.data);
             }
           }
@@ -332,13 +290,13 @@ export default function DashboardScreen({
     } catch (e) {
       console.error("Lỗi khi lưu ví active vào AsyncStorage:", e);
     }
-    fetchJars(wallet.id).then(async (res) => {
+    fetchJars(userId).then(async (res) => {
       if (res.success && res.data) {
         setJars(res.data);
         if (res.data.length < 6 || res.data.some((j) => j.allocation_percentage === 0)) {
-          const ensureRes = await ensureJarsExist(wallet.id, res.data, userJarsRatios);
+          const ensureRes = await ensureJarsExist(userId, res.data, userJarsRatios);
           if (ensureRes.success) {
-            const refetched = await fetchJars(wallet.id);
+            const refetched = await fetchJars(userId);
             if (refetched.success && refetched.data) setJars(refetched.data);
           }
         }
@@ -353,42 +311,7 @@ export default function DashboardScreen({
     if (selectedWallet) loadDashboardData(selectedWallet.id);
   };
 
-  const handleRemoveMember = (memberId: string, displayName: string) => {
-    if (!selectedWallet) return;
-    
-    Alert.alert(
-      "Xác nhận xóa",
-      `Bạn có chắc chắn muốn xóa thành viên "${displayName}" ra khỏi ví chung không?`,
-      [
-        { text: "Hủy", style: "cancel" },
-        {
-          text: "Xóa",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              setLoadingMembers(true);
-              const res = await removeMember(selectedWallet.id, memberId);
-              if (res.success) {
-                Alert.alert("Thành công", "Đã xóa thành viên khỏi ví chung.");
-                loadMembers(selectedWallet.id);
-                loadDashboardData(selectedWallet.id);
-              } else {
-                Alert.alert("Lỗi", res.error || "Không thể xóa thành viên.");
-              }
-            } catch (err: any) {
-              Alert.alert("Lỗi", err.message || "Lỗi kết nối.");
-            } finally {
-              setLoadingMembers(false);
-            }
-          }
-        }
-      ]
-    );
-  };
 
-  const handleJoinSuccess = (walletName: string) => {
-    loadDashboardData();
-  };
 
   const jarsWithAlerts = useMemo(() => {
     return jars.map((jar) => ({
@@ -1018,7 +941,6 @@ export default function DashboardScreen({
             handleSelectWallet(w);
             setActiveTab("home");
           }}
-          onOpenJoinScreen={() => setShowJoinScreen(true)}
         />
       ) : activeTab === "budget" ? (
         <BudgetScreen />
@@ -1056,24 +978,7 @@ export default function DashboardScreen({
         />
       )}
 
-      {selectedWallet && (
-        <WalletInviteScreen
-          visible={showInviteScreen}
-          onClose={() => setShowInviteScreen(false)}
-          walletId={selectedWallet.id}
-          walletName={selectedWallet.name}
-        />
-      )}
 
-      <WalletJoinScreen
-        visible={showJoinScreen}
-        onClose={() => {
-          setShowJoinScreen(false);
-          setInviteCodeToJoin(null);
-        }}
-        initialCode={inviteCodeToJoin}
-        onJoinSuccess={handleJoinSuccess}
-      />
 
       {activeTab === "home" && (
         <TouchableOpacity

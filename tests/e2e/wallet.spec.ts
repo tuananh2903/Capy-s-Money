@@ -153,17 +153,7 @@ async function setupBaseAuthMocks(page: any, dynamicWallets: any[]) {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
   });
 
-  await page.route('**/rest/v1/wallet_invite_codes*', async (route: any) => {
-    const method = route.request().method();
-    if (method === 'POST') {
-      await route.fulfill({
-        status: 201, contentType: 'application/json',
-        body: JSON.stringify([{ id: 'invite-1', code: 'CAPY-123456', expires_at: new Date(Date.now() + 86400000).toISOString() }])
-      });
-    } else {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
-    }
-  });
+
 }
 
 async function loginAndGoToWallet(page: any, dynamicWallets: any[]) {
@@ -219,15 +209,7 @@ test.describe('WalletScreen — Hiển thị & Điều hướng chi tiết', () 
     await expect(page.locator('text=12.000.000')).toBeVisible({ timeout: 5000 });
   });
 
-  test('should show quota limit warning when 2 personal + 1 shared reached', async ({ page }) => {
-    // Add a shared wallet to reach limit
-    dynamicWallets.push({
-      id: 'w-shared', user_id: 'mock-user-uuid-123', name: 'Ví Chung', balance: 0,
-      is_default: false, type: 'shared', is_deleted: false
-    });
-    await page.reload();
-    await page.locator('text=Ví').last().click();
-    await page.waitForSelector('text=Ví của tôi', { timeout: 5000 });
+  test('should show quota limit warning when 2 personal wallets reached', async ({ page }) => {
     await expect(page.locator('text=Bạn đã đạt giới hạn ví miễn phí')).toBeVisible();
     // Create button should be disabled
     const createBtn = page.getByTestId('create-wallet-btn');
@@ -256,9 +238,7 @@ test.describe('WalletCreateSheet — Tạo ví mới', () => {
     await expect(page.locator('text="Tạo Ví Mới"')).toBeVisible();
     // Wallet name field
     await expect(page.locator('[placeholder="Nhập tên ví (ví dụ: Ví Ăn Tiêu)"]')).toBeVisible();
-    // Wallet type tabs
-    await expect(page.locator('text="Cá nhân"').last()).toBeVisible();
-    await expect(page.locator('text=Ví chung')).toBeVisible();
+
     // Initial balance field
     await expect(page.locator('text=Số dư khởi tạo (VND)')).toBeVisible();
     // Color picker
@@ -284,18 +264,7 @@ test.describe('WalletCreateSheet — Tạo ví mới', () => {
     await expect(page.locator('text=Tên ví không được vượt quá 32 ký tự.')).toBeVisible();
   });
 
-  test('should switch between Personal and Shared wallet type', async ({ page }) => {
-    // Default is personal
-    await expect(page.locator('text="Cá nhân"').last()).toBeVisible();
- 
-    // Switch to shared
-    await page.locator('text=Ví chung').click();
-    // Shared type is now active (visual check via tab state)
-    await page.waitForTimeout(300);
-    // Click back to personal
-    await page.locator('text="Cá nhân"').last().click();
-    await page.waitForTimeout(300);
-  });
+
 
   test('should create a personal wallet successfully and appear in wallet list', async ({ page }) => {
     // Fill name
@@ -337,20 +306,7 @@ test.describe('WalletCreateSheet — Tạo ví mới', () => {
     expect(value).toMatch(/5/);
   });
 
-  test('should create a shared wallet type', async ({ page }) => {
-    // Switch to shared wallet
-    await page.locator('text=Ví chung').click();
-    await page.waitForTimeout(300);
 
-    // Fill name
-    await page.locator('[placeholder="Nhập tên ví (ví dụ: Ví Ăn Tiêu)"]').fill('Ví Gia Đình');
-    // Click create
-    await page.locator('text="Tạo ví"').click();
-
-    // Sheet should close after creation
-    await page.waitForTimeout(1000);
-    await expect(page.locator('text="Tạo Ví Mới"')).toBeHidden();
-  });
 });
 
 // ─── WalletEditSheet Tests ────────────────────────────────────────────────────
@@ -499,97 +455,7 @@ test.describe('WalletEditSheet — Cài đặt ví', () => {
   });
 });
 
-// ─── WalletEditSheet Shared Wallet Tests ──────────────────────────────────────
 
-test.describe('WalletEditSheet — Ví chung (Shared Wallet)', () => {
-  let dynamicWallets: any[];
-
-  test.beforeEach(async ({ page }) => {
-    dynamicWallets = [
-      { id: 'w-1', user_id: 'mock-user-uuid-123', name: 'Ví Cá Nhân', balance: 5000000, is_default: true, type: 'personal', is_deleted: false },
-      { id: 'w-shared', user_id: 'mock-user-uuid-123', name: 'Ví Gia Đình', balance: 2000000, is_default: false, type: 'shared', is_deleted: false }
-    ];
-
-    await loginAndGoToWallet(page, dynamicWallets);
-
-    // Override wallet_members to return members for shared wallet (AFTER login helper!)
-    await page.route('**/rest/v1/wallet_members*', async (route: any) => {
-      const url = route.request().url();
-      const method = route.request().method();
-      if (method === 'DELETE') {
-        await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
-        return;
-      }
-      if (url.includes('wallet_id=eq.w-shared')) {
-        await route.fulfill({
-          status: 200, contentType: 'application/json',
-          body: JSON.stringify([
-            { user_id: 'mock-user-uuid-123', role: 'owner', wallet_id: 'w-shared', profiles: { display_name: 'Capy User' } },
-            { user_id: 'member-456', role: 'editor', wallet_id: 'w-shared', profiles: { display_name: 'Member Capy' } }
-          ])
-        });
-      } else {
-        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
-      }
-    });
-
-    await page.getByTestId('btn-settings-w-shared').click();
-    await page.waitForSelector('text=Cài đặt: Ví Gia Đình', { timeout: 5000 });
-  });
-
-  test('should display members section for shared wallet', async ({ page }) => {
-    await expect(page.locator('text=THÀNH VIÊN VÍ')).toBeVisible();
-    await expect(page.locator('text=Capy User')).toBeVisible();
-    await expect(page.locator('text=Chủ ví')).toBeVisible();
-    await expect(page.locator('text=Member Capy')).toBeVisible();
-    await expect(page.locator('text=Người chỉnh sửa')).toBeVisible();
-  });
-
-  test('should show invite button when under 3 members', async ({ page }) => {
-    await expect(page.locator('text=➕ Mời thành viên mới')).toBeVisible();
-  });
-
-  test('should open WalletInviteScreen when clicking invite', async ({ page }) => {
-    await page.locator('text=➕ Mời thành viên mới').click();
-    await page.waitForTimeout(500);
-    await expect(page.locator('text="Mời thành viên"')).toBeVisible({ timeout: 5000 });
-  });
-
-  test('should show remove button for non-owner members (owner view)', async ({ page }) => {
-    // Owner sees Xóa button next to Member Capy
-    await expect(page.locator('text=Xóa').first()).toBeVisible();
-  });
-
-  test('should remove a member with confirmation', async ({ page }) => {
-    page.on('dialog', async (dialog: any) => {
-      if (dialog.message().includes('Xác nhận xóa thành viên')) {
-        await dialog.accept();
-      } else {
-        await dialog.accept();
-      }
-    });
-
-    await page.locator('text=Xóa').first().click();
-    await page.waitForTimeout(1000);
-    // After removal, member should be gone
-    await expect(page.locator('text="Member Capy"').first()).toBeHidden();
-  });
-
-  test('should cancel member removal when dismissing dialog', async ({ page }) => {
-    page.on('dialog', async (dialog: any) => {
-      if (dialog.message().includes('Xác nhận xóa thành viên')) {
-        await dialog.dismiss();
-      } else {
-        await dialog.accept();
-      }
-    });
-
-    await page.locator('text=Xóa').first().click();
-    await page.waitForTimeout(500);
-    // Member should still be visible
-    await expect(page.locator('text=Member Capy')).toBeVisible();
-  });
-});
 
 // ─── Full Wallet Management Flow ──────────────────────────────────────────────
 

@@ -113,7 +113,7 @@ describe('dashboardService', () => {
       expect(res.data).toEqual(mockJars);
       expect(supabase.from).toHaveBeenCalledWith('jars');
       expect(mockSelect).toHaveBeenCalledWith('*');
-      expect(mockEq).toHaveBeenCalledWith('wallet_id', 'w-123');
+      expect(mockEq).toHaveBeenCalledWith('user_id', 'w-123');
     });
 
     it('should return error if fetching jars fails', async () => {
@@ -365,7 +365,7 @@ describe('dashboardService', () => {
       expect(supabase.from).toHaveBeenCalledWith('jars');
       expect(mockUpsert).toHaveBeenCalledWith(
         expect.any(Array),
-        { onConflict: 'wallet_id,type' }
+        { onConflict: 'user_id,type' }
       );
       // Verifies that it upserted NEC (updated to 55%) and missing jars (PLAY, EDU, LTSS, GIVE)
       // but didn't upsert FFA (since it was already 10%)

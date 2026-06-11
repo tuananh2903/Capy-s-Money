@@ -99,7 +99,7 @@ describe('WalletEditSheet', () => {
     });
 
     expect(updateJarAllocations).toHaveBeenCalledWith(
-      'w-1',
+      'user-123',
       expect.arrayContaining([
         expect.objectContaining({ type: 'NEC', percentage: 55 }),
         expect.objectContaining({ type: 'FFA', percentage: 10 }),

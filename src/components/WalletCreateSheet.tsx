@@ -152,28 +152,7 @@ export default function WalletCreateSheet({
               }}
             />
 
-            {/* Wallet Type */}
-            <Text style={styles.label}>Loại ví</Text>
-            <View style={styles.tabContainer}>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                style={[styles.tab, type === 'personal' && styles.activeTabActive]}
-                onPress={() => setType('personal')}
-              >
-                <Text style={[styles.tabText, type === 'personal' && styles.activeTabText]}>
-                  Cá nhân
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                style={[styles.tab, type === 'shared' && styles.activeTabActive]}
-                onPress={() => setType('shared')}
-              >
-                <Text style={[styles.tabText, type === 'shared' && styles.activeTabText]}>
-                  Ví chung
-                </Text>
-              </TouchableOpacity>
-            </View>
+
 
             {/* Initial Balance */}
             <Text style={styles.label}>Số dư khởi tạo (VND)</Text>

@@ -41,37 +41,49 @@ export default function BudgetScreen() {
   const [isRolloverEnabled, setIsRolloverEnabled] = useState<boolean>(false);
 
 
+  const [userId, setUserId] = useState<string>('');
+
   // Load wallets on startup
   useEffect(() => {
-    async function loadWallets() {
+    async function loadWalletsAndUser() {
       setIsLoading(true);
-      const res = await fetchUserWallets();
-      if (res.success && res.data && res.data.length > 0) {
-        setWallets(res.data);
-        setActiveWalletId(res.data[0].id);
+      const [walletRes, userRes] = await Promise.all([
+        fetchUserWallets(),
+        supabase.auth.getUser()
+      ]);
+      const uid = userRes.data.user?.id || '';
+      setUserId(uid);
+
+      if (walletRes.success && walletRes.data && walletRes.data.length > 0) {
+        setWallets(walletRes.data);
+        setActiveWalletId(walletRes.data[0].id);
       } else {
-        setError(res.error || 'Failed to load wallets');
+        setError(walletRes.error || 'Failed to load wallets');
       }
       setIsLoading(false);
     }
-    loadWallets();
+    loadWalletsAndUser();
   }, []);
 
-  // Load jars, categories and category budgets on active wallet change
+  // Load jars, categories and category budgets on active wallet/user change
   const loadBudgetData = useCallback(async () => {
-    if (!activeWalletId) return;
+    if (!userId || !activeWalletId) return;
     setIsLoading(true);
     setError(null);
 
-    // Load total budget from AsyncStorage first
+    // Load total budget from profile database instead of AsyncStorage per wallet
     let walletTotalBudget = 10000000;
     try {
-      const saved = await AsyncStorage.getItem(`@wallet_total_budget_${activeWalletId}`);
-      if (saved) {
-        walletTotalBudget = parseInt(saved, 10) || 10000000;
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('total_budget')
+        .eq('id', userId)
+        .single();
+      if (profile && profile.total_budget) {
+        walletTotalBudget = Number(profile.total_budget);
       }
     } catch (e) {
-      console.error('Error loading total budget:', e);
+      console.error('Error loading total budget from database:', e);
     }
     setTotalBudget(walletTotalBudget);
 
@@ -89,8 +101,8 @@ export default function BudgetScreen() {
 
 
     const [jarsRes, budgetsRes, categoriesRes] = await Promise.all([
-      fetchJars(activeWalletId),
-      fetchCategoryBudgets(activeWalletId),
+      fetchJars(userId),
+      fetchCategoryBudgets(userId),
       fetchCategories()
     ]);
 
@@ -109,15 +121,17 @@ export default function BudgetScreen() {
         GIVE: { name: 'Từ thiện (GIVE)', icon: '💖' }
       };
 
-      const mappedJars = jarsRes.data.map(jar => ({
-        ...jar,
-        name: standardMeta[jar.type]?.name || jar.type,
-        icon: standardMeta[jar.type]?.icon || '💰',
-        pct: jar.allocation_percentage,
-        limit: walletTotalBudget * (jar.allocation_percentage / 100),
-        spent: jar.spent_amount,
-        enableAlerts: jar.enable_alerts
-      }));
+      const mappedJars = jarsRes.data
+        .filter(jar => jar.allocation_percentage > 0)
+        .map(jar => ({
+          ...jar,
+          name: standardMeta[jar.type]?.name || jar.type,
+          icon: standardMeta[jar.type]?.icon || '💰',
+          pct: jar.allocation_percentage,
+          limit: walletTotalBudget * (jar.allocation_percentage / 100),
+          spent: jar.spent_amount,
+          enableAlerts: jar.enable_alerts
+        }));
       setJars(mappedJars);
     } else {
       setError(jarsRes.error || 'Failed to load Jars');
@@ -130,7 +144,7 @@ export default function BudgetScreen() {
     }
 
     setIsLoading(false);
-  }, [activeWalletId]);
+  }, [userId, activeWalletId]);
 
   useEffect(() => {
     loadBudgetData();
@@ -143,20 +157,27 @@ export default function BudgetScreen() {
       return;
     }
     try {
-      await AsyncStorage.setItem(`@wallet_total_budget_${activeWalletId}`, cleanAmount.toString());
+      // Update total budget in profiles table
+      const { error: profileErr } = await supabase
+        .from('profiles')
+        .update({ total_budget: cleanAmount })
+        .eq('id', userId);
+      
+      if (profileErr) throw new Error(profileErr.message);
+
       setTotalBudget(cleanAmount);
       setIsEditingTotalBudget(false);
       
       // Sync all jar limits in the database
       const updatePromises = jars.map(async (jar) => {
         const jarLimit = cleanAmount * (jar.pct / 100);
-        return saveJarAllocation(activeWalletId, jar.type, jar.pct, jarLimit);
+        return saveJarAllocation(userId, jar.type, jar.pct, jarLimit);
       });
       await Promise.all(updatePromises);
       
       loadBudgetData();
-    } catch (e) {
-      Alert.alert('Lỗi', 'Không thể lưu tổng ngân sách.');
+    } catch (e: any) {
+      Alert.alert('Lỗi', 'Không thể lưu tổng ngân sách: ' + e.message);
     }
   };
 
@@ -221,16 +242,22 @@ export default function BudgetScreen() {
     const jar = jars[index];
     Alert.alert(
       'Xác nhận',
-      `Bạn chắc chắn muốn xóa hũ ${jar.name}?`,
+      `Bạn chắc chắn muốn xóa hũ ${jar.name}? Việc này sẽ đặt tỷ lệ phân bổ của hũ về 0% và xóa toàn bộ hạn mục con liên quan. Các giao dịch cũ vẫn sẽ được giữ lại.`,
       [
         { text: 'Hủy', style: 'cancel' },
         { 
           text: 'Xóa', 
           style: 'destructive',
           onPress: async () => {
+            await saveJarAllocation(userId, jar.type, 0, 0);
             const res = await deleteJar(jar.id);
             if (res.success) {
-              setJars(prev => prev.filter((_, i) => i !== index));
+              // Also delete all category budgets associated with this jar
+              const budgetsToDelete = categoryBudgets.filter(b => b.categories?.jar_type === jar.type);
+              for (const b of budgetsToDelete) {
+                await deleteCategoryBudget(b.id);
+              }
+              loadBudgetData();
             } else {
               Alert.alert('Lỗi', 'Không thể xóa Hũ');
             }
@@ -248,7 +275,7 @@ export default function BudgetScreen() {
     
     // Save Jar Allocation & Cash Limit
     const jarLimit = totalBudget * (config.pct / 100);
-    const allocationRes = await saveJarAllocation(activeWalletId, jar.type, config.pct, jarLimit);
+    const allocationRes = await saveJarAllocation(userId, jar.type, config.pct, jarLimit);
     if (!allocationRes.success) {
       setIsSavingJar(false);
       Alert.alert('Lỗi', 'Lưu tỷ lệ phân bổ Hũ thất bại: ' + (allocationRes.error || ''));
@@ -298,7 +325,7 @@ export default function BudgetScreen() {
       }
       
       if (categoryId) {
-        await saveCategoryBudget(activeWalletId, categoryId, cat.limit, userId);
+        await saveCategoryBudget(userId, categoryId, cat.limit);
       }
     }
 
@@ -309,6 +336,22 @@ export default function BudgetScreen() {
       );
       if (!stillExists) {
         await deleteCategoryBudget(b.id);
+        // Clean up custom categories if not used by any transactions
+        if (b.category_id) {
+          const catObj = allCategories.find(c => c.id === b.category_id);
+          if (catObj && !catObj.is_system && catObj.user_id === userId) {
+            const { count } = await supabase
+              .from('transactions')
+              .select('id', { count: 'exact', head: true })
+              .eq('category_id', b.category_id);
+            if (count === 0) {
+              await supabase
+                .from('categories')
+                .delete()
+                .eq('id', b.category_id);
+            }
+          }
+        }
       }
     }
 
@@ -412,17 +455,14 @@ export default function BudgetScreen() {
             </View>
 
             {jars.map((jar, idx) => {
-              const jarCategories = allCategories
-                .filter(cat => cat.jar_type === jar.type && cat.type === 'expense')
-                .map(cat => {
-                  const b = categoryBudgets.find(b => b.category_id === cat.id);
-                  return {
-                    id: b?.id || `temp-${cat.id}`,
-                    name: cat.name,
-                    amountLimit: b?.amount_limit || 0,
-                    enableAlerts: b?.enable_alerts || false
-                  };
-                });
+              const jarCategories = categoryBudgets
+                .filter(b => b.categories?.jar_type === jar.type)
+                .map(b => ({
+                  id: b.id,
+                  name: b.categories?.name || 'Hạng mục',
+                  amountLimit: b.amount_limit,
+                  enableAlerts: b.enable_alerts
+                }));
 
               return (
                 <JarCard
@@ -450,17 +490,14 @@ export default function BudgetScreen() {
             name: jars[editingJarIndex].name,
             icon: jars[editingJarIndex].icon,
             pct: jars[editingJarIndex].pct,
-            categories: allCategories
-              .filter(cat => cat.jar_type === jars[editingJarIndex].type && cat.type === 'expense')
-              .map(cat => {
-                const b = categoryBudgets.find(b => b.category_id === cat.id);
-                return {
-                  id: b?.id,
-                  category_id: cat.id,
-                  name: cat.name,
-                  limit: b?.amount_limit || 0
-                };
-              })
+            categories: categoryBudgets
+              .filter(b => b.categories?.jar_type === jars[editingJarIndex].type)
+              .map(b => ({
+                id: b.id,
+                category_id: b.category_id,
+                name: b.categories?.name || 'Hạng mục',
+                limit: b.amount_limit
+              }))
           }}
           onSave={handleSaveJarConfig}
           isSaving={isSavingJar}

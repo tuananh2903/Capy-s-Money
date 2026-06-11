@@ -13,7 +13,7 @@ export interface Wallet {
 
 export interface Jar {
   id?: string;
-  wallet_id?: string;
+  user_id?: string;
   type: 'NEC' | 'FFA' | 'EDU' | 'PLAY' | 'LTSS' | 'GIVE';
   budget_limit: number;
   spent_amount: number;
@@ -84,12 +84,12 @@ export async function fetchWallets(userId: string): Promise<{ success: boolean; 
  * 
  * @param walletId ID ví
  */
-export async function fetchJars(walletId: string): Promise<{ success: boolean; data?: Jar[]; error?: string }> {
+export async function fetchJars(userId: string): Promise<{ success: boolean; data?: Jar[]; error?: string }> {
   try {
     const { data, error } = await supabase
       .from('jars')
       .select('*')
-      .eq('wallet_id', walletId);
+      .eq('user_id', userId);
 
     if (error) {
       console.error('Error fetching jars:', error);
@@ -140,7 +140,7 @@ export async function createTransaction(txData: Transaction): Promise<{ success:
  * @param allocations Danh sách các hũ và tỷ lệ (%) mới
  */
 export async function updateJarAllocations(
-  walletId: string,
+  userId: string,
   allocations: { type: string; percentage: number }[]
 ): Promise<{ success: boolean; error?: string }> {
   const total = allocations.reduce((sum, item) => sum + item.percentage, 0);
@@ -153,7 +153,7 @@ export async function updateJarAllocations(
       const { error } = await supabase
         .from('jars')
         .update({ allocation_percentage: alloc.percentage })
-        .eq('wallet_id', walletId)
+        .eq('user_id', userId)
         .eq('type', alloc.type);
 
       if (error) {
@@ -205,7 +205,7 @@ export async function fetchWalletIncome(walletId: string): Promise<{ success: bo
  * @param ratiosFromProfile Tỷ lệ phân bổ từ profile (nếu có)
  */
 export async function ensureJarsExist(
-  walletId: string,
+  userId: string,
   currentJars: Jar[],
   ratiosFromProfile?: { nec?: number; lt?: number; ffa?: number; edu?: number; play?: number; give?: number } | null
 ): Promise<{ success: boolean; error?: string }> {
@@ -228,7 +228,7 @@ export async function ensureJarsExist(
     const existing = currentJars.find(j => j.type === req.type);
     if (!existing) {
       jarsToUpsert.push({
-        wallet_id: walletId,
+        user_id: userId,
         type: req.type,
         allocation_percentage: req.ratio,
         budget_limit: 0,
@@ -237,7 +237,7 @@ export async function ensureJarsExist(
       needsUpdate = true;
     } else if (existing.allocation_percentage === 0) {
       jarsToUpsert.push({
-        wallet_id: walletId,
+        user_id: userId,
         type: req.type,
         allocation_percentage: req.ratio,
         budget_limit: existing.budget_limit || 0,
@@ -254,7 +254,7 @@ export async function ensureJarsExist(
   try {
     const { error } = await supabase
       .from('jars')
-      .upsert(jarsToUpsert, { onConflict: 'wallet_id,type' });
+      .upsert(jarsToUpsert, { onConflict: 'user_id,type' });
 
     if (error) {
       console.error('Error upserting jars in ensureJarsExist:', error);

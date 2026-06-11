@@ -2,7 +2,7 @@ import { supabase } from './supabaseClient';
 
 export interface JarData {
   id: string;
-  wallet_id: string;
+  user_id: string;
   type: string;
   budget_limit: number;
   spent_amount: number;
@@ -14,7 +14,7 @@ export interface JarData {
 
 export interface CategoryBudget {
   id: string;
-  wallet_id: string;
+  user_id: string;
   category_id: string;
   amount_limit: number;
   enable_alerts: boolean;
@@ -38,12 +38,12 @@ export async function fetchUserWallets() {
   }
 }
 
-export async function fetchJars(walletId: string): Promise<{ success: boolean; data?: JarData[]; error?: string }> {
+export async function fetchJars(userId: string): Promise<{ success: boolean; data?: JarData[]; error?: string }> {
   try {
     const { data, error } = await supabase
       .from('jars')
       .select('*')
-      .eq('wallet_id', walletId);
+      .eq('user_id', userId);
     if (error) return { success: false, error: error.message };
     return { success: true, data: data as JarData[] };
   } catch (err: any) {
@@ -51,12 +51,12 @@ export async function fetchJars(walletId: string): Promise<{ success: boolean; d
   }
 }
 
-export async function fetchCategoryBudgets(walletId: string): Promise<{ success: boolean; data?: CategoryBudget[]; error?: string }> {
+export async function fetchCategoryBudgets(userId: string): Promise<{ success: boolean; data?: CategoryBudget[]; error?: string }> {
   try {
     const { data, error } = await supabase
       .from('budgets')
       .select('*, categories(name, icon, jar_type)')
-      .eq('wallet_id', walletId);
+      .eq('user_id', userId);
     if (error) return { success: false, error: error.message };
     return { success: true, data: data as any[] };
   } catch (err: any) {
@@ -102,17 +102,17 @@ export async function toggleCategoryBudgetAlert(budgetId: string, enable: boolea
   }
 }
 
-export async function saveJarAllocation(walletId: string, jarType: string, percentage: number, limit: number) {
+export async function saveJarAllocation(userId: string, jarType: string, percentage: number, limit: number) {
   try {
     const { error } = await supabase
       .from('jars')
       .upsert({
-        wallet_id: walletId,
+        user_id: userId,
         type: jarType,
         allocation_percentage: percentage,
         budget_limit: limit,
         updated_at: new Date().toISOString()
-      }, { onConflict: 'wallet_id,type' });
+      }, { onConflict: 'user_id,type' });
     if (error) return { success: false, error: error.message };
     return { success: true };
   } catch (err: any) {
@@ -120,17 +120,17 @@ export async function saveJarAllocation(walletId: string, jarType: string, perce
   }
 }
 
-export async function saveCategoryBudget(walletId: string, categoryId: string, limit: number, userId: string) {
+export async function saveCategoryBudget(userId: string, categoryId: string, limit: number) {
   try {
     const { error } = await supabase
       .from('budgets')
       .upsert({
-        wallet_id: walletId,
+        user_id: userId,
         category_id: categoryId,
         amount_limit: limit,
         created_by: userId,
         updated_at: new Date().toISOString()
-      }, { onConflict: 'wallet_id,category_id' });
+      }, { onConflict: 'user_id,category_id' });
     if (error) return { success: false, error: error.message };
     return { success: true };
   } catch (err: any) {
