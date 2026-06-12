@@ -8,17 +8,17 @@ import { TransactionDetailSheet } from '../components/ledger/TransactionDetailSh
 import { LedgerTransaction } from '../services/ledgerService';
 
 interface Props {
-  activeWalletId: string;
+  walletIds: string[];
 }
 
-export function LedgerScreen({ activeWalletId }: Props) {
+export function LedgerScreen({ walletIds }: Props) {
   const [targetDate, setTargetDate] = useState(new Date());
   const [activeTab, setActiveTab] = useState<'daily' | 'monthly' | 'calendar'>('daily');
   const [selectedTx, setSelectedTx] = useState<LedgerTransaction | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const { transactions, prevMonthSpend, isLoading, deleteTransaction } = useLedger(
-    activeWalletId,
+    walletIds,
     targetDate
   );
 

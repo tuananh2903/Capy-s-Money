@@ -107,23 +107,30 @@ describe('WalletScreen', () => {
     expect(await findByText('10.000.000 đ')).toBeTruthy();
   });
 
-  it('gating check: disables "+ Tạo ví mới" button and shows warning if user has >=2 personal wallets', async () => {
+  it('gating check: disables "+ Tạo ví mới" button and shows warning if user has >=5 wallets', async () => {
+    const mockFiveWallets = [
+      { id: 'w-1', name: 'Ví 1', balance: 1000000, type: 'personal', is_default: true, user_id: 'user-123' },
+      { id: 'w-2', name: 'Ví 2', balance: 1000000, type: 'personal', is_default: false, user_id: 'user-123' },
+      { id: 'w-3', name: 'Ví 3', balance: 1000000, type: 'personal', is_default: false, user_id: 'user-123' },
+      { id: 'w-4', name: 'Ví 4', balance: 1000000, type: 'personal', is_default: false, user_id: 'user-123' },
+      { id: 'w-5', name: 'Ví 5', balance: 1000000, type: 'personal', is_default: false, user_id: 'user-123' },
+    ];
     (fetchWallets as jest.Mock).mockResolvedValue({
       success: true,
-      data: mockPersonalWallets, // 2 personal
+      data: mockFiveWallets, // 5 wallets
     });
 
     const { findByText, getByTestId } = render(
       <WalletScreen userId={mockUserId} onWalletSelected={mockOnWalletSelected} />
     );
 
-    await findByText('Ví Ăn Tiêu'); // wait for load
+    await findByText('Ví 1'); // wait for load
     
     const createBtn = getByTestId('create-wallet-btn');
     expect(createBtn.props.accessibilityState?.disabled).toBe(true);
 
     const warningText = await findByText(
-      'Bạn đã đạt giới hạn ví miễn phí (tối đa 2 ví cá nhân). Nâng cấp Premium để tạo thêm'
+      'Bạn đã đạt giới hạn ví miễn phí (tối đa 5 ví). Nâng cấp Premium để tạo thêm'
     );
     expect(warningText).toBeTruthy();
   });
@@ -131,7 +138,7 @@ describe('WalletScreen', () => {
   it('gating check: enables "+ Tạo ví mới" button if user is below quotas', async () => {
     (fetchWallets as jest.Mock).mockResolvedValue({
       success: true,
-      data: [mockPersonalWallets[0]], // only 1 personal wallet
+      data: [mockPersonalWallets[0]], // only 1 wallet
     });
 
     const { findByText, getByTestId, queryByText } = render(
@@ -143,7 +150,7 @@ describe('WalletScreen', () => {
     const createBtn = getByTestId('create-wallet-btn');
     expect(createBtn.props.accessibilityState?.disabled ?? false).toBe(false);
     expect(
-      queryByText('Bạn đã đạt giới hạn ví miễn phí (tối đa 2 ví cá nhân). Nâng cấp Premium để tạo thêm')
+      queryByText('Bạn đã đạt giới hạn ví miễn phí (tối đa 5 ví). Nâng cấp Premium để tạo thêm')
     ).toBeNull();
   });
 

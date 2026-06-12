@@ -30,7 +30,7 @@ describe('useLedger Hook Tests', () => {
     (ledgerService.fetchLedgerTransactions as jest.Mock).mockResolvedValue({ success: true, data: mockTxs });
     (ledgerService.fetchPreviousMonthSpend as jest.Mock).mockResolvedValue({ success: true, data: 50 });
 
-    const { result } = renderHook(() => useLedger('wallet-123', new Date('2026-05-15')));
+    const { result } = renderHook(() => useLedger(['wallet-123'], new Date('2026-05-15')));
     
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
@@ -45,7 +45,7 @@ describe('useLedger Hook Tests', () => {
     const mockEq = (supabase as any)._mockEq;
     mockEq.mockResolvedValue({ error: { message: 'Database error' } });
 
-    const { result } = renderHook(() => useLedger('wallet-123', new Date('2026-05-15')));
+    const { result } = renderHook(() => useLedger(['wallet-123'], new Date('2026-05-15')));
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     expect(result.current.transactions).toEqual(mockTxs);

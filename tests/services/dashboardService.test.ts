@@ -1,4 +1,4 @@
-import { fetchWallets, fetchJars, createTransaction, updateJarAllocations, fetchWalletIncome, ensureJarsExist, createWallet, updateWallet, deleteWallet, setDefaultWallet } from '../../src/services/dashboardService';
+import { fetchWallets, fetchJars, createTransaction, updateJarAllocations, fetchWalletIncome, fetchWalletExpense, ensureJarsExist, createWallet, updateWallet, deleteWallet, setDefaultWallet } from '../../src/services/dashboardService';
 import { supabase } from '../../src/services/supabaseClient';
 
 const mockSelect = jest.fn();
@@ -64,31 +64,22 @@ describe('dashboardService', () => {
   });
 
   describe('fetchWallets', () => {
-    it('should fetch all wallets of the user (owned) - no shared wallets', async () => {
+    it('should fetch all wallets of the user (owned)', async () => {
       const mockWallets = [
         { id: 'w-1', name: 'Ví Cá Nhân', type: 'personal', balance: 5000000 },
       ];
 
-      let callCount = 0;
       mockChain.then = jest.fn((onFulfilled) => {
-        callCount++;
-        if (callCount === 1) {
-          // wallet_members query
-          return Promise.resolve(onFulfilled({ data: [], error: null }));
-        } else {
-          // wallets query
-          return Promise.resolve(onFulfilled({ data: mockWallets, error: null }));
-        }
+        return Promise.resolve(onFulfilled({ data: mockWallets, error: null }));
       });
 
       const res = await fetchWallets('user-123');
       expect(res.success).toBe(true);
       expect(res.data).toEqual(mockWallets);
-      expect(supabase.from).toHaveBeenCalledWith('wallet_members');
       expect(supabase.from).toHaveBeenCalledWith('wallets');
     });
 
-    it('should return error if fetching wallet_members fails', async () => {
+    it('should return error if fetching wallets fails', async () => {
       mockChain.then = jest.fn((onFulfilled) => {
         return Promise.resolve(onFulfilled({ data: null, error: { message: 'Database Error' } }));
       });
@@ -348,6 +339,45 @@ describe('dashboardService', () => {
       expect(res.success).toBe(false);
       expect(res.data).toBe(0);
       expect(res.error).toBe('Không thể tải dữ liệu thu nhập: DB error');
+    });
+  });
+
+  describe('fetchWalletExpense', () => {
+    it('should fetch and sum all expense transactions for a wallet', async () => {
+      const mockTxData = [
+        { amount: 300000 },
+        { amount: 400000 },
+      ];
+
+      const mockEq3 = jest.fn().mockResolvedValue({ data: mockTxData, error: null });
+      mockSelect.mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            eq: mockEq3
+          })
+        })
+      });
+
+      const res = await fetchWalletExpense('w-123');
+      expect(res.success).toBe(true);
+      expect(res.data).toBe(700000);
+      expect(supabase.from).toHaveBeenCalledWith('transactions');
+    });
+
+    it('should return error if db query fails', async () => {
+      const mockEq3 = jest.fn().mockResolvedValue({ data: null, error: { message: 'DB error' } });
+      mockSelect.mockReturnValue({
+        eq: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            eq: mockEq3
+          })
+        })
+      });
+
+      const res = await fetchWalletExpense('w-123');
+      expect(res.success).toBe(false);
+      expect(res.data).toBe(0);
+      expect(res.error).toBe('Không thể tải dữ liệu chi tiêu: DB error');
     });
   });
 

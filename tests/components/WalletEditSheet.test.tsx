@@ -50,62 +50,7 @@ describe('WalletEditSheet', () => {
 
     // Title & Sliders
     expect(await findByText('Cài đặt: Ví Ăn Tiêu')).toBeTruthy();
-    expect(await findByText('Tổng hũ: 100%')).toBeTruthy();
-    expect(await findByText('⭐ Mặc định')).toBeTruthy();
+    expect(await findByText('⭐ Đặt làm mặc định')).toBeTruthy();
     expect(await findByText('🗑️ Xóa ví')).toBeTruthy();
-  });
-
-  it('shows and disables save button when total percentage !== 100%', async () => {
-    const { findByText, getByTestId } = render(
-      <WalletEditSheet
-        visible={true}
-        onClose={mockOnClose}
-        wallet={mockWallet}
-        userId="user-123"
-        onSaveSuccess={mockOnSaveSuccess}
-      />
-    );
-
-    // Decrease one of the jars (e.g. FFA) to make total !== 100%
-    const decFFAButton = await findByText('- FFA'); // custom button for test accessibility
-    
-    await act(async () => {
-      fireEvent.press(decFFAButton);
-    });
-
-    expect(await findByText('Tổng hũ: 95%')).toBeTruthy();
-
-    const saveButton = getByTestId('save-allocations-btn');
-    expect(saveButton.props.accessibilityState?.disabled).toBe(true);
-  });
-
-  it('successfully updates allocations when clicking Save at 100%', async () => {
-    (updateJarAllocations as jest.Mock).mockResolvedValue({ success: true });
-
-    const { getByTestId } = render(
-      <WalletEditSheet
-        visible={true}
-        onClose={mockOnClose}
-        wallet={mockWallet}
-        userId="user-123"
-        onSaveSuccess={mockOnSaveSuccess}
-      />
-    );
-
-    const saveButton = getByTestId('save-allocations-btn');
-    
-    await act(async () => {
-      fireEvent.press(saveButton);
-    });
-
-    expect(updateJarAllocations).toHaveBeenCalledWith(
-      'user-123',
-      expect.arrayContaining([
-        expect.objectContaining({ type: 'NEC', percentage: 55 }),
-        expect.objectContaining({ type: 'FFA', percentage: 10 }),
-      ])
-    );
-    expect(mockOnSaveSuccess).toHaveBeenCalled();
-    expect(mockOnClose).toHaveBeenCalled();
   });
 });

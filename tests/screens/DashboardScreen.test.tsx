@@ -30,6 +30,7 @@ jest.mock('../../src/services/dashboardService', () => ({
   fetchJars: jest.fn(),
   createTransaction: jest.fn(),
   fetchWalletIncome: jest.fn(() => Promise.resolve({ success: true, data: 2500000 })),
+  fetchWalletExpense: jest.fn(() => Promise.resolve({ success: true, data: 1500000 })),
   ensureJarsExist: jest.fn(() => Promise.resolve({ success: true })),
   checkHasTransactionsToday: jest.fn(() => Promise.resolve(false)),
 }));
@@ -41,11 +42,30 @@ jest.mock('../../src/services/profileService', () => ({
 }));
 
 // Mock supabaseClient
+let mockTotalBudget = 10000000;
+let mockRolloverEnabled = false;
+
 jest.mock('../../src/services/supabaseClient', () => ({
   supabase: {
     auth: {
       getUser: jest.fn(() => Promise.resolve({ data: { user: { email: 'test@example.com', phone: '0123456789' } }, error: null })),
     },
+    from: jest.fn((table: string) => {
+      if (table === 'profiles') {
+        return {
+          select: jest.fn(() => ({
+            eq: jest.fn(() => ({
+              single: jest.fn(() => Promise.resolve({ data: { total_budget: mockTotalBudget, rollover_enabled: mockRolloverEnabled }, error: null }))
+            }))
+          }))
+        };
+      }
+      return {
+        select: jest.fn(() => ({
+          eq: jest.fn().mockResolvedValue({ data: [], error: null })
+        }))
+      };
+    })
   },
 }));
 
@@ -112,6 +132,7 @@ describe('DashboardScreen', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockRolloverEnabled = false;
   });
 
   it('renders loading state first, then lists wallets and active wallet data', async () => {
@@ -312,13 +333,9 @@ describe('DashboardScreen', () => {
   });
 
   it('displays rollover forecast banner on dashboard when rollover is enabled with surplus', async () => {
+    mockRolloverEnabled = true;
     (fetchWallets as jest.Mock).mockResolvedValue({ success: true, data: mockWallets });
     (fetchJars as jest.Mock).mockResolvedValue({ success: true, data: mockJars }); // spent sum = 1,450,000đ
-    (AsyncStorage.getItem as jest.Mock).mockImplementation((key) => {
-      if (key.includes('rollover_enabled')) return Promise.resolve('true');
-      if (key.includes('total_budget')) return Promise.resolve('10000000'); // 10M
-      return Promise.resolve(null);
-    });
 
     const { getByTestId, getByText, queryByText } = render(
       <DashboardScreen userId="user-123" onSignOut={jest.fn()} />
@@ -340,17 +357,13 @@ describe('DashboardScreen', () => {
   });
 
   it('displays rollover warning banner on dashboard when rollover is enabled with deficit', async () => {
+    mockRolloverEnabled = true;
     const overspentJars = [
       { type: 'NEC', allocation_percentage: 55, spent_amount: 8000000, budget_limit: 2750000 },
       { type: 'PLAY', allocation_percentage: 10, spent_amount: 4000000, budget_limit: 500000 },
     ]; // spent sum = 12M (exceeds 10M budget by 2M)
     (fetchWallets as jest.Mock).mockResolvedValue({ success: true, data: mockWallets });
     (fetchJars as jest.Mock).mockResolvedValue({ success: true, data: overspentJars });
-    (AsyncStorage.getItem as jest.Mock).mockImplementation((key) => {
-      if (key.includes('rollover_enabled')) return Promise.resolve('true');
-      if (key.includes('total_budget')) return Promise.resolve('10000000');
-      return Promise.resolve(null);
-    });
 
     const { getByTestId, getByText, queryByText } = render(
       <DashboardScreen userId="user-123" onSignOut={jest.fn()} />

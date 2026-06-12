@@ -152,8 +152,6 @@ export default function WalletCreateSheet({
               }}
             />
 
-
-
             {/* Initial Balance */}
             <Text style={styles.label}>Số dư khởi tạo (VND)</Text>
             <View style={styles.balanceInputContainer}>

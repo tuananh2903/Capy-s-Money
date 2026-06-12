@@ -209,7 +209,21 @@ test.describe('WalletScreen — Hiển thị & Điều hướng chi tiết', () 
     await expect(page.locator('text=12.000.000')).toBeVisible({ timeout: 5000 });
   });
 
-  test('should show quota limit warning when 2 personal wallets reached', async ({ page }) => {
+});
+
+test.describe('WalletScreen — Giới hạn quota 5 ví', () => {
+  let dynamicWallets: any[];
+
+  test('should show quota limit warning when 5 wallets reached', async ({ page }) => {
+    dynamicWallets = [
+      { id: 'w-1', user_id: 'mock-user-uuid-123', name: 'Ví Cá Nhân', balance: 5000000, is_default: true, type: 'personal', is_deleted: false },
+      { id: 'w-2', user_id: 'mock-user-uuid-123', name: 'Ví Tiết Kiệm', balance: 12000000, is_default: false, type: 'personal', is_deleted: false },
+      { id: 'w-3', user_id: 'mock-user-uuid-123', name: 'Ví Ăn Chơi', balance: 1000000, is_default: false, type: 'personal', is_deleted: false },
+      { id: 'w-4', user_id: 'mock-user-uuid-123', name: 'Ví Đầu Tư', balance: 2000000, is_default: false, type: 'personal', is_deleted: false },
+      { id: 'w-5', user_id: 'mock-user-uuid-123', name: 'Ví Tiết Kiệm Khác', balance: 3000000, is_default: false, type: 'personal', is_deleted: false }
+    ];
+    await loginAndGoToWallet(page, dynamicWallets);
+
     await expect(page.locator('text=Bạn đã đạt giới hạn ví miễn phí')).toBeVisible();
     // Create button should be disabled
     const createBtn = page.getByTestId('create-wallet-btn');

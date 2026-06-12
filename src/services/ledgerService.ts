@@ -17,18 +17,21 @@ export interface LedgerTransaction {
     parent_id: string | null;
     jar_type: string;
   } | null;
+  wallets: {
+    name: string;
+  } | null;
 }
 
 export async function fetchLedgerTransactions(
-  walletId: string,
+  walletIds: string[],
   startDate: Date,
   endDate: Date
 ): Promise<{ success: boolean; data?: LedgerTransaction[]; error?: string }> {
   try {
     const { data, error } = await supabase
       .from('transactions')
-      .select('*, categories(*)')
-      .eq('wallet_id', walletId)
+      .select('*, categories(*), wallets(name)')
+      .in('wallet_id', walletIds)
       .eq('is_deleted', false)
       .gte('occurred_at', startDate.toISOString())
       .lte('occurred_at', endDate.toISOString())
@@ -44,7 +47,7 @@ export async function fetchLedgerTransactions(
 }
 
 export async function fetchPreviousMonthSpend(
-  walletId: string,
+  walletIds: string[],
   currentMonthStart: Date
 ): Promise<{ success: boolean; data: number; error?: string }> {
   try {
@@ -54,7 +57,7 @@ export async function fetchPreviousMonthSpend(
     const { data, error } = await supabase
       .from('transactions')
       .select('amount')
-      .eq('wallet_id', walletId)
+      .in('wallet_id', walletIds)
       .eq('type', 'expense')
       .eq('is_deleted', false)
       .gte('occurred_at', startOfPrevMonth.toISOString())
@@ -69,3 +72,4 @@ export async function fetchPreviousMonthSpend(
     return { success: false, data: 0, error: err.message };
   }
 }
+

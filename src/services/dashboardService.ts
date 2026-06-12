@@ -7,6 +7,7 @@ export interface Wallet {
   balance: number;
   is_default: boolean;
   type: string;
+  rollover_enabled?: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -35,37 +36,17 @@ export interface Transaction {
 }
 
 /**
- * Lấy danh sách tất cả các ví người dùng có quyền truy cập (sở hữu hoặc được mời làm thành viên)
+ * Lấy danh sách tất cả các ví người dùng sở hữu (không kể ví đã xóa)
  * 
  * @param userId ID người dùng
  */
 export async function fetchWallets(userId: string): Promise<{ success: boolean; data?: Wallet[]; error?: string }> {
   try {
-    // Bước 1: Lấy danh sách wallet_id mà user là thành viên (ví chung)
-    const { data: memberRows, error: memberError } = await supabase
-      .from('wallet_members')
-      .select('wallet_id')
-      .eq('user_id', userId);
-
-    if (memberError) {
-      console.error('Error fetching wallet_members:', memberError);
-      return { success: false, error: `Không thể tải danh sách ví: ${memberError.message}` };
-    }
-
-    const sharedWalletIds = (memberRows ?? []).map((row: any) => row.wallet_id);
-
-    // Bước 2: Lấy tất cả ví mà user sở hữu hoặc là thành viên (không kể ví đã xóa)
-    let query = supabase.from('wallets').select('*').eq('user_id', userId).eq('is_deleted', false);
-
-    if (sharedWalletIds.length > 0) {
-      query = supabase
-        .from('wallets')
-        .select('*')
-        .or(`user_id.eq.${userId},id.in.(${sharedWalletIds.join(',')})`)
-        .eq('is_deleted', false);
-    }
-
-    const { data, error } = await query;
+    const { data, error } = await supabase
+      .from('wallets')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_deleted', false);
 
     if (error) {
       console.error('Error fetching wallets:', error);
@@ -195,6 +176,34 @@ export async function fetchWalletIncome(walletId: string): Promise<{ success: bo
     return { success: false, data: 0, error: err.message || 'Lỗi kết nối mạng.' };
   }
 }
+
+/**
+ * Lấy tổng chi tiêu của một ví cụ thể từ bảng transactions
+ * 
+ * @param walletId ID ví
+ */
+export async function fetchWalletExpense(walletId: string): Promise<{ success: boolean; data: number; error?: string }> {
+  try {
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('amount')
+      .eq('wallet_id', walletId)
+      .eq('type', 'expense')
+      .eq('is_deleted', false);
+
+    if (error) {
+      console.error('Error fetching wallet expense:', error);
+      return { success: false, data: 0, error: `Không thể tải dữ liệu chi tiêu: ${error.message}` };
+    }
+
+    const totalExpense = (data ?? []).reduce((sum: number, tx: any) => sum + (tx.amount || 0), 0);
+    return { success: true, data: totalExpense };
+  } catch (err: any) {
+    console.error('Unexpected error fetching wallet expense:', err);
+    return { success: false, data: 0, error: err.message || 'Lỗi kết nối mạng.' };
+  }
+}
+
 
 /**
  * Đảm bảo 6 hũ tài chính tồn tại cho ví cụ thể với tỷ lệ phân bổ hợp lệ.

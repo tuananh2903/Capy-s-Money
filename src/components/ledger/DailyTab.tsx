@@ -34,7 +34,12 @@ export function DailyTab({ transactions, onSelectTransaction }: Props) {
           <Text style={styles.dayHeader}>{dateHeader}</Text>
           {txs.map((tx) => (
             <TouchableOpacity key={tx.id} style={styles.txRow} onPress={() => onSelectTransaction(tx)}>
-              <Text style={styles.txTitle}>{tx.categories?.name || tx.jar_type}</Text>
+              <View style={styles.txLeft}>
+                <Text style={styles.txTitle}>{tx.categories?.name || tx.jar_type}</Text>
+                {tx.wallets?.name && (
+                  <Text style={styles.txWallet}>👛 {tx.wallets.name}</Text>
+                )}
+              </View>
               <Text style={tx.type === 'expense' ? styles.expense : styles.income}>
                 {tx.type === 'expense' ? '-' : '+'}{Number(tx.amount).toLocaleString('vi-VN')}đ
               </Text>
@@ -51,8 +56,10 @@ const styles = StyleSheet.create({
   emptyText: { color: '#71585c', fontSize: 13, fontWeight: '500' },
   dayGroup: { backgroundColor: '#ffffff', borderRadius: 20, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: '#ffd9df' },
   dayHeader: { fontSize: 11, fontWeight: '700', color: '#71585c', borderBottomWidth: 1, borderBottomColor: '#fff0f1', paddingBottom: 6, marginBottom: 6 },
-  txRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
+  txRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, alignItems: 'center' },
+  txLeft: { flexDirection: 'column', gap: 2 },
   txTitle: { fontSize: 12, fontWeight: '600', color: '#23191a' },
+  txWallet: { fontSize: 10, color: '#837375', fontFamily: 'Plus Jakarta Sans' },
   expense: { fontSize: 12, fontWeight: '700', color: '#ba1a1a' },
   income: { fontSize: 12, fontWeight: '700', color: '#34c759' }
 });

@@ -71,32 +71,41 @@ export default function BudgetScreen() {
     setIsLoading(true);
     setError(null);
 
-    // Load total budget from profile database instead of AsyncStorage per wallet
+    // Load total budget and rollover_enabled from profiles table
     let walletTotalBudget = 10000000;
-    try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('total_budget')
-        .eq('id', userId)
-        .single();
-      if (profile && profile.total_budget) {
-        walletTotalBudget = Number(profile.total_budget);
-      }
-    } catch (e) {
-      console.error('Error loading total budget from database:', e);
-    }
-    setTotalBudget(walletTotalBudget);
-
-    // Load rollover enabled setting from AsyncStorage
     let rolloverEnabled = false;
     try {
-      const savedRollover = await AsyncStorage.getItem(`@wallet_rollover_enabled_${activeWalletId}`);
-      if (savedRollover) {
-        rolloverEnabled = savedRollover === 'true';
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('total_budget, rollover_enabled')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        // Fallback if rollover_enabled does not exist in profiles table yet
+        if (error.message?.includes('rollover_enabled') || error.code === '42703' || error.code === 'PGRST204') {
+          const fallbackRes = await supabase
+            .from('profiles')
+            .select('total_budget')
+            .eq('id', userId)
+            .single();
+          if (fallbackRes.data && fallbackRes.data.total_budget) {
+            walletTotalBudget = Number(fallbackRes.data.total_budget);
+          }
+          // Read from AsyncStorage as fallback
+          const savedRollover = await AsyncStorage.getItem(`@app_rollover_enabled_${userId}`);
+          rolloverEnabled = savedRollover === 'true';
+        } else {
+          console.error('Error loading profile budget details:', error);
+        }
+      } else if (profile) {
+        if (profile.total_budget) walletTotalBudget = Number(profile.total_budget);
+        rolloverEnabled = !!profile.rollover_enabled;
       }
     } catch (e) {
-      console.error('Error loading rollover setting:', e);
+      console.error('Error loading total budget and rollover setting from database:', e);
     }
+    setTotalBudget(walletTotalBudget);
     setIsRolloverEnabled(rolloverEnabled);
 
 
@@ -184,10 +193,25 @@ export default function BudgetScreen() {
   const handleToggleRollover = async () => {
     try {
       const newValue = !isRolloverEnabled;
-      await AsyncStorage.setItem(`@wallet_rollover_enabled_${activeWalletId}`, newValue.toString());
+      const { error } = await supabase
+        .from('profiles')
+        .update({ rollover_enabled: newValue })
+        .eq('id', userId);
+      
+      if (error) {
+        // Fallback to AsyncStorage if database column does not exist
+        if (error.message?.includes('rollover_enabled') || error.code === '42703') {
+          await AsyncStorage.setItem(`@app_rollover_enabled_${userId}`, newValue.toString());
+          setIsRolloverEnabled(newValue);
+          return;
+        }
+        throw error;
+      }
+
       setIsRolloverEnabled(newValue);
-    } catch (e) {
-      Alert.alert('Lỗi', 'Không thể lưu thiết lập dồn ngân sách.');
+    } catch (e: any) {
+      console.error('Error toggling rollover:', e);
+      Alert.alert('Lỗi', 'Không thể lưu thiết lập dồn ngân sách: ' + e.message);
     }
   };
 
@@ -274,7 +298,7 @@ export default function BudgetScreen() {
     setIsSavingJar(true);
     
     // Save Jar Allocation & Cash Limit
-    const jarLimit = totalBudget * (config.pct / 100);
+    const jarLimit = Math.round(totalBudget * (config.pct / 100));
     const allocationRes = await saveJarAllocation(userId, jar.type, config.pct, jarLimit);
     if (!allocationRes.success) {
       setIsSavingJar(false);
@@ -283,8 +307,6 @@ export default function BudgetScreen() {
     }
 
     // Save Category Budgets
-    const userRes = await supabase.auth.getUser();
-    const userId = userRes.data.user?.id;
     if (!userId) {
       setIsSavingJar(false);
       Alert.alert('Lỗi', 'Không thể xác thực người dùng. Vui lòng đăng nhập lại.');
@@ -490,6 +512,7 @@ export default function BudgetScreen() {
             name: jars[editingJarIndex].name,
             icon: jars[editingJarIndex].icon,
             pct: jars[editingJarIndex].pct,
+            totalBudget: totalBudget,
             categories: categoryBudgets
               .filter(b => b.categories?.jar_type === jars[editingJarIndex].type)
               .map(b => ({
@@ -513,7 +536,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff8f7' },
   header: { backgroundColor: '#ffffff', padding: 16, borderBottomWidth: 1, borderBottomColor: '#fff0f1' },
   title: { fontSize: 18, fontWeight: '700', color: '#864e5a', textAlign: 'center', fontFamily: 'Plus Jakarta Sans' },
-  scroll: { padding: 16, paddingBottom: 24 },
+  scroll: { padding: 16, paddingBottom: 100 },
   totalCard: { backgroundColor: 'white', borderRadius: 24, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#FFDDE2' },
   cardTitle: { fontSize: 11, color: '#837375', textTransform: 'uppercase', fontWeight: 'bold', fontFamily: 'Plus Jakarta Sans' },
   amount: { fontSize: 24, fontWeight: 'bold', color: '#864e5a', marginVertical: 4, fontFamily: 'Plus Jakarta Sans' },

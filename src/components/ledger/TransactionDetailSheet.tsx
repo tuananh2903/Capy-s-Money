@@ -36,6 +36,13 @@ export function TransactionDetailSheet({ transaction, isOpen, onClose, onDelete,
               <Text style={styles.value}>{getCategoryHierarchy()}</Text>
             </View>
 
+            {transaction.wallets?.name && (
+              <View style={styles.infoRow}>
+                <Text style={styles.label}>Tài khoản/Ví:</Text>
+                <Text style={styles.value}>👛 {transaction.wallets.name}</Text>
+              </View>
+            )}
+
             <View style={styles.infoRow}>
               <Text style={styles.label}>Thời gian:</Text>
               <Text style={styles.value}>{new Date(transaction.occurred_at).toLocaleString('vi-VN')}</Text>

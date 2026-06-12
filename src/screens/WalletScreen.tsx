@@ -76,8 +76,8 @@ export default function WalletScreen({ userId, onWalletSelected }: WalletScreenP
     }
   };
 
-  const personalCount = wallets.filter((w) => w.type === 'personal').length;
-  const isLimitReached = personalCount >= 2;
+  const walletCount = wallets.length;
+  const isLimitReached = walletCount >= 5;
 
   if (loading) {
     return (
@@ -86,6 +86,15 @@ export default function WalletScreen({ userId, onWalletSelected }: WalletScreenP
       </View>
     );
   }
+
+  const GRADIENTS: Record<string, [string, string]> = {
+    '#FFB7C5': ['#FFB7C5', '#944652'],
+    '#FFD4A8': ['#FFD4A8', '#B25E2B'],
+    '#FFFEC4': ['#FFFEC4', '#A58B24'],
+    '#A8DFCE': ['#A8DFCE', '#2D7560'],
+    '#B4CAFF': ['#B4CAFF', '#3252A2'],
+    '#C8B7FF': ['#C8B7FF', '#4B369D'],
+  };
 
   return (
     <View style={styles.container}>
@@ -97,15 +106,7 @@ export default function WalletScreen({ userId, onWalletSelected }: WalletScreenP
 
         <View style={styles.deckContainer}>
           {wallets.map((wallet) => {
-            const isPersonal = wallet.type === 'personal';
-            const isOwner = wallet.user_id === userId;
-            const role = roles[wallet.id];
-            const isViewer = !isPersonal && !isOwner && role === 'viewer';
-
-            // Premium gradient styling based on type
-            const gradientColors: [string, string] = isPersonal
-              ? ['#FFB7C5', '#944652'] // Personal: Pastel Pink to Deep Red
-              : ['#FE9DA9', '#71585C']; // Shared: Soft Coral to Warm Grey
+            const gradientColors: [string, string] = GRADIENTS[wallet.color] || ['#FFB7C5', '#944652'];
 
             return (
               <TouchableOpacity
@@ -125,11 +126,6 @@ export default function WalletScreen({ userId, onWalletSelected }: WalletScreenP
 
                   <View style={styles.cardHeader}>
                     <Text style={styles.walletName}>{wallet.name}</Text>
-                    <View style={styles.badge}>
-                      <Text style={styles.badgeText}>
-                        {isPersonal ? 'Cá nhân' : 'Ví chung'}
-                      </Text>
-                    </View>
                   </View>
 
                   <View style={styles.cardFooter}>
@@ -140,16 +136,13 @@ export default function WalletScreen({ userId, onWalletSelected }: WalletScreenP
                       </Text>
                     </View>
 
-                    {/* Hide settings gear completely for Viewer */}
-                    {!isViewer && (
-                      <TouchableOpacity
-                        style={styles.settingsBtn}
-                        onPress={() => setSelectedWalletForEdit(wallet)}
-                        testID={`btn-settings-${wallet.id}`}
-                      >
-                        <Ionicons name="settings-outline" size={22} color="#FFFFFF" />
-                      </TouchableOpacity>
-                    )}
+                    <TouchableOpacity
+                      style={styles.settingsBtn}
+                      onPress={() => setSelectedWalletForEdit(wallet)}
+                      testID={`btn-settings-${wallet.id}`}
+                    >
+                      <Ionicons name="settings-outline" size={22} color="#FFFFFF" />
+                    </TouchableOpacity>
                   </View>
                 </LinearGradient>
               </TouchableOpacity>
@@ -160,7 +153,7 @@ export default function WalletScreen({ userId, onWalletSelected }: WalletScreenP
         {/* Quota limit notice */}
         {isLimitReached && (
           <Text style={styles.warningText}>
-            Bạn đã đạt giới hạn ví miễn phí (tối đa 2 ví cá nhân). Nâng cấp Premium để tạo thêm
+            Bạn đã đạt giới hạn ví miễn phí (tối đa 5 ví). Nâng cấp Premium để tạo thêm
           </Text>
         )}
 

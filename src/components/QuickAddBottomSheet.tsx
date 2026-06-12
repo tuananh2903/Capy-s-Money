@@ -10,7 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { createTransaction } from '../services/dashboardService';
+import { createTransaction, fetchWallets, Wallet } from '../services/dashboardService';
 import { supabase } from '../services/supabaseClient';
 
 interface QuickAddBottomSheetProps {
@@ -85,7 +85,7 @@ export default function QuickAddBottomSheet({
   userId,
   onSaveSuccess,
 }: QuickAddBottomSheetProps) {
-  const [type, setType] = useState<'income' | 'expense'>('expense');
+  const [type, setType] = useState<'income' | 'expense' | 'transfer'>('expense');
   const [amountText, setAmountText] = useState('');
   const [selectedJar, setSelectedJar] = useState<'NEC' | 'FFA' | 'EDU' | 'PLAY' | 'LTSS' | 'GIVE'>('NEC');
   const [selectedSubcategory, setSelectedSubcategory] = useState('Ăn uống');
@@ -95,19 +95,42 @@ export default function QuickAddBottomSheet({
   const [dbCategories, setDbCategories] = useState<any[]>([]);
   const [activeJars, setActiveJars] = useState<any[]>([]);
   const [activeBudgets, setActiveBudgets] = useState<any[]>([]);
+  const [wallets, setWallets] = useState<Wallet[]>([]);
+  const [selectedWalletId, setSelectedWalletId] = useState(walletId);
+  const [targetWalletId, setTargetWalletId] = useState('');
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentCalendarMonth, setCurrentCalendarMonth] = useState<Date>(new Date());
 
-  // Load categories, jars, and budgets from database on visible changes
+  // Sync selected wallet ID on prop or visibility changes
+  useEffect(() => {
+    if (visible) {
+      setSelectedWalletId(walletId);
+    }
+  }, [visible, walletId]);
+
+  // Set default targetWalletId when wallets are loaded
+  useEffect(() => {
+    if (visible && wallets.length > 0) {
+      const different = wallets.find(w => w.id !== selectedWalletId);
+      if (different) {
+        setTargetWalletId(different.id);
+      } else {
+        setTargetWalletId(wallets[0].id);
+      }
+    }
+  }, [visible, wallets, selectedWalletId]);
+
+  // Load categories, jars, budgets, and wallets from database on visible changes
   useEffect(() => {
     async function loadDbData() {
       try {
-        const [categoriesRes, jarsRes, budgetsRes] = await Promise.all([
+        const [categoriesRes, jarsRes, budgetsRes, walletsRes] = await Promise.all([
           supabase.from('categories').select('*'),
           supabase.from('jars').select('*').eq('user_id', userId),
-          supabase.from('budgets').select('*, categories(*)').eq('user_id', userId)
+          supabase.from('budgets').select('*, categories(*)').eq('user_id', userId),
+          fetchWallets(userId)
         ]);
 
         if (categoriesRes.data) {
@@ -120,6 +143,9 @@ export default function QuickAddBottomSheet({
         }
         if (budgetsRes.data) {
           setActiveBudgets(budgetsRes.data);
+        }
+        if (walletsRes.success && walletsRes.data) {
+          setWallets(walletsRes.data);
         }
       } catch (err) {
         console.error('Error loading data in QuickAddBottomSheet:', err);
@@ -239,19 +265,53 @@ export default function QuickAddBottomSheet({
     setValidationError(null);
     setLoading(true);
 
-    const selectedCatObj = subcats.find((c) => c.name === selectedSubcategory);
-    const categoryId = selectedCatObj && 'id' in selectedCatObj ? selectedCatObj.id : null;
+    let result;
+    if (type === 'transfer') {
+      const senderName = wallets.find(w => w.id === selectedWalletId)?.name || 'ví gửi';
+      const receiverName = wallets.find(w => w.id === targetWalletId)?.name || 'ví nhận';
+      const baseNote = note.trim() ? `: ${note.trim()}` : '';
 
-    const result = await createTransaction({
-      wallet_id: walletId,
-      jar_type: selectedJar,
-      amount: cleanAmount,
-      type: type,
-      note: note.trim() || null,
-      created_by: userId,
-      occurred_at: selectedDate.toISOString(),
-      category_id: categoryId,
-    });
+      const [senderRes, receiverRes] = await Promise.all([
+        createTransaction({
+          wallet_id: selectedWalletId,
+          jar_type: 'NEC', // default required field
+          amount: cleanAmount,
+          type: 'transfer',
+          note: `Chuyển khoản đến ${receiverName}${baseNote}`,
+          created_by: userId,
+          occurred_at: selectedDate.toISOString(),
+          category_id: null,
+        }),
+        createTransaction({
+          wallet_id: targetWalletId,
+          jar_type: 'NEC', // default required field
+          amount: cleanAmount,
+          type: 'income',
+          note: `Nhận tiền từ ${senderName}${baseNote}`,
+          created_by: userId,
+          occurred_at: selectedDate.toISOString(),
+          category_id: null,
+        })
+      ]);
+      result = {
+        success: senderRes.success && receiverRes.success,
+        error: senderRes.error || receiverRes.error
+      };
+    } else {
+      const selectedCatObj = subcats.find((c) => c.name === selectedSubcategory);
+      const categoryId = selectedCatObj && 'id' in selectedCatObj ? selectedCatObj.id : null;
+
+      result = await createTransaction({
+        wallet_id: selectedWalletId,
+        jar_type: selectedJar,
+        amount: cleanAmount,
+        type: type,
+        note: note.trim() || null,
+        created_by: userId,
+        occurred_at: selectedDate.toISOString(),
+        category_id: categoryId,
+      });
+    }
 
     setLoading(false);
 
@@ -304,8 +364,17 @@ export default function QuickAddBottomSheet({
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
           >
-            {/* Tab Selector: Income / Expense — Khoản thu trước, Khoản chi sau (theo Stitch) */}
+            {/* Tab Selector: Expense / Income / Transfer */}
             <View style={styles.tabContainer}>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={[styles.tab, type === 'expense' && styles.activeTabExpense]}
+                onPress={() => setType('expense')}
+              >
+                <Text style={[styles.tabText, type === 'expense' && styles.activeTabText]}>
+                  Khoản chi
+                </Text>
+              </TouchableOpacity>
               <TouchableOpacity
                 activeOpacity={0.8}
                 style={[styles.tab, type === 'income' && styles.activeTabIncome]}
@@ -317,11 +386,11 @@ export default function QuickAddBottomSheet({
               </TouchableOpacity>
               <TouchableOpacity
                 activeOpacity={0.8}
-                style={[styles.tab, type === 'expense' && styles.activeTabExpense]}
-                onPress={() => setType('expense')}
+                style={[styles.tab, type === 'transfer' && styles.activeTabTransfer]}
+                onPress={() => setType('transfer')}
               >
-                <Text style={[styles.tabText, type === 'expense' && styles.activeTabText]}>
-                  Khoản chi
+                <Text style={[styles.tabText, type === 'transfer' && styles.activeTabText]}>
+                  Chuyển khoản
                 </Text>
               </TouchableOpacity>
             </View>
@@ -339,6 +408,69 @@ export default function QuickAddBottomSheet({
               />
               <Text style={styles.currencyUnit}>đ</Text>
             </View>
+
+            {/* Wallet Selector */}
+            <Text style={styles.label}>
+              {type === 'income' ? 'Ví nhận tiền' : type === 'transfer' ? 'Ví gửi tiền' : 'Ví chi tiền'}
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.walletSelectorScroll}
+              contentContainerStyle={styles.walletSelectorContent}
+            >
+              {wallets.map((w) => {
+                const isActive = selectedWalletId === w.id;
+                if (type === 'transfer' && targetWalletId === w.id) return null;
+                return (
+                  <TouchableOpacity
+                    key={w.id}
+                    activeOpacity={0.8}
+                    style={[
+                      styles.walletPill,
+                      isActive ? styles.walletPillActive : styles.walletPillInactive
+                    ]}
+                    onPress={() => setSelectedWalletId(w.id)}
+                  >
+                    <Text style={isActive ? styles.walletPillTextActive : styles.walletPillTextInactive}>
+                      {w.name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            {type === 'transfer' && (
+              <>
+                <Text style={styles.label}>Ví nhận tiền</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.walletSelectorScroll}
+                  contentContainerStyle={styles.walletSelectorContent}
+                >
+                  {wallets.map((w) => {
+                    const isActive = targetWalletId === w.id;
+                    if (selectedWalletId === w.id) return null;
+                    return (
+                      <TouchableOpacity
+                        key={w.id}
+                        activeOpacity={0.8}
+                        style={[
+                          styles.walletPill,
+                          isActive ? styles.walletPillActive : styles.walletPillInactive
+                        ]}
+                        onPress={() => setTargetWalletId(w.id)}
+                      >
+                        <Text style={isActive ? styles.walletPillTextActive : styles.walletPillTextInactive}>
+                          {w.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </>
+            )}
 
             {/* Hũ tài chính — only show when expense */}
             {type === 'expense' && (
@@ -374,33 +506,37 @@ export default function QuickAddBottomSheet({
             )}
 
             {/* Hạng mục con */}
-            <Text style={styles.label}>Hạng mục con</Text>
-            <View style={styles.subcatContainer}>
-              {subcats.map((cat) => {
-                const isSelected = selectedSubcategory === cat.name;
-                return (
-                  <TouchableOpacity
-                    key={cat.name}
-                    activeOpacity={0.8}
-                    style={[
-                      styles.subcatBadge,
-                      isSelected && { backgroundColor: '#FFB7C5', borderColor: '#FFB7C5' },
-                    ]}
-                    onPress={() => setSelectedSubcategory(cat.name)}
-                  >
-                    <Text style={styles.subcatIcon}>{cat.icon}</Text>
-                    <Text
-                      style={[
-                        styles.subcatText,
-                        isSelected && { color: '#FFFFFF', fontWeight: '700' },
-                      ]}
-                    >
-                      {cat.name}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            {type !== 'transfer' && (
+              <>
+                <Text style={styles.label}>Hạng mục con</Text>
+                <View style={styles.subcatContainer}>
+                  {subcats.map((cat) => {
+                    const isSelected = selectedSubcategory === cat.name;
+                    return (
+                      <TouchableOpacity
+                        key={cat.name}
+                        activeOpacity={0.8}
+                        style={[
+                          styles.subcatBadge,
+                          isSelected && { backgroundColor: '#FFB7C5', borderColor: '#FFB7C5' },
+                        ]}
+                        onPress={() => setSelectedSubcategory(cat.name)}
+                      >
+                        <Text style={styles.subcatIcon}>{cat.icon}</Text>
+                        <Text
+                          style={[
+                            styles.subcatText,
+                            isSelected && { color: '#FFFFFF', fontWeight: '700' },
+                          ]}
+                        >
+                          {cat.name}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </>
+            )}
 
             {/* Thời gian & Ghi chú — row layout like Stitch */}
             <View style={styles.rowSection}>
@@ -634,6 +770,14 @@ const styles = StyleSheet.create({
   },
   activeTabExpense: {
     backgroundColor: '#864E5A',
+    shadowColor: '#864E5A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  activeTabTransfer: {
+    backgroundColor: '#71585C',
     shadowColor: '#864E5A',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
@@ -889,5 +1033,38 @@ const styles = StyleSheet.create({
     color: '#837375',
     fontSize: 14,
     fontWeight: '600',
+  },
+  walletSelectorScroll: {
+    marginBottom: 16,
+    maxHeight: 52,
+  },
+  walletSelectorContent: {
+    gap: 8,
+    alignItems: 'center',
+    paddingRight: 16,
+  },
+  walletPill: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 100,
+    borderWidth: 1.5,
+  },
+  walletPillActive: {
+    backgroundColor: '#864E5A',
+    borderColor: '#864E5A',
+  },
+  walletPillInactive: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#F1DEDF',
+  },
+  walletPillTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  walletPillTextInactive: {
+    color: '#514345',
+    fontWeight: '600',
+    fontSize: 13,
   },
 });

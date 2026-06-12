@@ -198,84 +198,6 @@ export default function WalletEditSheet({
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
           >
-            {/* Jar Allocations Section */}
-            <View style={styles.allocHeader}>
-              <Text style={styles.sectionHeading}>Tỷ lệ phân bổ hũ</Text>
-              <Text style={[styles.totalPctText, totalPercentage !== 100 && { color: '#BA1A1A' }]}>
-                Tổng hũ: {totalPercentage}%
-              </Text>
-            </View>
-
-            {loadingJars ? (
-              <ActivityIndicator size="small" color="#864E5A" style={{ marginVertical: 20 }} />
-            ) : (
-              Object.keys(allocations).map((type) => {
-                const pct = allocations[type] || 0;
-                return (
-                  <View key={type} style={styles.jarRow}>
-                    <View style={styles.jarRowHeader}>
-                      <Text style={styles.jarName}>{JAR_NAMES[type]}</Text>
-                      <Text style={styles.jarPct}>{pct}%</Text>
-                    </View>
-                    <View style={styles.sliderControls}>
-                      {/* TDD test accessible buttons */}
-                      <TouchableOpacity
-                        style={styles.adjustBtn}
-                        onPress={() => handleAdjust(type, -5)}
-                      >
-                        <Text style={styles.adjustBtnText}>- {type}</Text>
-                      </TouchableOpacity>
-                      
-                      {/* Visual track */}
-                      <View style={styles.visualTrack}>
-                        <View style={[styles.visualFill, { width: `${pct}%` }]} />
-                        <View style={[styles.visualThumb, { left: `${pct}%` }]} />
-                      </View>
-
-                      <TouchableOpacity
-                        style={styles.adjustBtn}
-                        onPress={() => handleAdjust(type, 5)}
-                      >
-                        <Text style={styles.adjustBtnText}>+ {type}</Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                );
-              })
-            )}
-
-            {(validationError || totalPercentage !== 100) && (
-              <Text style={styles.errorText}>
-                {validationError || `Tổng tỷ lệ phân bổ của các hũ phải bằng 100% (hiện tại: ${totalPercentage}%).`}
-              </Text>
-            )}
-
-            {/* Allocation Save Button */}
-            <TouchableOpacity
-              testID="save-allocations-btn"
-              activeOpacity={0.8}
-              style={[
-                styles.saveButton,
-                (totalPercentage !== 100 || saving) && styles.disabledButton,
-              ]}
-              onPress={handleSaveAllocations}
-              disabled={totalPercentage !== 100 || saving}
-              accessibilityState={{ disabled: totalPercentage !== 100 || saving }}
-            >
-              {saving ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <Text style={styles.saveButtonText}>Lưu Tỷ Lệ Hũ</Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.resetButton}
-              onPress={handleResetDefault}
-            >
-              <Text style={styles.resetButtonText}>Đặt lại mặc định (55-10-10-10-10-5)</Text>
-            </TouchableOpacity>
-
             {/* Quick Actions Footer */}
             <View style={styles.footerActions}>
               {!wallet.is_default && (
@@ -283,7 +205,7 @@ export default function WalletEditSheet({
                   style={styles.defaultActionBtn}
                   onPress={handleSetDefault}
                 >
-                  <Text style={styles.defaultActionText}>⭐ Mặc định</Text>
+                  <Text style={styles.defaultActionText}>⭐ Đặt làm mặc định</Text>
                 </TouchableOpacity>
               )}
 
@@ -299,8 +221,6 @@ export default function WalletEditSheet({
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
-
-
     </Modal>
   );
 }

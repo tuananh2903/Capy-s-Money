@@ -11,7 +11,7 @@
     "grepInvert": null,
     "maxFailures": 0,
     "metadata": {
-      "actualWorkers": 1
+      "actualWorkers": 4
     },
     "preserveOutput": "always",
     "projects": [
@@ -20,7 +20,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 1
+          "actualWorkers": 4
         },
         "id": "chromium",
         "name": "chromium",
@@ -66,20 +66,20 @@
   },
   "suites": [
     {
-      "title": "account-wide-budget.spec.ts",
-      "file": "account-wide-budget.spec.ts",
+      "title": "wallet.spec.ts",
+      "file": "wallet.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Account-wide Budget Jars E2E",
-          "file": "account-wide-budget.spec.ts",
-          "line": 23,
+          "title": "WalletScreen — Hiển thị & Điều hướng chi tiết",
+          "file": "wallet.spec.ts",
+          "line": 174,
           "column": 6,
           "specs": [
             {
-              "title": "should load profile total budget from database and sync changes back to DB profiles",
+              "title": "should display all wallet cards with correct info",
               "ok": true,
               "tags": [],
               "tests": [
@@ -94,43 +94,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 1891,
+                      "duration": 6916,
                       "errors": [],
-                      "stdout": [
-                        {
-                          "text": "BROWSER LOG: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: INIT SUPABASE URL: https://foxnpvitlrsqdouepdbc.supabase.co ENV_URL: https://foxnpvitlrsqdouepdbc.supabase.co\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: \"shadow*\" style props are deprecated. Use \"boxShadow\".\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: Running application \"main\" with appParams:\n {rootTag: #root, hydrate: undefined} \nDevelopment-level warnings: ON.\nPerformance optimizations: OFF.\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: --- RECEIVED DEEP LINK URL ---\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: URL: http://localhost:8081/\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ------------------------------\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: Parsed deep link tokens: {access_token: Missing, refresh_token: Missing}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: props.pointerEvents is deprecated. Use style.pointerEvents\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: Image: style.resizeMode is deprecated. Please use props.resizeMode.\n"
-                        }
-                      ],
+                      "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-06-11T15:19:17.807Z",
+                      "startTime": "2026-06-12T13:33:44.754Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -138,9 +107,857 @@
                   "status": "expected"
                 }
               ],
-              "id": "13b72c58aa0c917212d7-63d37741581a2fcd23c5",
-              "file": "account-wide-budget.spec.ts",
-              "line": 119,
+              "id": "27e87c8ff6887d69f80e-a6e00d100d0997852372",
+              "file": "wallet.spec.ts",
+              "line": 185,
+              "column": 7
+            },
+            {
+              "title": "should show settings icon for each wallet",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 7301,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-12T13:33:44.710Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-89d31095f44d9cf3c76e",
+              "file": "wallet.spec.ts",
+              "line": 199,
+              "column": 7
+            },
+            {
+              "title": "clicking wallet card navigates to Dashboard with that wallet selected",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 10095,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-12T13:33:44.705Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-fdb9a3d0fc0c68eeb9ad",
+              "file": "wallet.spec.ts",
+              "line": 204,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "WalletScreen — Giới hạn quota 5 ví",
+          "file": "wallet.spec.ts",
+          "line": 214,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should show quota limit warning when 5 wallets reached",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 7142,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-12T13:33:44.610Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-3dea170f7c5876ab383d",
+              "file": "wallet.spec.ts",
+              "line": 217,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "WalletCreateSheet — Tạo ví mới",
+          "file": "wallet.spec.ts",
+          "line": 238,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should display WalletCreateSheet with all required fields",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 5795,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-12T13:33:52.162Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-86c92cc54e1fcd999033",
+              "file": "wallet.spec.ts",
+              "line": 251,
+              "column": 7
+            },
+            {
+              "title": "should show validation error when wallet name is empty",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5389,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-12T13:33:52.203Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-447698127b160a723747",
+              "file": "wallet.spec.ts",
+              "line": 268,
+              "column": 7
+            },
+            {
+              "title": "should show validation error when wallet name exceeds 32 characters",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 5467,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-12T13:33:52.535Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-3b0888f704233f15606a",
+              "file": "wallet.spec.ts",
+              "line": 274,
+              "column": 7
+            },
+            {
+              "title": "should create a personal wallet successfully and appear in wallet list",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 7904,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-12T13:33:55.445Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-e3752c0d7b088b8c38bc",
+              "file": "wallet.spec.ts",
+              "line": 283,
+              "column": 7
+            },
+            {
+              "title": "should close WalletCreateSheet when clicking close button",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5700,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-12T13:33:57.701Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-958a731339be72a429a3",
+              "file": "wallet.spec.ts",
+              "line": 299,
+              "column": 7
+            },
+            {
+              "title": "should close WalletCreateSheet when clicking backdrop",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 5339,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-12T13:33:58.091Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-a0ee4c8ad3f9f6cf7a49",
+              "file": "wallet.spec.ts",
+              "line": 306,
+              "column": 7
+            },
+            {
+              "title": "should format balance input with thousand separators",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 5248,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-12T13:33:58.163Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-0b8c85a16e1f680b5db9",
+              "file": "wallet.spec.ts",
+              "line": 314,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "WalletEditSheet — Cài đặt ví",
+          "file": "wallet.spec.ts",
+          "line": 328,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should display WalletEditSheet with correct header for the wallet",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 5715,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-12T13:34:03.442Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-af0dadbe71e130cb9c40",
+              "file": "wallet.spec.ts",
+              "line": 342,
+              "column": 7
+            },
+            {
+              "title": "should display Save and Reset buttons",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5595,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-12T13:34:03.460Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-ea452a7836a8c3ee36a7",
+              "file": "wallet.spec.ts",
+              "line": 357,
+              "column": 7
+            },
+            {
+              "title": "should show footer actions (Set Default / Delete)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 5704,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-12T13:34:03.453Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-e2a1885ea22b38c3defe",
+              "file": "wallet.spec.ts",
+              "line": 362,
+              "column": 7
+            },
+            {
+              "title": "should show Set Default button for non-default wallet",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 5956,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-12T13:34:03.493Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-458bd78be5fcb43d8451",
+              "file": "wallet.spec.ts",
+              "line": 369,
+              "column": 7
+            },
+            {
+              "title": "should adjust jar allocation with + and - buttons",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6218,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-12T13:34:09.105Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-b13f7f296c9d22bc3b4b",
+              "file": "wallet.spec.ts",
+              "line": 382,
+              "column": 7
+            },
+            {
+              "title": "should show validation error when total allocation != 100%",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 5489,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-12T13:34:09.207Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-4835ace371483e67ce4a",
+              "file": "wallet.spec.ts",
+              "line": 395,
+              "column": 7
+            },
+            {
+              "title": "should reset allocations to default values",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 5814,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-12T13:34:09.229Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-5c2307fde22532c4d3dc",
+              "file": "wallet.spec.ts",
+              "line": 403,
+              "column": 7
+            },
+            {
+              "title": "should save jar allocations successfully when total is 100%",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 8708,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-12T13:34:09.500Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-d32195e99c38686729c3",
+              "file": "wallet.spec.ts",
+              "line": 414,
+              "column": 7
+            },
+            {
+              "title": "should delete wallet with confirmation dialog",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 6478,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-12T13:34:14.750Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-3790743e20f54712c065",
+              "file": "wallet.spec.ts",
+              "line": 424,
+              "column": 7
+            },
+            {
+              "title": "should cancel wallet delete when dismissing dialog",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 4935,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-12T13:34:15.114Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-5badc4d6b8501c4c1f39",
+              "file": "wallet.spec.ts",
+              "line": 437,
+              "column": 7
+            },
+            {
+              "title": "should close WalletEditSheet when clicking close button",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4881,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-12T13:34:15.384Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-d8fb0dd4b94d4406ba98",
+              "file": "wallet.spec.ts",
+              "line": 448,
+              "column": 7
+            },
+            {
+              "title": "should set wallet as default when clicking Set Default",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "passed",
+                      "duration": 6117,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-12T13:34:18.415Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-9a32eac0bfc71afa2fcf",
+              "file": "wallet.spec.ts",
+              "line": 455,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Full Wallet Management E2E Flows",
+          "file": "wallet.spec.ts",
+          "line": 476,
+          "column": 6,
+          "specs": [
+            {
+              "title": "full flow: create wallet → verify in list → open settings",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "passed",
+                      "duration": 6282,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-12T13:34:20.112Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-3951ea4afa2535588877",
+              "file": "wallet.spec.ts",
+              "line": 486,
+              "column": 7
+            },
+            {
+              "title": "full flow: navigate wallets → add transaction → verify balance in wallet list",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 6454,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-06-12T13:34:20.336Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "27e87c8ff6887d69f80e-0446bba3d2df900c9163",
+              "file": "wallet.spec.ts",
+              "line": 510,
               "column": 7
             }
           ]
@@ -150,9 +967,9 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-06-11T15:19:16.960Z",
-    "duration": 3001.192,
-    "expected": 1,
+    "startTime": "2026-06-12T13:33:43.013Z",
+    "duration": 45017.724,
+    "expected": 25,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

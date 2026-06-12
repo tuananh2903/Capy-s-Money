@@ -29,9 +29,37 @@ export async function fetchUserWallets() {
   try {
     const { data, error } = await supabase
       .from('wallets')
-      .select('id, name')
+      .select('id, name, rollover_enabled')
       .eq('is_deleted', false);
-    if (error) return { success: false, error: error.message };
+    
+    if (error) {
+      // Fallback if rollover_enabled does not exist in remote DB yet
+      if (error.message?.includes('rollover_enabled') || error.code === '42703' || error.code === 'PGRST204') {
+        const fallbackRes = await supabase
+          .from('wallets')
+          .select('id, name')
+          .eq('is_deleted', false);
+        if (fallbackRes.error) return { success: false, error: fallbackRes.error.message };
+        
+        // Map data to include rollover_enabled from AsyncStorage as fallback
+        const mappedData = await Promise.all((fallbackRes.data || []).map(async (w: any) => {
+          let localEnabled = false;
+          try {
+            const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+            const savedRollover = await AsyncStorage.getItem(`@wallet_rollover_enabled_${w.id}`);
+            localEnabled = savedRollover === 'true';
+          } catch (e) {
+            console.error('Error loading fallback local rollover:', e);
+          }
+          return {
+            ...w,
+            rollover_enabled: localEnabled
+          };
+        }));
+        return { success: true, data: mappedData };
+      }
+      return { success: false, error: error.message };
+    }
     return { success: true, data };
   } catch (err: any) {
     return { success: false, error: err.message };

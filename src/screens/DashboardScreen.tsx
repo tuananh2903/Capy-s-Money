@@ -11,7 +11,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 import CapyMascot from "../components/CapyMascot";
 import QuickAddBottomSheet from "../components/QuickAddBottomSheet";
-import { fetchWallets, fetchJars, fetchWalletIncome, ensureJarsExist, Wallet, Jar } from "../services/dashboardService";
+import { fetchWallets, fetchJars, fetchWalletIncome, fetchWalletExpense, ensureJarsExist, Wallet, Jar } from "../services/dashboardService";
 import { evaluateJarBudget, BudgetAlertStatus } from "../utils/budgetChecker";
 import BudgetScreen from "./BudgetScreen";
 import WalletScreen from "./WalletScreen";
@@ -129,6 +129,7 @@ export default function DashboardScreen({
   const [activeTab, setActiveTab] = useState<string>("home");
 
   const [walletIncome, setWalletIncome] = useState<number>(0);
+  const [walletExpense, setWalletExpense] = useState<number>(0);
   const [showTotalBalance, setShowTotalBalance] = useState<boolean>(true);
 
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -145,19 +146,50 @@ export default function DashboardScreen({
 
   useEffect(() => {
     async function loadRolloverSettings() {
-      if (!selectedWallet) return;
       try {
-        const savedEnabled = await AsyncStorage.getItem(`@wallet_rollover_enabled_${selectedWallet.id}`);
-        setIsRolloverEnabled(savedEnabled === 'true');
+        let dbBudget = 10000000;
+        let dbRollover = false;
         
-        const savedBudget = await AsyncStorage.getItem(`@wallet_total_budget_${selectedWallet.id}`);
-        setTotalBudget(savedBudget ? parseInt(savedBudget, 10) : 10000000);
+        if (supabase && typeof supabase.from === 'function') {
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('total_budget, rollover_enabled')
+            .eq('id', userId)
+            .single();
+          
+          if (error) {
+            // Fallback if rollover_enabled does not exist in profiles table yet
+            if (error.message?.includes('rollover_enabled') || error.code === '42703' || error.code === 'PGRST204') {
+              const fallbackRes = await supabase
+                .from('profiles')
+                .select('total_budget')
+                .eq('id', userId)
+                .single();
+              if (fallbackRes.data && fallbackRes.data.total_budget) {
+                dbBudget = Number(fallbackRes.data.total_budget);
+              }
+              const savedEnabled = await AsyncStorage.getItem(`@app_rollover_enabled_${userId}`);
+              dbRollover = savedEnabled === 'true';
+            }
+          } else if (profile) {
+            if (profile.total_budget) {
+              dbBudget = Number(profile.total_budget);
+            }
+            dbRollover = !!profile.rollover_enabled;
+          }
+        } else {
+          const savedEnabled = await AsyncStorage.getItem(`@app_rollover_enabled_${userId}`);
+          dbRollover = savedEnabled === 'true';
+        }
+        
+        setTotalBudget(dbBudget);
+        setIsRolloverEnabled(dbRollover);
       } catch (e) {
         console.error("Error loading rollover settings on dashboard:", e);
       }
     }
     loadRolloverSettings();
-  }, [selectedWallet?.id, activeTab]);
+  }, [userId, activeTab]);
 
   useEffect(() => {
     let isMounted = true;
@@ -208,9 +240,13 @@ export default function DashboardScreen({
               }
             }
           }
-          const incomeRes = await fetchWalletIncome(activeWallet.id);
-          if (isMounted && incomeRes.success) {
-            setWalletIncome(incomeRes.data);
+          const [incomeRes, expenseRes] = await Promise.all([
+            fetchWalletIncome(activeWallet.id),
+            fetchWalletExpense(activeWallet.id)
+          ]);
+          if (isMounted) {
+            if (incomeRes.success) setWalletIncome(incomeRes.data);
+            if (expenseRes.success) setWalletExpense(expenseRes.data);
           }
         }
       } finally {
@@ -275,8 +311,12 @@ export default function DashboardScreen({
             }
           }
         }
-        const incomeRes = await fetchWalletIncome(wallet.id);
+        const [incomeRes, expenseRes] = await Promise.all([
+          fetchWalletIncome(wallet.id),
+          fetchWalletExpense(wallet.id)
+        ]);
         if (incomeRes.success) setWalletIncome(incomeRes.data);
+        if (expenseRes.success) setWalletExpense(expenseRes.data);
       }
     } finally {
       if (!silent) setLoading(false);
@@ -302,8 +342,12 @@ export default function DashboardScreen({
         }
       }
     });
-    fetchWalletIncome(wallet.id).then((res) => {
-      if (res.success) setWalletIncome(res.data);
+    Promise.all([
+      fetchWalletIncome(wallet.id),
+      fetchWalletExpense(wallet.id)
+    ]).then(([incomeRes, expenseRes]) => {
+      if (incomeRes.success) setWalletIncome(incomeRes.data);
+      if (expenseRes.success) setWalletExpense(expenseRes.data);
     });
   };
 
@@ -755,7 +799,7 @@ export default function DashboardScreen({
                       style={styles.walletPillActive}
                       onPress={() => handleSelectWallet(w)}
                     >
-                      <Ionicons name="checkmark-circle" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+                      <Ionicons name="wallet" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
                       <Text style={styles.walletPillTextActive}>{w.name}</Text>
                     </TouchableOpacity>
                   );
@@ -768,7 +812,7 @@ export default function DashboardScreen({
                     onPress={() => handleSelectWallet(w)}
                   >
                     <Ionicons
-                      name={w.type === "personal" ? "person-outline" : "people-outline"}
+                      name="wallet-outline"
                       size={18}
                       color={COLORS.onSurfaceVariant}
                       style={{ marginRight: 6 }}
@@ -808,7 +852,7 @@ export default function DashboardScreen({
                 <View style={styles.balanceColumnRight}>
                   <Text style={styles.columnLabel}>Đã chi tiêu</Text>
                   <Text style={styles.spentAmount} numberOfLines={1} adjustsFontSizeToFit>
-                    -{walletSpent.toLocaleString("vi-VN")} đ
+                    -{walletExpense.toLocaleString("vi-VN")} đ
                   </Text>
                 </View>
               </View>
@@ -945,7 +989,7 @@ export default function DashboardScreen({
       ) : activeTab === "budget" ? (
         <BudgetScreen />
       ) : activeTab === "ledger" && selectedWallet ? (
-        <LedgerScreen activeWalletId={selectedWallet.id} />
+        <LedgerScreen walletIds={wallets.map(w => w.id)} />
       ) : null}
 
       {/* Bottom Navigation Bar */}

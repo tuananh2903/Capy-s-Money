@@ -114,6 +114,11 @@ export default function App() {
           if (sessionError) {
             console.error('Error setting session from deep link:', sessionError.message);
             setLoading(false);
+          } else {
+            // Clear hash on Web to prevent loops
+            if (Platform.OS === 'web' && window.history && window.history.replaceState) {
+              window.history.replaceState(null, '', window.location.pathname + window.location.search);
+            }
           }
         } catch (err) {
           console.error('Failed to set session:', err);

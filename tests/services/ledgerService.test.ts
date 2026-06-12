@@ -10,6 +10,7 @@ jest.mock('../../src/services/supabaseClient', () => ({
     lte: jest.fn().mockReturnThis(),
     order: jest.fn().mockReturnThis(),
     lt: jest.fn().mockReturnThis(),
+    in: jest.fn().mockReturnThis(),
   }
 }));
 
@@ -20,13 +21,14 @@ describe('Ledger Service Tests', () => {
     
     mockFrom.mockReturnValue({
       select: jest.fn().mockReturnThis(),
+      in: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
       gte: jest.fn().mockReturnThis(),
       lte: jest.fn().mockReturnThis(),
       order: jest.fn().mockResolvedValue({ data: mockData, error: null })
     });
 
-    const res = await fetchLedgerTransactions('wallet-123', new Date('2026-05-01'), new Date('2026-05-31'));
+    const res = await fetchLedgerTransactions(['wallet-123'], new Date('2026-05-01'), new Date('2026-05-31'));
     expect(res.success).toBe(true);
     expect(res.data).toEqual(mockData);
   });
@@ -35,12 +37,13 @@ describe('Ledger Service Tests', () => {
     const mockFrom = supabase.from as jest.Mock;
     mockFrom.mockReturnValue({
       select: jest.fn().mockReturnThis(),
+      in: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
       gte: jest.fn().mockReturnThis(),
       lt: jest.fn().mockResolvedValue({ data: [{ amount: 15000 }, { amount: 20000 }], error: null })
     });
 
-    const res = await fetchPreviousMonthSpend('wallet-123', new Date('2026-05-01'));
+    const res = await fetchPreviousMonthSpend(['wallet-123'], new Date('2026-05-01'));
     expect(res.success).toBe(true);
     expect(res.data).toBe(35000);
   });

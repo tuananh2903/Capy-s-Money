@@ -15,6 +15,7 @@ interface JarEditSheetProps {
     name: string;
     icon: string;
     pct: number;
+    totalBudget: number;
     categories: CategoryItem[];
   };
   onSave: (data: { name: string; icon: string; pct: number; categories: CategoryItem[] }) => void;
@@ -42,7 +43,7 @@ export const JarEditSheet: React.FC<JarEditSheetProps> = ({ visible, onClose, ja
   }, [jarData, visible]);
 
   const addCategory = () => {
-    setCategories([...categories, { name: 'Hạng mục mới', limit: 500000 }]);
+    setCategories([...categories, { name: 'Hạng mục mới', limit: 0 }]);
   };
 
   const deleteCategory = (index: number) => {
@@ -63,6 +64,16 @@ export const JarEditSheet: React.FC<JarEditSheetProps> = ({ visible, onClose, ja
     setPct(prev => Math.min(prev + 5, 100));
   };
 
+  // Calculate current jar limit based on totalBudget and percentage
+  const totalBudgetVal = jarData?.totalBudget || 0;
+  const jarLimit = Math.round(totalBudgetVal * (pct / 100));
+
+  // Sum of subcategory limits
+  const subcategoriesTotal = categories.reduce((sum, cat) => sum + Math.round(cat.limit || 0), 0);
+  
+  // Validation flag
+  const isValidationError = categories.length > 0 && Math.round(subcategoriesTotal) !== Math.round(jarLimit);
+
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.overlay}>
@@ -82,7 +93,7 @@ export const JarEditSheet: React.FC<JarEditSheetProps> = ({ visible, onClose, ja
               <TextInput style={styles.input} value={icon} onChangeText={setIcon} placeholder="🍔" />
             </View>
             <View style={styles.group}>
-              <Text style={styles.label}>Tỷ lệ phân bổ: {pct}%</Text>
+              <Text style={styles.label}>Tỷ lệ phân bổ: {pct}% (Hạn mức hũ: {jarLimit.toLocaleString('vi-VN')}đ)</Text>
               <View style={styles.pctButtonsRow}>
                 <TouchableOpacity onPress={decreasePct} style={styles.pctBtn}><Text style={styles.pctBtnText}>-5%</Text></TouchableOpacity>
                 <TouchableOpacity onPress={increasePct} style={styles.pctBtn}><Text style={styles.pctBtnText}>+5%</Text></TouchableOpacity>
@@ -91,7 +102,14 @@ export const JarEditSheet: React.FC<JarEditSheetProps> = ({ visible, onClose, ja
 
             <View style={styles.categorySection}>
               <View style={styles.catHeader}>
-                <Text style={styles.label}>Hạng mục con</Text>
+                <View>
+                  <Text style={styles.label}>Hạng mục con</Text>
+                  {categories.length > 0 && (
+                    <Text style={[styles.catTotalLabel, isValidationError && { color: '#ba1a1a' }]}>
+                      Tổng phân bổ: {subcategoriesTotal.toLocaleString('vi-VN')}đ / {jarLimit.toLocaleString('vi-VN')}đ
+                    </Text>
+                  )}
+                </View>
                 <TouchableOpacity onPress={addCategory} style={styles.addBtn}><Text style={styles.addText}>+ Thêm</Text></TouchableOpacity>
               </View>
 
@@ -107,7 +125,10 @@ export const JarEditSheet: React.FC<JarEditSheetProps> = ({ visible, onClose, ja
                     style={[styles.input, { width: 100, marginRight: 8 }]}
                     keyboardType="numeric"
                     value={cat.limit.toString()}
-                    onChangeText={(val) => updateCategory(idx, 'limit', parseInt(val) || 0)}
+                    onChangeText={(val) => {
+                      const cleanVal = val.replace(/[^0-9]/g, '');
+                      updateCategory(idx, 'limit', parseInt(cleanVal, 10) || 0);
+                    }}
                     placeholder="Hạn mức"
                   />
                   <TouchableOpacity onPress={() => deleteCategory(idx)}>
@@ -118,10 +139,16 @@ export const JarEditSheet: React.FC<JarEditSheetProps> = ({ visible, onClose, ja
             </View>
           </ScrollView>
 
+          {isValidationError && (
+            <Text style={styles.errorText}>
+              ⚠️ Tổng hạn mức của các hạng mục con ({subcategoriesTotal.toLocaleString('vi-VN')}đ) phải bằng hạn mức của hũ ({jarLimit.toLocaleString('vi-VN')}đ).
+            </Text>
+          )}
+
           <TouchableOpacity
-            style={[styles.saveBtn, isSaving && { backgroundColor: '#c09aa0' }]}
-            onPress={() => !isSaving && onSave({ name, icon, pct, categories })}
-            disabled={isSaving}
+            style={[styles.saveBtn, (isSaving || isValidationError) && { backgroundColor: '#c09aa0' }]}
+            onPress={() => !isSaving && !isValidationError && onSave({ name, icon, pct, categories })}
+            disabled={isSaving || isValidationError}
           >
             <Text style={styles.saveText}>{isSaving ? 'Đang lưu...' : 'Lưu Cấu Hình'}</Text>
           </TouchableOpacity>
@@ -150,5 +177,7 @@ const styles = StyleSheet.create({
   catRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
   deleteIcon: { fontSize: 16, padding: 4 },
   saveBtn: { backgroundColor: '#864e5a', borderRadius: 9999, padding: 12, alignItems: 'center', marginTop: 16 },
-  saveText: { color: 'white', fontWeight: 'bold', fontSize: 12, fontFamily: 'Plus Jakarta Sans' }
+  saveText: { color: 'white', fontWeight: 'bold', fontSize: 12, fontFamily: 'Plus Jakarta Sans' },
+  catTotalLabel: { fontSize: 10, color: '#10b981', fontWeight: '600', marginTop: 2, fontFamily: 'Plus Jakarta Sans' },
+  errorText: { fontSize: 10, color: '#ba1a1a', fontWeight: 'bold', marginTop: 8, fontFamily: 'Plus Jakarta Sans', textAlign: 'center' }
 });

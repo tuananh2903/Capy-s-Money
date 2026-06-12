@@ -71,7 +71,12 @@ export function CalendarTab({ transactions, onSelectTransaction, targetDate }: P
         contentContainerStyle={{ marginTop: 12 }}
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.txRow} onPress={() => onSelectTransaction(item)}>
-            <Text style={styles.txTitle}>{item.categories?.name || item.jar_type}</Text>
+            <View style={styles.txLeft}>
+              <Text style={styles.txTitle}>{item.categories?.name || item.jar_type}</Text>
+              {item.wallets?.name && (
+                <Text style={styles.txWallet}>👛 {item.wallets.name}</Text>
+              )}
+            </View>
             <Text style={item.type === 'expense' ? styles.expense : styles.income}>
               {item.type === 'expense' ? '-' : '+'}{Number(item.amount).toLocaleString('vi-VN')}đ
             </Text>
@@ -96,8 +101,10 @@ const styles = StyleSheet.create({
   selectedDayText: { fontWeight: '700', color: '#864e5a' },
   dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#fe9da9', marginTop: 2 },
   selectedDot: { backgroundColor: '#864e5a' },
-  txRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, paddingHorizontal: 12, backgroundColor: '#ffffff', borderRadius: 12, marginBottom: 8, borderWidth: 1, borderColor: '#fff0f1' },
+  txRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, paddingHorizontal: 12, backgroundColor: '#ffffff', borderRadius: 12, marginBottom: 8, borderWidth: 1, borderColor: '#fff0f1', alignItems: 'center' },
+  txLeft: { flexDirection: 'column', gap: 2 },
   txTitle: { fontSize: 12, fontWeight: '600', color: '#23191a' },
+  txWallet: { fontSize: 10, color: '#837375', fontFamily: 'Plus Jakarta Sans' },
   expense: { fontSize: 12, fontWeight: '700', color: '#ba1a1a' },
   income: { fontSize: 12, fontWeight: '700', color: '#34c759' },
   emptyText: { textAlign: 'center', color: '#71585c', fontSize: 12, padding: 12 }

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { fetchLedgerTransactions, fetchPreviousMonthSpend, LedgerTransaction } from '../services/ledgerService';
 import { supabase } from '../services/supabaseClient';
 
-export function useLedger(walletId: string, targetDate: Date) {
+export function useLedger(walletIds: string[], targetDate: Date) {
   const [transactions, setTransactions] = useState<LedgerTransaction[]>([]);
   const [prevMonthSpend, setPrevMonthSpend] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -12,13 +12,13 @@ export function useLedger(walletId: string, targetDate: Date) {
   const endOfMonth = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0, 23, 59, 59, 999);
 
   const loadData = useCallback(async () => {
-    if (!walletId) return;
+    if (!walletIds || walletIds.length === 0) return;
     setIsLoading(true);
     setError(null);
 
     const [txResult, prevSpendResult] = await Promise.all([
-      fetchLedgerTransactions(walletId, startOfMonth, endOfMonth),
-      fetchPreviousMonthSpend(walletId, startOfMonth),
+      fetchLedgerTransactions(walletIds, startOfMonth, endOfMonth),
+      fetchPreviousMonthSpend(walletIds, startOfMonth),
     ]);
 
     if (txResult.success && txResult.data) {
@@ -32,7 +32,7 @@ export function useLedger(walletId: string, targetDate: Date) {
     }
 
     setIsLoading(false);
-  }, [walletId, targetDate]);
+  }, [JSON.stringify(walletIds), targetDate]);
 
   useEffect(() => {
     loadData();
