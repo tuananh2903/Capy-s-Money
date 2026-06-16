@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wallet Settings — Layout Mockup</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, 'Inter', sans-serif;
+    background: #1a0f10;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px 64px;
+    gap: 40px;
+  }
+
+  h1 {
+    color: #FFF8F7;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+
+  .subtitle {
+    color: #a07c80;
+    font-size: 13px;
+    margin-top: 4px;
+    text-align: center;
+  }
+
+  .compare-row {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .phone-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .option-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFB7C5;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* Phone frame */
+  .phone {
+    width: 320px;
+    height: 620px;
+    background: #FFF8F7;
+    border-radius: 44px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 2px #3a2224;
+  }
+
+  /* ======== SHARED PHONE COMPONENTS ======== */
+  .screen {
+    position: absolute;
+    inset: 0;
+    background: #FFF8F7;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.35s cubic-bezier(.4,0,.2,1), opacity 0.25s ease;
+  }
+  .screen.hidden {
+    transform: translateX(100%);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .screen.slide-out-left {
+    transform: translateX(-30%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Status bar */
+  .status-bar {
+    height: 44px;
+    background: #FFF8F7;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    flex-shrink: 0;
+  }
+  .status-time { font-size: 14px; font-weight: 600; color: #23191A; }
+  .status-icons { font-size: 12px; color: #23191A; }
+
+  /* Wallet card area (scroll bg) */
+  .wallet-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 16px 0;
+    scrollbar-width: none;
+  }
+  .wallet-area::-webkit-scrollbar { display: none; }
+
+  .screen-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #23191A;
+    margin-bottom: 14px;
+    padding: 0 4px;
+  }
+
+  /* Wallet card */
+  .wallet-card {
+    border-radius: 20px;
+    padding: 18px;
+    height: 140px;
+    background: linear-gradient(135deg, #FFB7C5, #944652);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .wallet-card::before {
+    content: '';
+    position: absolute;
+    top: -20px; right: -20px;
+    width: 90px; height: 90px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+  }
+  .card-name { font-size: 16px; font-weight: 700; color: #fff; }
+  .card-footer { display: flex; justify-content: space-between; align-items: flex-end; }
+  .balance-label { font-size: 11px; color: rgba(255,255,255,0.7); margin-bottom: 2px; }
+  .balance-val { font-size: 20px; font-weight: 700; color: #fff; }
+  .settings-btn {
+    width: 36px; height: 36px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    border: none;
+    transition: background 0.2s;
+  }
+  .settings-btn:hover { background: rgba(255,255,255,0.35); }
+
+  /* ======== BOTTOM SHEET ======== */
+  .bottom-sheet {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: #FFF8F7;
+    border-radius: 28px 28px 0 0;
+    box-shadow: 0 -8px 32px rgba(134,78,90,0.15);
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(.4,0,.2,1);
+    overflow: hidden;
+    max-height: 90%;
+    display: flex;
+    flex-direction: column;
+  }
+  .bottom-sheet.open {
+    transform: translateY(0);
+  }
+  .sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(74,62,63,0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .sheet-backdrop.visible {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .drag-bar {
+    width: 40px; height: 5px;
+    background: #F1DEDF;
+    border-radius: 3px;
+    margin: 10px auto 6px;
+    flex-shrink: 0;
+  }
+  .sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px 12px;
+    border-bottom: 1px solid #F1DEDF;
+    flex-shrink: 0;
+  }
+  .sheet-title { font-size: 17px; font-weight: 700; color: #23191A; }
+  .close-btn {
+    width: 28px; height: 28px;
+    background: #F1DEDF;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    color: #864E5A;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .sheet-scroll {
+    overflow-y: auto;
+    padding: 16px 20px 24px;
+    flex: 1;
+    scrollbar-width: none;
+  }
+  .sheet-scroll::-webkit-scrollbar { display: none; }
+
+  /* ======== OPTION A — Flat layout ======== */
+  .section-heading {
+    font-size: 11px;
+    font-weight: 700;
+    color: #864E5A;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 8px;
+    margin-top: 16px;
+  }
+  .section-heading:first-child { margin-top: 0; }
+
+  .input-group {
+    background: #fff;
+    border: 1.5px solid #F1DEDF;
+    border-radius: 14px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+  .input-label { font-size: 11px; color: #837375; margin-bottom: 4px; }
+  .input-field {
+    font-size: 15px;
+    font-weight: 600;
+    color: #23191A;
+    border: none;
+    background: transparent;
+    width: 100%;
+    outline: none;
+    padding: 0;
+  }
+  .input-hint { font-size: 10px; color: #837375; margin-top: 4px; line-height: 1.4; }
+
+  .save-btn {
+    background: #864E5A;
+    color: #fff;
+    border: none;
+    border-radius: 100px;
+    padding: 13px;
+    font-size: 14px;
+    font-weight: 700;
+    width: 100%;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: opacity 0.2s;
+  }
+  .save-btn:hover { opacity: 0.88; }
+  .save-btn.secondary {
+    background: transparent;
+    color: #864E5A;
+    border: 1.5px solid #864E5A;
+    margin-top: 8px;
+  }
+  .save-btn.danger {
+    background: #FFDAD6;
+    color: #BA1A1A;
+    border: 1.5px solid #FFBAAC;
+    margin-top: 8px;
+  }
+
+  .divider { height: 1px; background: #F1DEDF; margin: 14px 0; }
+
+  /* ======== OPTION B — Sub-screen navigation ======== */
+  .action-list { display: flex; flex-direction: column; gap: 8px; }
+  .action-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #fff;
+    border: 1.5px solid #F1DEDF;
+    border-radius: 16px;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .action-item:hover { background: #FFF0F1; border-color: #e8c8ca; }
+  .action-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .action-icon.pink { background: #FFE4E8; }
+  .action-icon.blue { background: #E8F0FF; }
+  .action-icon.star { background: #FFF8E1; }
+  .action-icon.red { background: #FFDAD6; }
+
+  .action-text { flex: 1; }
+  .action-name { font-size: 14px; font-weight: 600; color: #23191A; }
+  .action-desc { font-size: 11px; color: #837375; margin-top: 2px; }
+  .chevron { color: #D6C2C4; font-size: 16px; }
+
+  /* Back button for sub-screen */
+  .back-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #864E5A;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 0;
+    margin-bottom: 16px;
+  }
+  .back-btn:hover { opacity: 0.75; }
+
+  .char-count {
+    font-size: 10px;
+    color: #837375;
+    text-align: right;
+    margin-top: 4px;
+  }
+
+  /* ======== TABS ======== */
+  .tabs {
+    display: flex;
+    gap: 8px;
+    background: #2a1618;
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 8px;
+  }
+  .tab {
+    flex: 1;
+    padding: 8px 0;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #a07c80;
+    border-radius: 9px;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    transition: all 0.2s;
+  }
+  .tab.active {
+    background: #944652;
+    color: #fff;
+  }
+
+  /* selected badge */
+  .badge-selected {
+    display: inline-block;
+    background: #944652;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 100px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  /* toast */
+  .toast {
+    position: absolute;
+    bottom: 20px; left: 16px; right: 16px;
+    background: #23191A;
+    color: #fff;
+    border-radius: 12px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+    z-index: 100;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* PHONE B sub-screens */
+  .sub-screen {
+    position: absolute;
+    inset: 0;
+    background: #FFF8F7;
+    border-radius: 28px 28px 0 0;
+    padding: 0;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+    z-index: 20;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .sub-screen::-webkit-scrollbar { display: none; }
+  .sub-screen.open { transform: translateX(0); }
+
+  .sub-screen-inner {
+    padding: 20px;
+  }
+
+  /* ======== GLOBAL LABEL ======== */
+  .label-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .note-box {
+    background: #FFF3CD;
+    border-left: 3px solid #F5A623;
+    border-radius: 0 8px 8px 0;
+    padding: 8px 10px;
+    font-size: 11px;
+    color: #7a5a00;
+    margin-bottom: 12px;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div style="text-align:center;">
+  <h1>🎨 Layout Mockup — Cài đặt Ví</h1>
+  <p class="subtitle">Nhấn vào nút ⚙️ trên card ví để xem sheet cài đặt</p>
+</div>
+
+<!-- Toggle tabs -->
+<div class="tabs" style="width:320px;">
+  <button class="tab active" id="tab-a" onclick="switchTab('a')">Phương án A · Flat</button>
+  <button class="tab" id="tab-b" onclick="switchTab('b')">Phương án B · Sub-screen</button>
+</div>
+
+<!-- ====================== PHONE A ====================== -->
+<div class="phone-wrap" id="phone-a">
+  <div class="phone" id="phoneA">
+    <!-- Status bar -->
+    <div class="status-bar">
+      <span class="status-time">21:35</span>
+      <span class="status-icons">●●● 100%</span>
+    </div>
+
+    <!-- Main screen -->
+    <div class="wallet-area">
+      <div class="screen-title">Ví của tôi</div>
+
+      <!-- Card 1 -->
+      <div class="wallet-card">
+        <div class="card-name">Viettel Money VK</div>
+        <div class="card-footer">
+          <div>
+            <div class="balance-label">Số dư</div>
+            <div class="balance-val">201.186 đ</div>
+          </div>
+          <button class="settings-btn" onclick="openSheetA('Viettel Money VK', 201186)">⚙️</button>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="wallet-card" style="background: linear-gradient(135deg, #B4CAFF, #3252A2);">
+        <div class="card-name">Tech Chung</div>
+        <div class="card-footer">
+          <div>
+            <div class="balance-label">Số dư</div>
+            <div class="balance-val">57.384.302 đ</div>
+          </div>
+          <button class="settings-btn" onclick="openSheetA('Tech Chung', 57384302)">⚙️</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Backdrop -->
+    <div class="sheet-backdrop" id="backdropA" onclick="closeSheetA()"></div>
+
+    <!-- Bottom Sheet A — Flat layout -->
+    <div class="bottom-sheet" id="sheetA">
+      <div class="drag-bar"></div>
+      <div class="sheet-header">
+        <div class="sheet-title" id="sheetATitleEl">Cài đặt: Ví</div>
+        <button class="close-btn" onclick="closeSheetA()">✕</button>
+      </div>
+
+      <div class="sheet-scroll">
+        <!-- Section: Tên ví -->
+        <div class="section-heading">Tên ví</div>
+        <div class="input-group">
+          <div class="input-label">Tên hiển thị</div>
+          <input class="input-field" id="inputNameA" maxlength="30" oninput="updateCharCountA()" />
+          <div class="char-count"><span id="charCountA">0</span>/30</div>
+        </div>
+        <button class="save-btn" onclick="saveNameA()">Lưu tên ví</button>
+
+        <div class="divider"></div>
+
+        <!-- Section: Số dư -->
+        <div class="section-heading">Điều chỉnh số dư</div>
+        <div class="note-box">⚠️ Thao tác này không tạo giao dịch. Sẽ ghi lại 1 bản điều chỉnh để audit.</div>
+        <div class="input-group">
+          <div class="input-label">Số dư mới (đ)</div>
+          <input class="input-field" id="inputBalanceA" type="number" placeholder="Nhập số dư thực tế" />
+          <div class="input-hint">Số dư hiện tại: <strong id="currentBalA">—</strong></div>
+        </div>
+        <button class="save-btn" onclick="confirmBalanceA()">Điều chỉnh số dư</button>
+
+        <div class="divider"></div>
+
+        <!-- Section: Hành động khác -->
+        <div class="section-heading">Hành động khác</div>
+        <button class="save-btn secondary" onclick="showToastA('⭐ Đã đặt làm ví mặc định!')">⭐ Đặt làm mặc định</button>
+        <button class="save-btn danger" onclick="showToastA('🗑️ Đã xóa ví')">🗑️ Xóa ví</button>
+      </div>
+    </div>
+
+    <div class="toast" id="toastA"></div>
+  </div>
+
+  <p class="subtitle" style="max-width:300px; text-align:center; line-height:1.6;">
+    <strong style="color:#FFB7C5">Phương án A — Flat:</strong><br>
+    Tất cả trong 1 sheet, cuộn để xem.<br>
+    Nhanh, nhưng sheet dài hơn.
+  </p>
+</div>
+
+<!-- ====================== PHONE B ====================== -->
+<div class="phone-wrap" id="phone-b" style="display:none;">
+  <div class="phone" id="phoneB">
+    <div class="status-bar">
+      <span class="status-time">21:35</span>
+      <span class="status-icons">●●● 100%</span>
+    </div>
+
+    <div class="wallet-area">
+      <div class="screen-title">Ví của tôi</div>
+
+      <div class="wallet-card">
+        <div class="card-name">Viettel Money VK</div>
+        <div class="card-footer">
+          <div>
+            <div class="balance-label">Số dư</div>
+            <div class="balance-val">201.186 đ</div>
+          </div>
+          <button class="settings-btn" onclick="openSheetB('Viettel Money VK', 201186)">⚙️</button>
+        </div>
+      </div>
+
+      <div class="wallet-card" style="background: linear-gradient(135deg, #B4CAFF, #3252A2);">
+        <div class="card-name">Tech Chung</div>
+        <div class="card-footer">
+          <div>
+            <div class="balance-label">Số dư</div>
+            <div class="balance-val">57.384.302 đ</div>
+          </div>
+          <button class="settings-btn" onclick="openSheetB('Tech Chung', 57384302)">⚙️</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Backdrop B -->
+    <div class="sheet-backdrop" id="backdropB" onclick="closeSheetB()"></div>
+
+    <!-- Bottom Sheet B — Action list -->
+    <div class="bottom-sheet" id="sheetB" style="max-height: 72%;">
+      <div class="drag-bar"></div>
+      <div class="sheet-header">
+        <div class="sheet-title" id="sheetBTitleEl">Cài đặt ví</div>
+        <button class="close-btn" onclick="closeSheetB()">✕</button>
+      </div>
+
+      <div class="sheet-scroll" style="padding-top:12px;">
+        <div class="action-list">
+          <div class="action-item" onclick="openSubB('name')">
+            <div class="action-icon pink">✏️</div>
+            <div class="action-text">
+              <div class="action-name">Đổi tên ví</div>
+              <div class="action-desc" id="subNameDesc">Tên hiện tại: —</div>
+            </div>
+            <div class="chevron">›</div>
+          </div>
+
+          <div class="action-item" onclick="openSubB('balance')">
+            <div class="action-icon blue">💰</div>
+            <div class="action-text">
+              <div class="action-name">Chỉnh sửa số dư</div>
+              <div class="action-desc" id="subBalDesc">Số dư hiện tại: —</div>
+            </div>
+            <div class="chevron">›</div>
+          </div>
+
+          <div class="action-item" onclick="openSubB('default')">
+            <div class="action-icon star">⭐</div>
+            <div class="action-text">
+              <div class="action-name">Đặt làm mặc định</div>
+              <div class="action-desc">Dùng ví này khi ghi giao dịch mới</div>
+            </div>
+            <div class="chevron">›</div>
+          </div>
+
+          <div class="action-item" style="border-color:#FFBAAC;" onclick="openSubB('delete')">
+            <div class="action-icon red">🗑️</div>
+            <div class="action-text">
+              <div class="action-name" style="color:#BA1A1A;">Xóa ví</div>
+              <div class="action-desc">Ẩn toàn bộ lịch sử của ví này</div>
+            </div>
+            <div class="chevron" style="color:#FFBAAC;">›</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub-screen: Đổi tên -->
+      <div class="sub-screen" id="subBName">
+        <div class="sub-screen-inner">
+          <button class="back-btn" onclick="closeSubB()">‹ Quay lại</button>
+          <div class="sheet-title" style="margin-bottom:16px;">✏️ Đổi tên ví</div>
+
+          <div class="input-group">
+            <div class="input-label">Tên ví mới</div>
+            <input class="input-field" id="inputNameB" maxlength="30" oninput="updateCharCountB()" />
+            <div class="char-count"><span id="charCountB">0</span>/30</div>
+          </div>
+
+          <button class="save-btn" style="margin-top:8px;" onclick="saveNameB()">Lưu tên ví</button>
+        </div>
+      </div>
+
+      <!-- Sub-screen: Chỉnh số dư -->
+      <div class="sub-screen" id="subBBalance">
+        <div class="sub-screen-inner">
+          <button class="back-btn" onclick="closeSubB()">‹ Quay lại</button>
+          <div class="sheet-title" style="margin-bottom:8px;">💰 Chỉnh sửa số dư</div>
+          <div class="note-box">⚠️ Sẽ ghi 1 bản điều chỉnh tự động để audit lịch sử.</div>
+
+          <div class="input-group">
+            <div class="input-label">Số dư mới (đ)</div>
+            <input class="input-field" id="inputBalanceB" type="number" placeholder="Nhập số tiền" />
+            <div class="input-hint">Số dư hiện tại: <strong id="currentBalB">—</strong></div>
+          </div>
+
+          <button class="save-btn" style="margin-top:8px;" onclick="confirmBalanceB()">Điều chỉnh</button>
+        </div>
+      </div>
+
+      <!-- Sub-screen: Mặc định -->
+      <div class="sub-screen" id="subBDefault">
+        <div class="sub-screen-inner">
+          <button class="back-btn" onclick="closeSubB()">‹ Quay lại</button>
+          <div class="sheet-title" style="margin-bottom:16px;">⭐ Đặt làm mặc định</div>
+          <p style="color:#514345; font-size:13px; line-height:1.7; margin-bottom:20px;">
+            Ví mặc định sẽ được tự động chọn khi bạn ghi giao dịch mới hoặc xem dashboard.
+          </p>
+          <button class="save-btn" onclick="showToastB('⭐ Đã đặt làm ví mặc định!'); closeSubB(); closeSheetB();">Xác nhận đặt mặc định</button>
+        </div>
+      </div>
+
+      <!-- Sub-screen: Xóa ví -->
+      <div class="sub-screen" id="subBDelete">
+        <div class="sub-screen-inner">
+          <button class="back-btn" onclick="closeSubB()">‹ Quay lại</button>
+          <div class="sheet-title" style="margin-bottom:8px; color:#BA1A1A;">🗑️ Xóa ví</div>
+          <p style="color:#514345; font-size:13px; line-height:1.7; margin-bottom:20px;">
+            Hành động này sẽ <strong>ẩn toàn bộ lịch sử giao dịch</strong> của ví và không thể hoàn tác trên app.
+          </p>
+          <button class="save-btn danger" onclick="showToastB('🗑️ Đã xóa ví'); closeSubB(); closeSheetB();">Xác nhận xóa ví</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toastB"></div>
+  </div>
+
+  <p class="subtitle" style="max-width:300px; text-align:center; line-height:1.6;">
+    <strong style="color:#FFB7C5">Phương án B — Sub-screen:</strong><br>
+    Sheet chính = danh sách hành động.<br>
+    Bấm vào mỗi hành động → mở màn riêng.
+  </p>
+</div>
+
+<script>
+// ============ TABS ============
+function switchTab(tab) {
+  document.getElementById('phone-a').style.display = tab === 'a' ? 'flex' : 'none';
+  document.getElementById('phone-b').style.display = tab === 'b' ? 'flex' : 'none';
+  document.getElementById('tab-a').className = 'tab' + (tab === 'a' ? ' active' : '');
+  document.getElementById('tab-b').className = 'tab' + (tab === 'b' ? ' active' : '');
+}
+
+// ============ PHONE A ============
+let walletNameA = '', walletBalA = 0;
+
+function openSheetA(name, bal) {
+  walletNameA = name; walletBalA = bal;
+  document.getElementById('sheetATitleEl').textContent = 'Cài đặt: ' + name;
+  document.getElementById('inputNameA').value = name;
+  document.getElementById('charCountA').textContent = name.length;
+  document.getElementById('inputBalanceA').value = bal;
+  document.getElementById('currentBalA').textContent = bal.toLocaleString('vi-VN') + ' đ';
+  document.getElementById('sheetA').classList.add('open');
+  document.getElementById('backdropA').classList.add('visible');
+}
+function closeSheetA() {
+  document.getElementById('sheetA').classList.remove('open');
+  document.getElementById('backdropA').classList.remove('visible');
+}
+function updateCharCountA() {
+  document.getElementById('charCountA').textContent = document.getElementById('inputNameA').value.length;
+}
+function saveNameA() {
+  const v = document.getElementById('inputNameA').value.trim();
+  if (!v) { showToastA('⚠️ Tên ví không được để trống'); return; }
+  showToastA('✅ Đã đổi tên ví thành "' + v + '"');
+  setTimeout(closeSheetA, 1200);
+}
+function confirmBalanceA() {
+  const v = parseFloat(document.getElementById('inputBalanceA').value);
+  if (isNaN(v) || v < 0) { showToastA('⚠️ Số dư không hợp lệ'); return; }
+  const msg = 'Đặt số dư về ' + v.toLocaleString('vi-VN') + ' đ?\n(Thao tác này sẽ ghi 1 bản điều chỉnh)';
+  if (confirm(msg)) { showToastA('✅ Đã cập nhật số dư'); setTimeout(closeSheetA, 1200); }
+}
+function showToastA(msg) {
+  const t = document.getElementById('toastA');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ============ PHONE B ============
+let walletNameB = '', walletBalB = 0;
+let activeSub = null;
+
+function openSheetB(name, bal) {
+  walletNameB = name; walletBalB = bal;
+  document.getElementById('sheetBTitleEl').textContent = name;
+  document.getElementById('subNameDesc').textContent = 'Tên hiện tại: ' + name;
+  document.getElementById('subBalDesc').textContent = 'Số dư hiện tại: ' + bal.toLocaleString('vi-VN') + ' đ';
+  document.getElementById('inputNameB').value = name;
+  document.getElementById('charCountB').textContent = name.length;
+  document.getElementById('inputBalanceB').value = bal;
+  document.getElementById('currentBalB').textContent = bal.toLocaleString('vi-VN') + ' đ';
+  document.getElementById('sheetB').classList.add('open');
+  document.getElementById('backdropB').classList.add('visible');
+}
+function closeSheetB() {
+  closeSubB();
+  document.getElementById('sheetB').classList.remove('open');
+  document.getElementById('backdropB').classList.remove('visible');
+}
+function openSubB(type) {
+  if (activeSub) closeSubB(false);
+  const map = { name: 'subBName', balance: 'subBBalance', default: 'subBDefault', delete: 'subBDelete' };
+  activeSub = map[type];
+  document.getElementById(activeSub).classList.add('open');
+}
+function closeSubB(restore = true) {
+  if (activeSub) {
+    document.getElementById(activeSub).classList.remove('open');
+    activeSub = null;
+  }
+}
+function updateCharCountB() {
+  document.getElementById('charCountB').textContent = document.getElementById('inputNameB').value.length;
+}
+function saveNameB() {
+  const v = document.getElementById('inputNameB').value.trim();
+  if (!v) { showToastB('⚠️ Tên ví không được để trống'); return; }
+  showToastB('✅ Đã đổi tên thành "' + v + '"');
+  setTimeout(() => { closeSubB(); closeSheetB(); }, 1200);
+}
+function confirmBalanceB() {
+  const v = parseFloat(document.getElementById('inputBalanceB').value);
+  if (isNaN(v) || v < 0) { showToastB('⚠️ Số dư không hợp lệ'); return; }
+  const msg = 'Đặt số dư về ' + v.toLocaleString('vi-VN') + ' đ?\n(Thao tác này sẽ ghi 1 bản điều chỉnh)';
+  if (confirm(msg)) {
+    showToastB('✅ Đã cập nhật số dư');
+    setTimeout(() => { closeSubB(); closeSheetB(); }, 1200);
+  }
+}
+function showToastB(msg) {
+  const t = document.getElementById('toastB');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+</script>
+</body>
+</html>

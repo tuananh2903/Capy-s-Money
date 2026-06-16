@@ -6,7 +6,9 @@ export interface Wallet {
   name: string;
   balance: number;
   is_default: boolean;
+  is_deleted?: boolean;
   type: string;
+  color?: string | null;
   rollover_enabled?: boolean;
   created_at?: string;
   updated_at?: string;
@@ -340,6 +342,61 @@ export async function deleteWallet(walletId: string): Promise<{ success: boolean
     return { success: true };
   } catch (err: any) {
     console.error('Unexpected error deleting wallet:', err);
+    return { success: false, error: err.message || 'Lỗi kết nối mạng.' };
+  }
+}
+
+/**
+ * Điều chỉnh số dư ví bằng cách tạo một giao dịch điều chỉnh (audit trail).
+ * Trigger `update_wallet_balance` trên DB sẽ tự cập nhật wallet.balance.
+ *
+ * @param walletId     ID ví cần điều chỉnh
+ * @param currentBalance  Số dư hiện tại (để tính delta)
+ * @param newBalance   Số dư mới mong muốn
+ * @param userId       ID người thực hiện
+ * @param note         Lý do điều chỉnh (tuỳ chọn)
+ */
+export async function adjustWalletBalance(
+  walletId: string,
+  currentBalance: number,
+  newBalance: number,
+  userId: string,
+  note?: string,
+): Promise<{ success: boolean; error?: string }> {
+  const delta = newBalance - currentBalance;
+
+  // Không có thay đổi → skip
+  if (delta === 0) {
+    return { success: true };
+  }
+
+  const txType = delta > 0 ? 'income' : 'expense';
+  const txAmount = Math.abs(delta);
+  const txNote = note
+    ? `Điều chỉnh số dư: ${note}`
+    : 'Điều chỉnh số dư thủ công';
+
+  try {
+    const { error } = await supabase.from('transactions').insert({
+      wallet_id: walletId,
+      created_by: userId,
+      type: txType,
+      amount: txAmount,
+      // NEC là jar mặc định cho giao dịch điều chỉnh
+      jar_type: 'NEC',
+      note: txNote,
+      source: 'adjustment',
+      occurred_at: new Date().toISOString(),
+    });
+
+    if (error) {
+      console.error('Error creating adjustment transaction:', error);
+      return { success: false, error: `Không thể điều chỉnh số dư: ${error.message}` };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Unexpected error adjusting wallet balance:', err);
     return { success: false, error: err.message || 'Lỗi kết nối mạng.' };
   }
 }
