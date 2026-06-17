@@ -40,6 +40,11 @@ const mockTransactions = [
     created_by: 'mock-user-uuid-123', categories: { name: 'Ăn hàng sang' }, note: 'Đi ăn buffet'
   },
   {
+    id: 'tx-transfer-1', wallet_id: 'w-1', amount: 300000, type: 'transfer',
+    is_deleted: false, jar_type: 'NEC', occurred_at: day1,
+    created_by: 'mock-user-uuid-123', categories: null, note: 'Chuyển khoản đến Ví chồng'
+  },
+  {
     id: 'tx-prev-month', wallet_id: 'w-1', amount: 1000000, type: 'expense',
     is_deleted: false, jar_type: 'NEC', occurred_at: prevMonth,
     created_by: 'mock-user-uuid-123', categories: { name: 'Thuê nhà' }, note: null
@@ -145,11 +150,19 @@ async function setupLedgerMocks(page: any, dynamicTransactions: any[]) {
 
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(filtered) });
     } else if (method === 'PATCH') {
+      // Support both soft-delete and field updates
       const body = JSON.parse(route.request().postData() || '{}');
       const match = url.match(/id=eq\.(tx-[a-zA-Z0-9-]+)/);
       if (match) {
         const tx = dynamicTransactions.find((t: any) => t.id === match[1]);
-        if (tx && body.is_deleted) tx.is_deleted = true;
+        if (tx) {
+          if (body.is_deleted) {
+            tx.is_deleted = true;
+          } else {
+            // Apply field updates for edit operations
+            Object.assign(tx, body);
+          }
+        }
       }
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
     } else {
@@ -158,6 +171,10 @@ async function setupLedgerMocks(page: any, dynamicTransactions: any[]) {
   });
 
   await page.route('**/rest/v1/categories*', async (route: any) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
+  });
+
+  await page.route('**/rest/v1/budgets*', async (route: any) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
   });
 
@@ -255,7 +272,7 @@ test.describe('LedgerScreen — TransactionDetailSheet Chi tiết', () => {
     await expect(page.locator('text=+5.000.000đ').first()).toBeVisible();
     // Jar & category info
     await expect(page.locator('text=Hũ & Phân mục:')).toBeVisible();
-    await expect(page.locator('text=NEC')).toBeVisible();
+    await expect(page.locator('text=NEC > Lương')).toBeVisible();
     // Time info
     await expect(page.locator('text=Thời gian:')).toBeVisible();
     // Note info
@@ -333,15 +350,15 @@ test.describe('LedgerScreen — TransactionDetailSheet Chi tiết', () => {
     await expect(page.locator('text=Chi Tiết Giao Dịch')).toBeVisible();
   });
 
-  test('should trigger edit flow when pressing Sửa', async ({ page }) => {
+  test('should trigger edit flow when pressing Sửa on income/expense transaction', async ({ page }) => {
     await page.locator('text=Lương').first().click();
     await expect(page.locator('text=Chi Tiết Giao Dịch')).toBeVisible();
 
-    // Click Sửa — triggers onEdit callback which closes the sheet
+    // Click Sửa — opens EditTransactionSheet
     await page.locator('text=Sửa').click();
-    await page.waitForTimeout(500);
-    // Sheet closes after Sửa click
-    await expect(page.locator('text=Chi Tiết Giao Dịch')).toBeHidden();
+    await page.waitForTimeout(600);
+    // EditTransactionSheet should open
+    await expect(page.locator('text=Sửa Giao Dịch')).toBeVisible({ timeout: 3000 });
   });
 });
 
@@ -576,5 +593,133 @@ test.describe('LedgerScreen — Chuyển đổi giữa các tabs', () => {
     const now = new Date();
     const prevMonthNum = now.getMonth() === 0 ? 12 : now.getMonth();
     await expect(page.locator(`text=Tháng ${prevMonthNum}`)).toBeVisible();
+  });
+});
+
+// ─── LedgerScreen: Edit Transaction (Sửa Giao Dịch) ──────────────────────────
+
+test.describe('LedgerScreen — Sửa Giao Dịch', () => {
+  let dynamicTransactions: any[];
+
+  test.beforeEach(async ({ page }) => {
+    dynamicTransactions = JSON.parse(JSON.stringify(mockTransactions));
+    await loginAndNavigateToLedger(page, dynamicTransactions);
+  });
+
+  test('should show Sửa button for income transactions', async ({ page }) => {
+    await page.locator('text=Lương').first().click();
+    await page.waitForTimeout(500);
+    await expect(page.locator('text=Chi Tiết Giao Dịch')).toBeVisible();
+    await expect(page.locator('text=Sửa')).toBeVisible();
+  });
+
+  test('should show Sửa button for expense transactions', async ({ page }) => {
+    await page.locator('text=Ăn uống').first().click();
+    await page.waitForTimeout(500);
+    await expect(page.locator('text=Chi Tiết Giao Dịch')).toBeVisible();
+    await expect(page.locator('text=Sửa')).toBeVisible();
+  });
+
+  test('should NOT show Sửa button for transfer transactions', async ({ page }) => {
+    await page.locator('text=Chuyển khoản đến Ví chồng').first().click();
+    await page.waitForTimeout(500);
+    await expect(page.locator('text=Chi Tiết Giao Dịch')).toBeVisible();
+    await expect(page.locator('text=Sửa')).toBeHidden();
+    await expect(page.locator('text=Xóa')).toBeVisible();
+  });
+
+  test('should open EditTransactionSheet when Sửa is clicked', async ({ page }) => {
+    await page.locator('text=Ăn uống').first().click();
+    await page.waitForTimeout(500);
+    await page.locator('text=Sửa').click();
+    await page.waitForTimeout(600);
+    await expect(page.locator('text=Sửa Giao Dịch')).toBeVisible({ timeout: 3000 });
+  });
+
+  test('should show "Khoản chi" badge in EditTransactionSheet for expense', async ({ page }) => {
+    await page.locator('text=Ăn uống').first().click();
+    await page.waitForTimeout(500);
+    await page.locator('text=Sửa').click();
+    await page.waitForTimeout(600);
+    await expect(page.locator('text=Khoản chi')).toBeVisible({ timeout: 3000 });
+  });
+
+  test('should show "Khoản thu" badge in EditTransactionSheet for income', async ({ page }) => {
+    await page.locator('text=Lương').first().click();
+    await page.waitForTimeout(500);
+    await page.locator('text=Sửa').click();
+    await page.waitForTimeout(600);
+    await expect(page.locator('text=Khoản thu')).toBeVisible({ timeout: 3000 });
+  });
+
+  test('should close EditTransactionSheet when X button is pressed', async ({ page }) => {
+    await page.locator('text=Ăn uống').first().click();
+    await page.waitForTimeout(500);
+    await page.locator('text=Sửa').click();
+    await page.waitForTimeout(600);
+    await expect(page.locator('text=Sửa Giao Dịch')).toBeVisible({ timeout: 3000 });
+    await page.getByTestId('edit-sheet-close').click();
+    await page.waitForTimeout(500);
+    await expect(page.locator('text=Sửa Giao Dịch')).toBeHidden();
+  });
+
+  test('should close EditTransactionSheet by tapping backdrop', async ({ page }) => {
+    await page.locator('text=Ăn uống').first().click();
+    await page.waitForTimeout(500);
+    await page.locator('text=Sửa').click();
+    await page.waitForTimeout(600);
+    await expect(page.locator('text=Sửa Giao Dịch')).toBeVisible({ timeout: 3000 });
+    await page.getByTestId('edit-sheet-overlay').click({ position: { x: 10, y: 10 } });
+    await page.waitForTimeout(500);
+    await expect(page.locator('text=Sửa Giao Dịch')).toBeHidden();
+  });
+
+  test('should save changes and close both sheets on success', async ({ page }) => {
+    await page.locator('text=Ăn uống').first().click();
+    await page.waitForTimeout(500);
+    await expect(page.locator('text=Chi Tiết Giao Dịch')).toBeVisible();
+    await page.locator('text=Sửa').click();
+    await page.waitForTimeout(600);
+    await expect(page.locator('text=Sửa Giao Dịch')).toBeVisible({ timeout: 3000 });
+    const noteInput = page.getByTestId('edit-note-input');
+    await noteInput.clear();
+    await noteInput.fill('Phở sáng đã sửa');
+    await page.getByTestId('edit-save-button').click();
+    await page.waitForTimeout(1000);
+    await expect(page.locator('text=Sửa Giao Dịch')).toBeHidden({ timeout: 3000 });
+    await expect(page.locator('text=Chi Tiết Giao Dịch')).toBeHidden({ timeout: 3000 });
+  });
+
+  test('should show "Lưu thay đổi" as the save button label', async ({ page }) => {
+    await page.locator('text=Ăn uống').first().click();
+    await page.waitForTimeout(500);
+    await page.locator('text=Sửa').click();
+    await page.waitForTimeout(600);
+    await expect(page.locator('text=Lưu thay đổi')).toBeVisible({ timeout: 3000 });
+  });
+
+  test('should show inline error when saving with empty amount', async ({ page }) => {
+    await page.locator('text=Ăn uống').first().click();
+    await page.waitForTimeout(500);
+    await page.locator('text=Sửa').click();
+    await page.waitForTimeout(600);
+    await expect(page.locator('text=Sửa Giao Dịch')).toBeVisible({ timeout: 3000 });
+    const amountInput = page.getByTestId('edit-amount-input');
+    await amountInput.clear();
+    await page.getByTestId('edit-save-button').click();
+    await page.waitForTimeout(500);
+    await expect(page.locator('text=Số tiền giao dịch phải lớn hơn 0 đ. Vui lòng nhập lại.')).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('text=Sửa Giao Dịch')).toBeVisible();
+  });
+
+  test('should open date picker when clicking Thời gian chip', async ({ page }) => {
+    await page.locator('text=Ăn uống').first().click();
+    await page.waitForTimeout(500);
+    await page.locator('text=Sửa').click();
+    await page.waitForTimeout(600);
+    await expect(page.locator('text=Sửa Giao Dịch')).toBeVisible({ timeout: 3000 });
+    await page.getByTestId('edit-date-picker-button').click();
+    await page.waitForTimeout(300);
+    await expect(page.locator('text=Hủy')).toBeVisible({ timeout: 3000 });
   });
 });

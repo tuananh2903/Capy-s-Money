@@ -72,7 +72,9 @@ export function CalendarTab({ transactions, onSelectTransaction, targetDate }: P
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.txRow} onPress={() => onSelectTransaction(item)}>
             <View style={styles.txLeft}>
-              <Text style={styles.txTitle}>{item.categories?.name || item.jar_type}</Text>
+              <Text style={styles.txTitle}>
+                {item.type === 'transfer' ? (item.note || 'Chuyển khoản') : (item.categories?.name || item.jar_type)}
+              </Text>
               {item.wallets?.name && (
                 <Text style={styles.txWallet}>👛 {item.wallets.name}</Text>
               )}

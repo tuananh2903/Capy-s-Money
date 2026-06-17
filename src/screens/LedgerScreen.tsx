@@ -5,7 +5,9 @@ import { DailyTab } from '../components/ledger/DailyTab';
 import { MonthlyTab } from '../components/ledger/MonthlyTab';
 import { CalendarTab } from '../components/ledger/CalendarTab';
 import { TransactionDetailSheet } from '../components/ledger/TransactionDetailSheet';
+import { EditTransactionSheet } from '../components/ledger/EditTransactionSheet';
 import { LedgerTransaction } from '../services/ledgerService';
+import { UpdateTransactionPayload } from '../services/ledgerService';
 
 interface Props {
   walletIds: string[];
@@ -16,8 +18,9 @@ export function LedgerScreen({ walletIds }: Props) {
   const [activeTab, setActiveTab] = useState<'daily' | 'monthly' | 'calendar'>('daily');
   const [selectedTx, setSelectedTx] = useState<LedgerTransaction | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
 
-  const { transactions, prevMonthSpend, isLoading, deleteTransaction } = useLedger(
+  const { transactions, prevMonthSpend, isLoading, deleteTransaction, updateTransaction } = useLedger(
     walletIds,
     targetDate
   );
@@ -31,6 +34,21 @@ export function LedgerScreen({ walletIds }: Props) {
   const handleSelectTx = (tx: LedgerTransaction) => {
     setSelectedTx(tx);
     setIsSheetOpen(true);
+  };
+
+  const handleOpenEdit = (tx: LedgerTransaction) => {
+    setSelectedTx(tx);
+    setIsEditSheetOpen(true);
+  };
+
+  const handleSaveEdit = async (txId: string, data: UpdateTransactionPayload): Promise<boolean> => {
+    const ok = await updateTransaction(txId, data);
+    if (ok) {
+      // Close both EditTransactionSheet and TransactionDetailSheet
+      setIsEditSheetOpen(false);
+      setIsSheetOpen(false);
+    }
+    return ok;
   };
 
   return (
@@ -81,9 +99,14 @@ export function LedgerScreen({ walletIds }: Props) {
         isOpen={isSheetOpen}
         onClose={() => setIsSheetOpen(false)}
         onDelete={deleteTransaction}
-        onEdit={(tx) => {
-          // Edit navigation trigger placeholders
-        }}
+        onEdit={handleOpenEdit}
+      />
+
+      <EditTransactionSheet
+        transaction={selectedTx}
+        isOpen={isEditSheetOpen}
+        onClose={() => setIsEditSheetOpen(false)}
+        onSave={handleSaveEdit}
       />
     </SafeAreaView>
   );

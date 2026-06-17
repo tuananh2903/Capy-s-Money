@@ -64,4 +64,51 @@ describe('useLedger Hook Tests', () => {
     expect((supabase as any)._mockUpdate).toHaveBeenCalledWith({ is_deleted: true });
     expect(mockEq).toHaveBeenCalledWith('id', '1');
   });
+
+  it('should update transaction optimistically and rollback if server fails', async () => {
+    (ledgerService.fetchLedgerTransactions as jest.Mock).mockResolvedValue({ success: true, data: mockTxs });
+    (ledgerService.fetchPreviousMonthSpend as jest.Mock).mockResolvedValue({ success: true, data: 50 });
+
+    const mockEq = (supabase as any)._mockEq;
+    mockEq.mockResolvedValue({ error: { message: 'Database error' } });
+
+    const { result } = renderHook(() => useLedger(['wallet-123'], new Date('2026-05-15')));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(result.current.transactions[0].amount).toBe(100);
+
+    // Call updateTransaction — optimistic update should change amount immediately
+    act(() => {
+      result.current.updateTransaction('1', { amount: 9999 });
+    });
+
+    // Wait for the rollback to restore original amount
+    await waitFor(() => {
+      expect(result.current.transactions[0].amount).toBe(100);
+    });
+
+    expect(supabase.from).toHaveBeenCalledWith('transactions');
+    expect((supabase as any)._mockUpdate).toHaveBeenCalledWith({ amount: 9999 });
+    expect(mockEq).toHaveBeenCalledWith('id', '1');
+  });
+
+  it('should update transaction successfully with optimistic update', async () => {
+    (ledgerService.fetchLedgerTransactions as jest.Mock).mockResolvedValue({ success: true, data: mockTxs });
+    (ledgerService.fetchPreviousMonthSpend as jest.Mock).mockResolvedValue({ success: true, data: 50 });
+
+    const mockEq = (supabase as any)._mockEq;
+    mockEq.mockResolvedValue({ error: null });
+
+    const { result } = renderHook(() => useLedger(['wallet-123'], new Date('2026-05-15')));
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    let updateResult: boolean = false;
+    await act(async () => {
+      updateResult = await result.current.updateTransaction('1', { amount: 250000, note: 'Phở sáng' });
+    });
+
+    expect(updateResult).toBe(true);
+    expect(result.current.transactions[0].amount).toBe(250000);
+    expect(result.current.transactions[0].note).toBe('Phở sáng');
+  });
 });

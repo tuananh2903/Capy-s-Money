@@ -22,6 +22,15 @@ export interface LedgerTransaction {
   } | null;
 }
 
+export interface UpdateTransactionPayload {
+  amount?: number;
+  note?: string | null;
+  occurred_at?: string;
+  jar_type?: 'NEC' | 'FFA' | 'EDU' | 'PLAY' | 'LTSS' | 'GIVE';
+  category_id?: string | null;
+  wallet_id?: string;
+}
+
 export async function fetchLedgerTransactions(
   walletIds: string[],
   startDate: Date,
@@ -73,3 +82,28 @@ export async function fetchPreviousMonthSpend(
   }
 }
 
+export async function updateTransactionById(
+  txId: string,
+  payload: UpdateTransactionPayload
+): Promise<{ success: boolean; error?: string }> {
+  if (payload.amount !== undefined && payload.amount <= 0) {
+    return { success: false, error: 'Số tiền giao dịch phải lớn hơn 0 đ. Vui lòng nhập lại.' };
+  }
+  if (payload.note !== undefined && payload.note !== null && payload.note.length > 200) {
+    return { success: false, error: 'Ghi chú không được vượt quá 200 ký tự.' };
+  }
+
+  try {
+    const { error } = await supabase
+      .from('transactions')
+      .update(payload)
+      .eq('id', txId);
+
+    if (error) {
+      return { success: false, error: 'Không thể lưu thay đổi. Vui lòng thử lại.' };
+    }
+    return { success: true };
+  } catch {
+    return { success: false, error: 'Không thể lưu thay đổi. Vui lòng thử lại.' };
+  }
+}

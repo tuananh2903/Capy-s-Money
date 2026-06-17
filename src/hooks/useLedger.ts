@@ -32,7 +32,7 @@ export function useLedger(walletIds: string[], targetDate: Date) {
     }
 
     setIsLoading(false);
-  }, [JSON.stringify(walletIds), targetDate]);
+  }, [JSON.stringify(walletIds), targetDate.getTime()]);
 
   useEffect(() => {
     loadData();

@@ -57,11 +57,13 @@ export function TransactionDetailSheet({ transaction, isOpen, onClose, onDelete,
           </ScrollView>
 
           <View style={styles.btnRow}>
-            <TouchableOpacity style={[styles.btn, styles.editBtn]} onPress={() => { onEdit(transaction); onClose(); }}>
-              <Text style={styles.btnText}>Sửa</Text>
-            </TouchableOpacity>
+            {transaction.type !== 'transfer' && (
+              <TouchableOpacity style={[styles.btn, styles.editBtn]} onPress={() => { onEdit(transaction); onClose(); }}>
+                <Text style={styles.btnText}>Sửa</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
-              style={[styles.btn, styles.deleteBtn]}
+              style={[styles.btn, styles.deleteBtn, transaction.type === 'transfer' && styles.btnFullWidth]}
               onPress={() => {
                 Alert.alert(
                   'Xác nhận xóa',
@@ -106,6 +108,7 @@ const styles = StyleSheet.create({
   value: { fontSize: 13, color: '#23191a', fontWeight: '600', maxWidth: '60%' },
   btnRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
   btn: { flex: 1, paddingVertical: 12, borderRadius: 20, alignItems: 'center' },
+  btnFullWidth: { flex: 1 },
   editBtn: { backgroundColor: '#fde9ea', borderWidth: 1, borderColor: '#ffd9df' },
   deleteBtn: { backgroundColor: '#ba1a1a' },
   btnText: { fontSize: 14, fontWeight: '700', color: '#864e5a' },

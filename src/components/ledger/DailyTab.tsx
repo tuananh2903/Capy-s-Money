@@ -35,7 +35,9 @@ export function DailyTab({ transactions, onSelectTransaction }: Props) {
           {txs.map((tx) => (
             <TouchableOpacity key={tx.id} style={styles.txRow} onPress={() => onSelectTransaction(tx)}>
               <View style={styles.txLeft}>
-                <Text style={styles.txTitle}>{tx.categories?.name || tx.jar_type}</Text>
+                <Text style={styles.txTitle}>
+                  {tx.type === 'transfer' ? (tx.note || 'Chuyển khoản') : (tx.categories?.name || tx.jar_type)}
+                </Text>
                 {tx.wallets?.name && (
                   <Text style={styles.txWallet}>👛 {tx.wallets.name}</Text>
                 )}
