@@ -1,9 +1,8 @@
-const CACHE_NAME = "capy-money-cache-v1";
+const CACHE_NAME = "capy-money-cache-v2";
 const ASSETS_TO_CACHE = [
   "/",
   "/index.html",
-  "/manifest.json",
-  "/favicon.png"
+  "/favicon.ico"
 ];
 
 // Install Service Worker

@@ -43,3 +43,5 @@ yarn-error.*
 # Playwright
 test-results/
 playwright-report/
+
+.vercel

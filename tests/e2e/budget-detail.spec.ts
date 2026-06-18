@@ -33,6 +33,34 @@ const mockCategories = [
 ];
 
 async function setupBudgetMocks(page: any, dynamicJars: any[]) {
+  let currentTotalBudget = 10000000;
+  const dynamicCategoryBudgets = [
+    {
+      id: 'cb-1',
+      user_id: 'mock-user-uuid-123',
+      category_id: 'cat-nec-1',
+      amount_limit: 1000000,
+      enable_alerts: false,
+      categories: {
+        id: 'cat-nec-1',
+        name: 'Ăn uống',
+        jar_type: 'NEC'
+      }
+    },
+    {
+      id: 'cb-2',
+      user_id: 'mock-user-uuid-123',
+      category_id: 'cat-nec-2',
+      amount_limit: 4500000,
+      enable_alerts: false,
+      categories: {
+        id: 'cat-nec-2',
+        name: 'Thuê nhà',
+        jar_type: 'NEC'
+      }
+    }
+  ];
+
   await page.route('**/auth/v1/session*', async (route: any) => {
     await route.fulfill({
       status: 200, contentType: 'application/json',
@@ -63,6 +91,10 @@ async function setupBudgetMocks(page: any, dynamicJars: any[]) {
   await page.route('**/rest/v1/profiles*', async (route: any) => {
     const method = route.request().method();
     if (method === 'PATCH' || method === 'PUT') {
+      const body = JSON.parse(route.request().postData() || '{}');
+      if (body.total_budget !== undefined) {
+        currentTotalBudget = body.total_budget;
+      }
       await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
     } else {
       await route.fulfill({
@@ -70,6 +102,7 @@ async function setupBudgetMocks(page: any, dynamicJars: any[]) {
         body: JSON.stringify({
           id: 'mock-user-uuid-123', onboarding_completed: true,
           display_name: 'Capy User',
+          total_budget: currentTotalBudget,
           jars_ratios: { nec: 55, lt: 10, ffa: 10, edu: 10, play: 10, give: 5 }
         })
       });
@@ -127,13 +160,12 @@ async function setupBudgetMocks(page: any, dynamicJars: any[]) {
     }
   });
 
-  await page.route('**/rest/v1/category_budgets*', async (route: any) => {
+  await page.route('**/rest/v1/budgets*', async (route: any) => {
     const method = route.request().method();
     if (method === 'POST' || method === 'PATCH') {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
     } else {
-      // Return category budgets with enable_alerts=false
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(dynamicCategoryBudgets) });
     }
   });
 
@@ -290,7 +322,7 @@ test.describe('Budget Screen — JarCard Chi tiết & Tương tác', () => {
     await expect(page.locator('text=Tên hũ')).toBeVisible();
     await expect(page.locator('text=Icon (Emoji)')).toBeVisible();
     await expect(page.locator('text=Tỷ lệ phân bổ:')).toBeVisible();
-    await expect(page.locator('text=Hạng mục con')).toBeVisible();
+    await expect(page.getByText('Hạng mục con', { exact: true })).toBeVisible();
     await expect(page.locator('text=Lưu Cấu Hình')).toBeVisible();
   });
 
