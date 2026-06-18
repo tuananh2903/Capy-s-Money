@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   StyleSheet, Text, View, TouchableOpacity, ScrollView,
-  SafeAreaView, ActivityIndicator, Dimensions, Alert, Image,
+  SafeAreaView, Animated, Dimensions, Alert, Image,
   Platform, StatusBar, Modal, TextInput
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -16,6 +16,27 @@ import { evaluateJarBudget, BudgetAlertStatus } from "../utils/budgetChecker";
 import BudgetScreen from "./BudgetScreen";
 import WalletScreen from "./WalletScreen";
 import { LedgerScreen } from "./LedgerScreen";
+
+// ── Skeleton shimmer component ───────────────────────────────────────────────
+function SkeletonBlock({ width: w, height: h, borderRadius: br = 8, style }: {
+  width?: number | string; height: number; borderRadius?: number; style?: any;
+}) {
+  const shimmer = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(shimmer, { toValue: 1, duration: 900, useNativeDriver: true }),
+        Animated.timing(shimmer, { toValue: 0, duration: 900, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+  const opacity = shimmer.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0.7] });
+  return (
+    <Animated.View
+      style={[{ width: w ?? '100%', height: h, borderRadius: br, backgroundColor: '#F1DEDF', opacity }, style]}
+    />
+  );
+}
 
 const { width } = Dimensions.get("window");
 
@@ -193,12 +214,16 @@ export default function DashboardScreen({
 
   useEffect(() => {
     let isMounted = true;
-    
+
     const load = async () => {
       try {
-        setLoading(true);
-        // Load profile first to get jars ratios
-        const profileRes = await fetchProfile(userId);
+        // Đọc lastWalletId từ cache SONG SONG với network calls — không block UI
+        const [profileRes, walletsRes, cachedWalletId] = await Promise.all([
+          fetchProfile(userId),
+          fetchWallets(userId),
+          AsyncStorage.getItem(`last_active_wallet_id_${userId}`).catch(() => null),
+        ]);
+
         let currentJarsRatios = null;
         if (isMounted && profileRes.success && profileRes.data) {
           setUserDisplayName(profileRes.data.display_name || "Thành viên Capy");
@@ -206,47 +231,40 @@ export default function DashboardScreen({
           currentJarsRatios = profileRes.data.jars_ratios || null;
         }
 
-        const walletsRes = await fetchWallets(userId);
         if (isMounted && walletsRes.success && walletsRes.data && walletsRes.data.length > 0) {
           setWallets(walletsRes.data);
-          
+
           let activeWallet = walletsRes.data[0];
-          let isLastWalletFound = false;
-          try {
-            const lastWalletId = await AsyncStorage.getItem(`last_active_wallet_id_${userId}`);
-            if (lastWalletId) {
-              const found = walletsRes.data.find((w) => w.id === lastWalletId);
-              if (found) {
-                activeWallet = found;
-                isLastWalletFound = true;
-              }
-            }
-            if (!isLastWalletFound) {
-              await AsyncStorage.setItem(`last_active_wallet_id_${userId}`, activeWallet.id);
-            }
-          } catch (e) {
-            console.error("Lỗi khi đọc/lưu ví active từ AsyncStorage:", e);
+          if (cachedWalletId) {
+            const found = walletsRes.data.find((w) => w.id === cachedWalletId);
+            if (found) activeWallet = found;
+          } else {
+            AsyncStorage.setItem(`last_active_wallet_id_${userId}`, activeWallet.id).catch(() => {});
           }
-          
           setSelectedWallet(activeWallet);
-          const jarsRes = await fetchJars(userId);
-          if (isMounted && jarsRes.success && jarsRes.data) {
-            setJars(jarsRes.data);
-            if (jarsRes.data.length < 6 || jarsRes.data.some((j) => j.allocation_percentage === 0)) {
-              const ensureRes = await ensureJarsExist(userId, jarsRes.data, currentJarsRatios);
-              if (ensureRes.success && isMounted) {
-                const refetched = await fetchJars(userId);
-                if (refetched.success && refetched.data) setJars(refetched.data);
-              }
-            }
-          }
-          const [incomeRes, expenseRes] = await Promise.all([
+
+          // Fetch jars + income + expense song song
+          const [jarsRes, incomeRes, expenseRes] = await Promise.all([
+            fetchJars(userId),
             fetchWalletIncome(activeWallet.id),
-            fetchWalletExpense(activeWallet.id)
+            fetchWalletExpense(activeWallet.id),
           ]);
+
           if (isMounted) {
             if (incomeRes.success) setWalletIncome(incomeRes.data);
             if (expenseRes.success) setWalletExpense(expenseRes.data);
+            if (jarsRes.success && jarsRes.data) {
+              setJars(jarsRes.data);
+              // ensureJarsExist chạy ngầm, không block render
+              if (jarsRes.data.length < 6 || jarsRes.data.some((j) => j.allocation_percentage === 0)) {
+                ensureJarsExist(userId, jarsRes.data, currentJarsRatios).then(async (ensureRes) => {
+                  if (ensureRes.success && isMounted) {
+                    const refetched = await fetchJars(userId);
+                    if (refetched.success && refetched.data && isMounted) setJars(refetched.data);
+                  }
+                });
+              }
+            }
           }
         }
       } finally {
@@ -519,14 +537,7 @@ export default function DashboardScreen({
     );
   };
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>Đang chuẩn bị tài chính...</Text>
-      </View>
-    );
-  }
+  // Skeleton inline — không return early, dashboard render ngay lập tức
 
   return (
     <SafeAreaView style={styles.container}>
@@ -749,7 +760,44 @@ export default function DashboardScreen({
 
       {activeTab === "home" ? (
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {selectedWallet && (
+        {loading ? (
+          /* Skeleton placeholders — hien ngay khi data dang fetch */
+          <>
+            {/* Skeleton: Balance card */}
+            <View style={[styles.totalBalanceCard, { padding: 24, backgroundColor: '#F1DEDF' }]}>
+              <SkeletonBlock height={16} width="40%" borderRadius={8} style={{ marginBottom: 12 }} />
+              <SkeletonBlock height={40} width="65%" borderRadius={10} />
+            </View>
+            {/* Skeleton: Wallet pill */}
+            <View style={{ flexDirection: 'row', paddingHorizontal: 16, gap: 8, marginVertical: 12 }}>
+              <SkeletonBlock width={110} height={36} borderRadius={20} />
+              <SkeletonBlock width={90} height={36} borderRadius={20} />
+            </View>
+            {/* Skeleton: Balance hero card */}
+            <View style={[styles.balanceHeroCard, { padding: 20, gap: 12 }]}>
+              <SkeletonBlock height={16} width="30%" />
+              <SkeletonBlock height={32} width="55%" />
+              <View style={{ flexDirection: 'row', gap: 16, marginTop: 8 }}>
+                <SkeletonBlock width="45%" height={40} borderRadius={12} />
+                <SkeletonBlock width="45%" height={40} borderRadius={12} />
+              </View>
+            </View>
+            {/* Skeleton: Jars */}
+            <View style={{ paddingHorizontal: 16, marginTop: 16 }}>
+              <SkeletonBlock height={18} width="40%" style={{ marginBottom: 14 }} />
+              {[1, 2, 3].map((i) => (
+                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: 12 }}>
+                  <SkeletonBlock width={44} height={44} borderRadius={14} />
+                  <View style={{ flex: 1, gap: 8 }}>
+                    <SkeletonBlock height={14} width="60%" />
+                    <SkeletonBlock height={8} borderRadius={4} />
+                  </View>
+                </View>
+              ))}
+            </View>
+          </>
+        ) : selectedWallet ? (
+
           <>
             {/* Total Balance Card */}
             <LinearGradient
@@ -885,12 +933,8 @@ export default function DashboardScreen({
                 </View>
               );
             })()}
-          </>
-        )}
 
-          <>
-
-            {/* Mascot Quote Card */}
+          {/* Mascot Quote Card */}
             <View style={styles.quoteCard}>
               <View style={styles.quoteMascotContainer}>
                 <Image
@@ -977,6 +1021,7 @@ export default function DashboardScreen({
               )}
             </View>
           </>
+        ) : null}
         </ScrollView>
       ) : activeTab === "wallets" ? (
         <WalletScreen

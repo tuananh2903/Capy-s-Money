@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, ActivityIndicator, Text, SafeAreaView, Platform, Alert } from 'react-native';
+import { StyleSheet, View, Text, SafeAreaView, Platform, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import * as Linking from 'expo-linking';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from './src/services/supabaseClient';
 if (Platform.OS === 'web') {
   require('./src/utils/register-sw');
@@ -41,7 +42,26 @@ export default function App() {
 
   // 1. Kiểm tra trạng thái Onboarding của người dùng
   const checkOnboardingStatus = async (userId: string) => {
+    const CACHE_KEY = `onboarding_completed_${userId}`;
     try {
+      // Đọc cache local trước — instant, không cần network
+      const cached = await AsyncStorage.getItem(CACHE_KEY);
+      if (cached !== null) {
+        setOnboardingCompleted(cached === '1');
+        setLoading(false);
+        // Background re-check chỉ khi cache báo chưa hoàn thành (tránh stale)
+        if (cached !== '1') {
+          supabase.from('profiles').select('onboarding_completed').eq('id', userId).single()
+            .then(({ data }) => {
+              if (data?.onboarding_completed) {
+                setOnboardingCompleted(true);
+                AsyncStorage.setItem(CACHE_KEY, '1').catch(() => {});
+              }
+            });
+        }
+        return;
+      }
+      // Chưa có cache — fetch DB lần đầu
       const { data, error } = await supabase
         .from('profiles')
         .select('onboarding_completed')
@@ -49,11 +69,13 @@ export default function App() {
         .single();
 
       if (error) {
-        // Trong trường hợp tài khoản mới chưa kịp sinh Trigger profile (hoặc lỗi kết nối)
         console.warn('Profile not found, defaulting onboarding_completed to false:', error.message);
         setOnboardingCompleted(false);
+        await AsyncStorage.setItem(CACHE_KEY, '0').catch(() => {});
       } else if (data) {
-        setOnboardingCompleted(data.onboarding_completed ?? false);
+        const completed = data.onboarding_completed ?? false;
+        setOnboardingCompleted(completed);
+        await AsyncStorage.setItem(CACHE_KEY, completed ? '1' : '0').catch(() => {});
       }
     } catch (err) {
       console.error('Failed to check onboarding status:', err);
@@ -137,9 +159,28 @@ export default function App() {
       }
     });
 
+    // --- WEB PWA: Refresh session khi user quay lại app sau khi iOS "đóng băng" tab ---
+    // iOS Safari hay terminate PWA background context → access token có thể hết hạn
+    // visibilitychange event fire khi user switch back → force Supabase refresh token
+    let visibilityHandler: (() => void) | null = null;
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      visibilityHandler = async () => {
+        if (document.visibilityState === 'visible') {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            setSession(session);
+          }
+        }
+      };
+      document.addEventListener('visibilitychange', visibilityHandler);
+    }
+
     return () => {
       subscription.unsubscribe();
       linkingSubscription.remove();
+      if (visibilityHandler && Platform.OS === 'web' && typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', visibilityHandler);
+      }
     };
   }, []);
 
@@ -158,6 +199,8 @@ export default function App() {
 
     if (res.success) {
       setOnboardingCompleted(true);
+      // Cập nhật cache — lần mở app sau sẽ instant không cần query DB
+      AsyncStorage.setItem(`onboarding_completed_${session.user.id}`, '1').catch(() => {});
     } else {
       setOnboardingError(res.error || 'Có lỗi xảy ra khi thiết lập ví. Vui lòng thử lại.');
     }
@@ -176,6 +219,10 @@ export default function App() {
     } finally {
       setSession(null);
       setOnboardingCompleted(false);
+      // Xóa cache onboarding khi sign out — người dùng khác có thể đăng nhập sau
+      if (session?.user?.id) {
+        AsyncStorage.removeItem(`onboarding_completed_${session.user.id}`).catch(() => {});
+      }
       setLoading(false);
     }
   };

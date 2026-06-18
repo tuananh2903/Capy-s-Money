@@ -135,7 +135,7 @@ describe('DashboardScreen', () => {
     mockRolloverEnabled = false;
   });
 
-  it('renders loading state first, then lists wallets and active wallet data', async () => {
+  it('renders skeleton first, then lists wallets and active wallet data', async () => {
     (fetchWallets as jest.Mock).mockResolvedValue({ success: true, data: mockWallets });
     (fetchJars as jest.Mock).mockResolvedValue({ success: true, data: mockJars });
 
@@ -143,18 +143,16 @@ describe('DashboardScreen', () => {
       <DashboardScreen userId="user-123" onSignOut={jest.fn()} />
     );
 
-    // Verify loading screen is shown initially
-    expect(getByText(/Đang chuẩn bị/i)).toBeTruthy();
-
-    await waitFor(() => {
-      expect(queryByText(/Đang chuẩn bị/i)).toBeNull();
-    });
-
-    // Check header title
+    // Loading text no longer shown — skeleton UI renders immediately instead
+    expect(queryByText(/Đang chuẩn bị/i)).toBeNull();
+    // Header is visible immediately
     expect(getByText("Capy's Money")).toBeTruthy();
 
-    // Check balance card: wallet name shown as switcher, balance in vi-VN format
-    expect(getByText('Ví Cá Nhân')).toBeTruthy();
+    await waitFor(() => {
+      // After data loads, wallet name and balance appear
+      expect(getByText('Ví Cá Nhân')).toBeTruthy();
+    });
+
     // Balance 5000000 formatted as vi-VN with đ suffix
     expect(getByText(/5[.,]000[.,]000/)).toBeTruthy();
 
@@ -173,7 +171,7 @@ describe('DashboardScreen', () => {
     );
 
     await waitFor(() => {
-      expect(queryByText(/Đang chuẩn bị/i)).toBeNull();
+      expect(getByText('Ví Cá Nhân')).toBeTruthy();
     });
 
     // Press to open wallet selector
@@ -201,7 +199,7 @@ describe('DashboardScreen', () => {
     );
 
     await waitFor(() => {
-      expect(queryByText(/Đang chuẩn bị/i)).toBeNull();
+      expect(getByText('Ví Cá Nhân')).toBeTruthy();
     });
 
     // Press Add Transaction button
@@ -235,7 +233,7 @@ describe('DashboardScreen', () => {
     );
 
     await waitFor(() => {
-      expect(queryByText(/Đang chuẩn bị/i)).toBeNull();
+      expect(getByText('Ví Cá Nhân')).toBeTruthy();
     });
 
     // Profile options should not be visible initially
@@ -267,12 +265,12 @@ describe('DashboardScreen', () => {
     (fetchWallets as jest.Mock).mockResolvedValue({ success: true, data: mockWallets });
     (fetchJars as jest.Mock).mockResolvedValue({ success: true, data: mockJars });
 
-    const { getByTestId, queryByText } = render(
+    const { getByTestId, queryByText, getByText } = render(
       <DashboardScreen userId="user-123" onSignOut={onSignOutMock} />
     );
 
     await waitFor(() => {
-      expect(queryByText(/Đang chuẩn bị/i)).toBeNull();
+      expect(getByText('Ví Cá Nhân')).toBeTruthy();
     });
 
     // Press bell button
@@ -299,7 +297,7 @@ describe('DashboardScreen', () => {
     );
 
     await waitFor(() => {
-      expect(queryByText(/Đang chuẩn bị/i)).toBeNull();
+      expect(getByText('Ví Cá Nhân')).toBeTruthy();
     });
 
     // Open dropdown
@@ -342,7 +340,7 @@ describe('DashboardScreen', () => {
     );
 
     await waitFor(() => {
-      expect(queryByText(/Đang chuẩn bị/i)).toBeNull();
+      expect(getByText('Ví Cá Nhân')).toBeTruthy();
     });
 
     // Check rollover banner text for surplus: 10M budget - 2.05M spent = 7.95M surplus
@@ -370,7 +368,7 @@ describe('DashboardScreen', () => {
     );
 
     await waitFor(() => {
-      expect(queryByText(/Đang chuẩn bị/i)).toBeNull();
+      expect(getByText('Ví Cá Nhân')).toBeTruthy();
     });
 
     // Check rollover banner text for deficit: 10M budget - 12M spent = 2M deficit

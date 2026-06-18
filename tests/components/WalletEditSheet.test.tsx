@@ -48,9 +48,10 @@ describe('WalletEditSheet', () => {
       />
     );
 
-    // Title & Sliders
-    expect(await findByText('Cài đặt: Ví Ăn Tiêu')).toBeTruthy();
-    expect(await findByText('⭐ Đặt làm mặc định')).toBeTruthy();
-    expect(await findByText('🗑️ Xóa ví')).toBeTruthy();
+    // Title
+    expect(await findByText('Ví Ăn Tiêu')).toBeTruthy();
+    // Action items
+    expect(await findByText('Đặt làm mặc định')).toBeTruthy();
+    expect(await findByText('Xóa ví')).toBeTruthy();
   });
 });
