@@ -347,7 +347,7 @@ test.describe('Cross-Screen Flow — Tạo ví mới và kiểm tra ngân sách'
     await page.locator('text=Ví').last().click();
     await page.waitForSelector('text=Ví của tôi', { timeout: 5000 });
     await page.getByTestId('btn-settings-w-1').click();
-    await page.waitForSelector('text=Cài đặt: Ví Cá Nhân', { timeout: 5000 });
+    await page.waitForSelector('text=TỶ LỆ PHÂN BỔ HŨ', { timeout: 5000 });
 
     // Step 2: Adjust NEC allocation from 55% to 60%
     await page.locator('text=+ NEC').click();
@@ -592,8 +592,8 @@ test.describe('Cross-Screen Flow — Trải nghiệm người dùng đầy đủ
     const newWalletId = appState.wallets.find((w: any) => w.name === 'Ví Kinh Doanh')?.id;
     if (newWalletId) {
       await page.getByTestId(`btn-settings-${newWalletId}`).click();
-      await page.waitForSelector('text=Cài đặt: Ví Kinh Doanh', { timeout: 5000 });
-      await page.locator('text=⭐ Mặc định').click();
+      await page.waitForSelector('text=TỶ LỆ PHÂN BỔ HŨ', { timeout: 5000 });
+      await page.getByTestId('action-set-default').click();
       await page.waitForTimeout(1000);
       await page.locator('text=✕').first().click();
       await page.waitForTimeout(500);

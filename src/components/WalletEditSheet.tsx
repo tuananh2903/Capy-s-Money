@@ -277,7 +277,7 @@ export default function WalletEditSheet({
 
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.headerTitle} numberOfLines={1}>
+            <Text style={styles.headerTitle} numberOfLines={1} testID="wallet-edit-title">
               {wallet.name}
             </Text>
             <TouchableOpacity onPress={onClose} style={styles.closeBtn}>

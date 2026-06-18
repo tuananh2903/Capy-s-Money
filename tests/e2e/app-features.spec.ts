@@ -526,7 +526,7 @@ test.describe('Wallet Screen (Ví) E2E Tests', () => {
     await page.getByTestId('btn-settings-w-1').click();
     // WalletEditSheet should appear
     await page.waitForTimeout(500);
-    await expect(page.locator('text="Cài đặt: Ví Cá Nhân"')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId('wallet-edit-title')).toHaveText('Ví Cá Nhân', { timeout: 5000 });
   });
 
   test('should navigate to home tab after selecting a wallet', async ({ page }) => {

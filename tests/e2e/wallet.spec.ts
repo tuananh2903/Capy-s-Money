@@ -336,11 +336,11 @@ test.describe('WalletEditSheet — Cài đặt ví', () => {
     await loginAndGoToWallet(page, dynamicWallets);
     // Open settings for w-1
     await page.getByTestId('btn-settings-w-1').click();
-    await page.waitForSelector('text=Cài đặt: Ví Cá Nhân', { timeout: 5000 });
+    await page.waitForSelector('text=TỶ LỆ PHÂN BỔ HŨ', { timeout: 5000 });
   });
 
   test('should display WalletEditSheet with correct header for the wallet', async ({ page }) => {
-    await expect(page.locator('text=Cài đặt: Ví Cá Nhân')).toBeVisible();
+    await expect(page.getByTestId('wallet-edit-title')).toHaveText('Ví Cá Nhân');
     // Section heading
     await expect(page.locator('text=TỶ LỆ PHÂN BỔ HŨ')).toBeVisible();
     // Total percentage
@@ -361,9 +361,9 @@ test.describe('WalletEditSheet — Cài đặt ví', () => {
 
   test('should show footer actions (Set Default / Delete)', async ({ page }) => {
     // w-1 is_default = true, so only delete button visible
-    await expect(page.locator('text=🗑️ Xóa ví')).toBeVisible();
+    await expect(page.getByTestId('action-delete')).toBeVisible();
     // No "set default" for default wallet
-    await expect(page.locator('text=⭐ Mặc định')).toBeHidden();
+    await expect(page.getByTestId('action-set-default')).toBeHidden();
   });
 
   test('should show Set Default button for non-default wallet', async ({ page }) => {
@@ -371,12 +371,12 @@ test.describe('WalletEditSheet — Cài đặt ví', () => {
     await page.locator('text=✕').first().click();
     await page.waitForTimeout(500);
     await page.getByTestId('btn-settings-w-2').click();
-    await page.waitForSelector('text=Cài đặt: Ví Tiết Kiệm', { timeout: 5000 });
+    await page.waitForSelector('text=TỶ LỆ PHÂN BỔ HŨ', { timeout: 5000 });
 
     // Set default button should appear
-    await expect(page.locator('text=⭐ Mặc định')).toBeVisible();
+    await expect(page.getByTestId('action-set-default')).toBeVisible();
     // Delete button also visible
-    await expect(page.locator('text=🗑️ Xóa ví')).toBeVisible();
+    await expect(page.getByTestId('action-delete')).toBeVisible();
   });
 
   test('should adjust jar allocation with + and - buttons', async ({ page }) => {
@@ -418,7 +418,7 @@ test.describe('WalletEditSheet — Cài đặt ví', () => {
     await page.getByTestId('save-allocations-btn').click();
     // Sheet closes on success
     await page.waitForTimeout(1000);
-    await expect(page.locator('text=Cài đặt: Ví Cá Nhân')).toBeHidden();
+    await expect(page.getByTestId('wallet-edit-title')).toBeHidden();
   });
 
   test('should delete wallet with confirmation dialog', async ({ page }) => {
@@ -427,11 +427,11 @@ test.describe('WalletEditSheet — Cài đặt ví', () => {
       await dialog.accept();
     });
 
-    await page.locator('text=🗑️ Xóa ví').click();
+    await page.getByTestId('action-delete').click();
     // Alert should trigger — handled by dialog event
     await page.waitForTimeout(1000);
     // Sheet should close after successful delete
-    await expect(page.locator('text=Cài đặt: Ví Cá Nhân')).toBeHidden();
+    await expect(page.getByTestId('wallet-edit-title')).toBeHidden();
   });
 
   test('should cancel wallet delete when dismissing dialog', async ({ page }) => {
@@ -439,17 +439,17 @@ test.describe('WalletEditSheet — Cài đặt ví', () => {
       await dialog.dismiss();
     });
 
-    await page.locator('text=🗑️ Xóa ví').click();
+    await page.getByTestId('action-delete').click();
     await page.waitForTimeout(500);
     // Sheet should still be visible
-    await expect(page.locator('text=Cài đặt: Ví Cá Nhân')).toBeVisible();
+    await expect(page.getByTestId('wallet-edit-title')).toHaveText('Ví Cá Nhân');
   });
 
   test('should close WalletEditSheet when clicking close button', async ({ page }) => {
-    await expect(page.locator('text=Cài đặt: Ví Cá Nhân')).toBeVisible();
+    await expect(page.getByTestId('wallet-edit-title')).toHaveText('Ví Cá Nhân');
     await page.locator('text=✕').first().click();
     await page.waitForTimeout(500);
-    await expect(page.locator('text=Cài đặt: Ví Cá Nhân')).toBeHidden();
+    await expect(page.getByTestId('wallet-edit-title')).toBeHidden();
   });
 
   test('should set wallet as default when clicking Set Default', async ({ page }) => {
@@ -461,9 +461,9 @@ test.describe('WalletEditSheet — Cài đặt ví', () => {
     await page.locator('text=✕').first().click();
     await page.waitForTimeout(500);
     await page.getByTestId('btn-settings-w-2').click();
-    await page.waitForSelector('text=Cài đặt: Ví Tiết Kiệm', { timeout: 5000 });
+    await page.waitForSelector('text=TỶ LỆ PHÂN BỔ HŨ', { timeout: 5000 });
 
-    await page.locator('text=⭐ Mặc định').click();
+    await page.getByTestId('action-set-default').click();
     // Alert confirmation accepted by dialog handler
     await page.waitForTimeout(1000);
   });
@@ -500,8 +500,8 @@ test.describe('Full Wallet Management E2E Flows', () => {
     const newWalletId = dynamicWallets.find((w: any) => w.name === 'Ví Đi Chợ')?.id;
     if (newWalletId) {
       await page.getByTestId(`btn-settings-${newWalletId}`).click();
-      await page.waitForSelector('text=Cài đặt: Ví Đi Chợ', { timeout: 5000 });
-      await expect(page.locator('text=TỶ LỆ PHÂN BỔ HŨ')).toBeVisible();
+      await page.waitForSelector('text=TỶ LỆ PHÂN BỔ HŨ', { timeout: 5000 });
+      await expect(page.getByTestId('wallet-edit-title')).toHaveText('Ví Đi Chợ');
       // Close sheet
       await page.locator('text=✕').first().click();
     }
