@@ -67,8 +67,10 @@ class LargeSecureStore {
   }
 }
 
-// Dùng LargeSecureStore (iOS Keychain) trên native, AsyncStorage trên Web
-const storageAdapter = Platform.OS === 'web' ? AsyncStorage : new LargeSecureStore();
+// Dùng LargeSecureStore (iOS Keychain) trên native, window.localStorage trên Web
+const storageAdapter = Platform.OS === 'web'
+  ? (typeof window !== 'undefined' ? window.localStorage : undefined)
+  : new LargeSecureStore();
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
